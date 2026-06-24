@@ -2198,16 +2198,45 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 #intro-anim {
   position: absolute; inset: 0;
   background: url('images/cabinetclosed.jpg') center/cover no-repeat;
-  display: flex; align-items: center; justify-content: center;
 }
+/* Title — cross-fades in then out (controlled by .show) */
 #intro-title-wrap {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  z-index: 2;
   display: flex; flex-direction: column; align-items: center; gap: 18px;
   text-align: center; padding: 0 40px;
-  animation: intro-title-in 1.2s ease 0.3s both;
+  opacity: 0; transition: opacity 1.3s ease;
 }
-@keyframes intro-title-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
+#intro-title-wrap.show { opacity: 1; }
+/* Scroll — the letter; fades in mid-sequence, sits behind the plaque */
+#intro-scroll {
+  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%);
+  z-index: 1;
+  height: min(76vh, 700px); width: auto; max-width: 94vw;
+  opacity: 0; transition: opacity 1.5s ease;
+  filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
+  pointer-events: none;
+}
+#intro-scroll.show { opacity: 1; }
+/* Plaque — stretched along the bottom, holds the loading bar, sits in front */
+#intro-plaque {
+  position: absolute; left: 50%; bottom: 3.2vh; transform: translateX(-50%);
+  z-index: 4;
+  width: min(860px, 92vw); aspect-ratio: 1002 / 362;
+  background: url('images/plaque.png') center/100% 100% no-repeat;
+  display: flex; align-items: center; justify-content: center;
+}
+#intro-loadbar-track {
+  width: 60%; height: 9px; margin-bottom: 2%;
+  background: rgba(35,24,12,0.40);
+  border: 1px solid rgba(35,24,12,0.55);
+  border-radius: 5px; overflow: hidden;
+}
+#intro-loadbar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #7a5418, #caa233, #e8c860);
+  box-shadow: 0 0 8px rgba(212,168,50,0.7);
+  transition: width 0.25s ease;
 }
 #intro-title {
   font-family: 'Cinzel Decorative', serif;
@@ -13034,11 +13063,102 @@ function cabClearHighlights() {
     }, 700);
   }
 
+  // Scan the page source once for every image the game references.
+  function gatherImages() {
+    var html = document.documentElement.outerHTML;
+    var re = /(?:images\/[\w@.\-]+\.(?:png|jpe?g|gif|webp))|cabinetempty\.png/gi;
+    var seen = {}, list = [], m;
+    while ((m = re.exec(html)) !== null) {
+      var u = m[0];
+      if (!seen[u]) { seen[u] = 1; list.push(u); }
+    }
+    // Load the intro's own chrome first so doors/plaque/scroll are ready.
+    var prioOrder = ['images/cabinetclosed.jpg', 'images/plaque.png', 'images/scroll.png'];
+    var pri = [], rest = [];
+    list.forEach(function(u) { (prioOrder.indexOf(u) >= 0 ? pri : rest).push(u); });
+    pri.sort(function(a, b) { return prioOrder.indexOf(a) - prioOrder.indexOf(b); });
+    return pri.concat(rest);
+  }
+
+  // Preload with capped concurrency so we don't re-create the request-storm
+  // that causes timeouts. Each image resolves on load, error, OR timeout, so
+  // a single missing/slow file can never freeze the loader.
+  function preload(urls, onProgress, onDone) {
+    var total = urls.length, done = 0, i = 0;
+    var CONCURRENCY = 10, PER_IMG_TIMEOUT = 15000;
+    if (total === 0) { onDone(); return; }
+    function finishOne() {
+      done++; onProgress(done, total);
+      if (done >= total) { onDone(); return; }
+      pump();
+    }
+    function loadOne(url) {
+      var img = new Image(), settled = false;
+      var t = setTimeout(function() { if (!settled) { settled = true; finishOne(); } }, PER_IMG_TIMEOUT);
+      img.onload  = function() { if (!settled) { settled = true; clearTimeout(t); finishOne(); } };
+      img.onerror = function() { if (!settled) { settled = true; clearTimeout(t);
+        try { console.warn('[preload] missing/failed:', url); } catch (e) {} finishOne(); } };
+      img.src = url;
+    }
+    function pump() { while (i < total && (i - done) < CONCURRENCY) { loadOne(urls[i++]); } }
+    pump();
+  }
+
   function initIntro() {
     var ov = document.getElementById('intro-overlay');
     if (!ov) { bye(); return; }
-    ov.addEventListener('click', bye);
-    setTimeout(bye, 4000);
+
+    var titleWrap = document.getElementById('intro-title-wrap');
+    var scroll    = document.getElementById('intro-scroll');
+    var fill      = document.getElementById('intro-loadbar-fill');
+
+    var urls   = gatherImages();
+    var total  = urls.length, done = 0;
+    var startT = Date.now();
+    var MIN_FILL = 4000;   // floor that smooths the bar fill; real load may take longer
+    var ready = false, scrollArmed = false, dismissing = false;
+
+    preload(urls, function(d, t) { done = d; total = t; }, function() {});
+
+    // Bar reflects real load progress (floored by a short minimum so it animates
+    // smoothly rather than snapping to full on a warm cache).
+    function tick() {
+      if (ready) return;
+      var loadFrac = total ? done / total : 1;
+      var timeFrac = Math.min(1, (Date.now() - startT) / MIN_FILL);
+      if (fill) fill.style.width = (Math.min(loadFrac, timeFrac) * 100).toFixed(1) + '%';
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // Hold on the doors (bar visible) until the very last image has loaded, then
+    // fade the doors and begin. Honours \"wait for all images\".
+    function finishWhenLoaded() {
+      if (ready) return;
+      if (done >= total) { ready = true; if (fill) fill.style.width = '100%'; setTimeout(bye, 400); return; }
+      setTimeout(finishWhenLoaded, 150);
+    }
+
+    // Click anywhere once the scroll is up to dismiss it and enter the game.
+    ov.style.cursor = 'pointer';
+    ov.addEventListener('click', function() {
+      if (!scrollArmed || dismissing) return;
+      dismissing = true;
+      if (scroll) scroll.classList.remove('show');   // scroll fades out
+      setTimeout(finishWhenLoaded, 600);             // then wait for load -> doors fade -> game
+    });
+
+    // Title flourish, then reveal the scroll and leave it up for the reader.
+    if (titleWrap) titleWrap.classList.add('show');                                       // title fades in
+    setTimeout(function() { if (titleWrap) titleWrap.classList.remove('show'); }, 2600);  // title fades out
+    if (scroll) {
+      setTimeout(function() {
+        scroll.classList.add('show');                          // scroll fades in...
+        setTimeout(function() { scrollArmed = true; }, 700);   // ...then becomes dismissable
+      }, 3900);
+    } else {
+      setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
+    }
   }
 
   // Run after DOM is parsed (the overlay div is declared after this script block)
@@ -13200,6 +13320,10 @@ function chooseRival() { _enterCharSelect(2); }
       <div id="intro-rule-top"></div>
       <div id="intro-title">CABINETS<br>OF CURIOSITY</div>
       <div id="intro-rule-bot"></div>
+    </div>
+    <img id="intro-scroll" src="images/scroll.png" alt="">
+    <div id="intro-plaque">
+      <div id="intro-loadbar-track"><div id="intro-loadbar-fill"></div></div>
     </div>
   </div>
   <div id="intro-black"></div>
