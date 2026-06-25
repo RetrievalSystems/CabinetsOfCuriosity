@@ -3997,7 +3997,7 @@ const ROUTES = {
     circuit:   ['baramahal'],
     nodes: [
       {x:1081, y:451, name:'Kongu Nadu',  isPort:true,  portImg:'images/kongudest.png'},      // 0
-      {x:1077, y:452, name:'Baramahal',   isPort:true,  portImg:'images/baramahaldest.png'},  // 1
+      {x:1077, y:452, name:'Baramahal',   isPort:true,  portImg:'images/baramahaldest.jpeg'},  // 1
     ],
   },
   baramahal_return: {
@@ -4009,7 +4009,7 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['baramahal_return'],
     nodes: [
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.png'}, // 0
+      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 0
       {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.png'},      // 1
     ],
   },
@@ -4022,14 +4022,14 @@ const ROUTES = {
       {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'},      // 0
       {x:1086, y:449, name:'',           isPort:false },                                     // 1
       {x:1081, y:451, name:'Kongu Nadu', isPort:false },                                     // 2 — pass through, no stop
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.png'}, // 3
+      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 3
     ],
   },
   baramahal_direct_return: {
     id:'baramahal_direct_return', shipImg:'images/mule.png', shipName:'Mule journey back to Madras',
     lineColor:'rgba(140,100,60,0.25)', smallToken:true, nextRoute:null, circuit:['baramahal_direct_return'],
     nodes: [
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.png'}, // 0
+      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 0
       {x:1081, y:451, name:'Kongu Nadu', isPort:false },                                     // 1 — pass through
       {x:1086, y:449, name:'',           isPort:false },                                     // 2
       {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'},      // 3
@@ -6211,7 +6211,7 @@ const PORT_IMAGES = {
   'Rio':              'images/portbat.jpeg',
   'Lisbon':           'images/portlis.jpg',
   'Kongu Nadu':       'images/kongudest.png',
-  'Baramahal':        'images/baramahaldest.png',
+  'Baramahal':        'images/baramahaldest.jpeg',
   'Poonamallee':      'images/poonamalleedest.png',
   'Caramujeira':      'images/caramujeiradestination.jpeg',
   'False Bay':        'images/falsecapedestination.png',
@@ -8780,10 +8780,10 @@ const SEA_CARD_TEMPLATES = [
   mkCard('images/wsse.png', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
   mkCard('images/wsw.png',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
-  mkCard('images/whirln.png',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
-  mkCard('images/whirlne.png', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
-  mkCard('images/whirle.png',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
-  mkCard('images/whirlw.png',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
+  mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
+  mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
+  mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
+  mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
   // ── Indian Ocean storm — cardinals only: S, W ──
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
@@ -9188,10 +9188,10 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/wsse.png', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SE.`); advanceStormToken('atlantic','SE'); } },
   { img:'images/wsw.png',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves W.`);  advanceStormToken('atlantic','W');  } },
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
-  { img:'images/whirln.png',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves N.`);  advanceStormToken('whirlpool','N');  } },
-  { img:'images/whirlne.png', effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves NE.`); advanceStormToken('whirlpool','NE'); } },
-  { img:'images/whirle.png',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves E.`);  advanceStormToken('whirlpool','E');  } },
-  { img:'images/whirlw.png',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves W.`);  advanceStormToken('whirlpool','W');  } },
+  { img:'images/whirln.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves N.`);  advanceStormToken('whirlpool','N');  } },
+  { img:'images/whirlne.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves NE.`); advanceStormToken('whirlpool','NE'); } },
+  { img:'images/whirle.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves E.`);  advanceStormToken('whirlpool','E');  } },
+  { img:'images/whirlw.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves W.`);  advanceStormToken('whirlpool','W');  } },
   // ── Indian Ocean storm — cardinals only: S, W, N, E ──
   { img:'images/storm2_s.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves S.`); advanceStormToken('indian','S'); } },
   { img:'images/storm2_w.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves W.`); advanceStormToken('indian','W'); } },
