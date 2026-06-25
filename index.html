@@ -1571,7 +1571,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   40%     { box-shadow: 0 0 0 8px rgba(212,168,85,0.55); }
   70%     { box-shadow: 0 0 0 14px rgba(212,168,85,0.15); }
 }
-.draw-pulse { animation: drawPulse 0.7s ease-out 2; }
+.draw-pulse { animation: drawPulse 0.7s ease-out 1; }
 
 /* ── Route debug toggle button ── */
 
@@ -10081,7 +10081,7 @@ function endTurn() {
       const deckEl = document.getElementById(atSea ? 'deck-sea' : 'deck-land');
       if (deckEl) {
         deckEl.classList.add('draw-pulse');
-        setTimeout(() => deckEl?.classList.remove('draw-pulse'), 1400);
+        setTimeout(() => deckEl?.classList.remove('draw-pulse'), 700);
       }
     } catch(e) { /* safe — don't let pulse failure block anything */ }
     return;
@@ -13085,22 +13085,32 @@ function cabClearHighlights() {
   // a single missing/slow file can never freeze the loader.
   function preload(urls, onProgress, onDone) {
     var total = urls.length, done = 0, i = 0;
-    var CONCURRENCY = 10, PER_IMG_TIMEOUT = 15000;
+    var CONCURRENCY = 8, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 2;
     if (total === 0) { onDone(); return; }
     function finishOne() {
       done++; onProgress(done, total);
       if (done >= total) { onDone(); return; }
       pump();
     }
-    function loadOne(url) {
+    function loadOne(url, attempt) {
       var img = new Image(), settled = false;
-      var t = setTimeout(function() { if (!settled) { settled = true; finishOne(); } }, PER_IMG_TIMEOUT);
+      function fail() {
+        if (settled) return; settled = true;
+        if (attempt < MAX_RETRIES) {
+          // Straggler — give it another go. A cold CDN edge usually warms up
+          // between attempts, so a retry typically succeeds where the first stalled.
+          setTimeout(function() { loadOne(url, attempt + 1); }, 600);
+        } else {
+          try { console.warn('[preload] gave up after retries:', url); } catch (e) {}
+          finishOne();
+        }
+      }
+      var t = setTimeout(fail, PER_IMG_TIMEOUT);
       img.onload  = function() { if (!settled) { settled = true; clearTimeout(t); finishOne(); } };
-      img.onerror = function() { if (!settled) { settled = true; clearTimeout(t);
-        try { console.warn('[preload] missing/failed:', url); } catch (e) {} finishOne(); } };
+      img.onerror = function() { clearTimeout(t); fail(); };
       img.src = url;
     }
-    function pump() { while (i < total && (i - done) < CONCURRENCY) { loadOne(urls[i++]); } }
+    function pump() { while (i < total && (i - done) < CONCURRENCY) { loadOne(urls[i++], 0); } }
     pump();
   }
 
