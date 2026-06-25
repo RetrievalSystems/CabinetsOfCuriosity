@@ -12122,7 +12122,6 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
     ...(bonuses || []).map(b => ({ label: b.name, val: '+' + b.pts })),
     { label: 'Reputation', val: repScore  },
     ...(catBonus ? [{ label: 'The Cat', val: '+1' }] : []),
-    ...(NUM_PLAYERS === 1 ? [{ label: 'Weeks', val: roundNumber }] : []),
   ];
 
   el.innerHTML =
@@ -12136,6 +12135,10 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
     `</div>` +
     `<div style="font-family:'Cinzel Decorative',serif;font-size:clamp(2.2rem,5vw,3.4rem);` +
     `color:#1a0c04;line-height:1;text-shadow:0 1px 0 rgba(255,220,120,0.3);">${grand}</div>` +
+    (NUM_PLAYERS === 1
+      ? `<div style="font-family:'Cinzel',serif;font-size:0.5rem;color:#5a3010;` +
+        `letter-spacing:.2em;margin-top:5px;">IN ${roundNumber} ${roundNumber === 1 ? 'WEEK' : 'WEEKS'}</div>`
+      : '') +
     `<div style="font-family:'Cinzel',serif;font-size:0.58rem;color:#3a1e08;` +
     `letter-spacing:.18em;margin-top:6px;">${p.name.toUpperCase()}</div>` +
     `<div style="font-family:'Cinzel',serif;font-size:0.42rem;color:#5a3010;` +
@@ -13049,6 +13052,26 @@ function cabClearHighlights() {
 }
 
 // ── Intro controller ─────────────────────────────────────────────────────
+// Image retry net: any <img> that ends up blank re-fetches itself, so a
+// cold-CDN miss self-heals during play instead of leaving a gap.
+(function() {
+  var MAX = 4, pkc = 0;
+  document.addEventListener('error', function(e) {
+    var img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    var src = img.getAttribute('src') || '';
+    if (!src || src.charAt(0) === '#' || src.lastIndexOf('data:', 0) === 0) return;
+    if (img.__pk == null) img.__pk = ++pkc;
+    img.__retries = (img.__retries || 0) + 1;
+    if (img.__retries > MAX) return;          // genuinely stuck — stop, leave as-is
+    var base = src.split('?')[0], n = img.__retries;
+    setTimeout(function() {
+      img.style.display = '';                 // undo any inline onerror hide
+      img.src = base + '?r=' + n;             // cache-bust to force a fresh fetch
+    }, 350 * n);                              // gentle backoff
+  }, true);   // capture phase — image error events don't bubble
+})();
+
 (function() {
   function bye() {
     var ov = document.getElementById('intro-overlay');
@@ -13085,7 +13108,7 @@ function cabClearHighlights() {
   // a single missing/slow file can never freeze the loader.
   function preload(urls, onProgress, onDone) {
     var total = urls.length, done = 0, i = 0;
-    var CONCURRENCY = 8, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 2;
+    var CONCURRENCY = 8, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 3;
     if (total === 0) { onDone(); return; }
     function finishOne() {
       done++; onProgress(done, total);
