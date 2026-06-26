@@ -2213,11 +2213,14 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   z-index: 1;
   height: 100vh; width: auto; max-width: 100vw;
-  opacity: 0; transition: opacity 1.5s ease;
+  opacity: 0;
+  clip-path: inset(0 0 calc(100% - 20px) 0);          /* start: only the top 20px strip */
+  transition: opacity 0.5s ease, clip-path 1.5s cubic-bezier(0.22,1,0.36,1) 0.45s;
   filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
   pointer-events: none;
+  will-change: clip-path, opacity;
 }
-#intro-scroll.show { opacity: 1; }
+#intro-scroll.show { opacity: 1; clip-path: inset(0 0 0 0); }   /* then unrolls down to full */
 /* Plaque — stretched along the bottom, holds the loading bar, sits in front */
 #intro-plaque {
   position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
@@ -4198,7 +4201,7 @@ function _makePlayerObj(i) {
   return {
     id:i, name:PLAYER_DEFAULTS[i].name, color:PLAYER_DEFAULTS[i].color,
     shipId:null, cardDrawn:false, arrivedAtPort:false, pendingPortOpen:null,
-    reputation:50, silver:20, ingots:10, items:[], hasCat:false, poxImmune:false,
+    reputation:5, silver:20, ingots:10, items:[], hasCat:false, poxImmune:false,
     disembarked:false, heldCards:[], freePass:[], noTrading:null, skipActions:false,
   };
 }
@@ -4216,7 +4219,7 @@ let players = Array.from({length: NUM_PLAYERS}, (_, i) => ({
   cardDrawn:    false,
   arrivedAtPort: false,   // true only the turn a player first arrives at a port
   pendingPortOpen: null,  // { name, portImg } — set on arrival, consumed by dismissCard
-  reputation:   50,
+  reputation:    5,
   silver:       20,
   ingots:       10,
   items:        [],
@@ -5373,13 +5376,14 @@ function spinGhostShipDial(pIdx) {
     const inPirate   = inBottom && norm >= 30 && norm <= pirateArcHi && pirateArcHi > 30;
 
     const p = players[pIdx];
+    const ghostHaul = 5 * (1 + Math.floor(Math.random() * 4));  // non-ambush reward: random 5/10/15/20 ingots (20 = jackpot)
 
     if (inPirate) {
       // ── AMBUSH — battle starts, no silver, -3 reputation ──
       firePiratesBanner(pIdx);
       flashAstrolabe(pIdx, 'hit');
       // Reputation penalty for falling into a ghost ship ambush
-      p.reputation = Math.max(0, (p.reputation || 50) - 3);
+      p.reputation = Math.max(0, (p.reputation ?? 5) - 3);
       updateRepMarker(pIdx);
       setStatus(`💀 ${p.name}: AMBUSH — the ghost ship attacks! −3 reputation.`);
       log(`${p.name}: AMBUSH! Caught off guard — −3 reputation, dial hit pirate zone at ${norm.toFixed(0)}°.`);
@@ -5394,7 +5398,7 @@ function spinGhostShipDial(pIdx) {
 
     } else if (inBottom) {
       // ── Bottom third, safe — 6 ingots ──
-      p.ingots = (p.ingots || 0) + 6;
+      p.ingots = (p.ingots || 0) + ghostHaul;
       flashAstrolabe(pIdx, 'miss');
       if (!s.inBattle) { // only clear battle UI if no real pirate battle was ongoing
         document.getElementById('ast-stack-p' + pIdx)?.classList.remove('ast-battle');
@@ -5403,12 +5407,12 @@ function spinGhostShipDial(pIdx) {
         unzoomAstrolabe(pIdx);
       }
       updateHUD();
-      setStatus(`${p.name}: The ghost ship's hold is full of silver! +6 ingots.`);
-      log(`${p.name}: Ghost ship bottom (${norm.toFixed(0)}°) — +6 ingots.`);
+      setStatus(`${p.name}: The ghost ship's hold is full of silver! +${ghostHaul} ingots.`);
+      log(`${p.name}: Ghost ship bottom (${norm.toFixed(0)}°) — +${ghostHaul} ingots.`);
 
     } else if (inLeft) {
       // ── Left third — 2 ingots ──
-      p.ingots = (p.ingots || 0) + 2;
+      p.ingots = (p.ingots || 0) + ghostHaul;
       flashAstrolabe(pIdx, 'miss');
       if (!s.inBattle) {
         document.getElementById('ast-stack-p' + pIdx)?.classList.remove('ast-battle');
@@ -5417,12 +5421,12 @@ function spinGhostShipDial(pIdx) {
         unzoomAstrolabe(pIdx);
       }
       updateHUD();
-      setStatus(`${p.name}: A modest find — +2 ingots from the ghost ship's stores.`);
-      log(`${p.name}: Ghost ship left third (${norm.toFixed(0)}°) — +2 ingots.`);
+      setStatus(`${p.name}: You pick through the ghost ship's stores — +${ghostHaul} ingots.`);
+      log(`${p.name}: Ghost ship left third (${norm.toFixed(0)}°) — +${ghostHaul} ingots.`);
 
     } else if (inRight) {
       // ── Right third — 4 ingots but pox (sulphur scrub; skip next card draw) ──
-      p.ingots = (p.ingots || 0) + 4;
+      p.ingots = (p.ingots || 0) + ghostHaul;
       p.skipCardDraw = true;   // misses card draw next turn — sulphur scrub treatment
       flashAstrolabe(pIdx, 'hit');
       document.getElementById('ast-stack-p' + pIdx)?.classList.remove('ast-battle');
@@ -5430,8 +5434,8 @@ function spinGhostShipDial(pIdx) {
       setBattleOverlay(false);
       unzoomAstrolabe(pIdx);
       updateHUD();
-      setStatus(`⚠ ${p.name}: The ship's sick! +4 ingots but you contract ship fever — sulphur scrub next turn, no card draw.`);
-      log(`${p.name}: Ghost ship right third (${norm.toFixed(0)}°) — +4 ingots, pox/sulphur scrub (skip card draw next turn).`);
+      setStatus(`⚠ ${p.name}: The ship's sick! +${ghostHaul} ingots but you contract ship fever — sulphur scrub next turn, no card draw.`);
+      log(`${p.name}: Ghost ship right third (${norm.toFixed(0)}°) — +${ghostHaul} ingots, pox/sulphur scrub (skip card draw next turn).`);
     }
   }, 3700);
 }
@@ -7574,7 +7578,7 @@ function openBodleianPort() {
         const idx2 = (p2.heldCards||[]).findIndex(hc => hc.isBodleianInvite);
         if (idx2 >= 0) {
           p2.heldCards.splice(idx2, 1);
-          p2.reputation = Math.min(100, (p2.reputation||50) + 20);
+          p2.reputation = Math.min(10, (p2.reputation ?? 5) + 2);
           renderHeldCards(currentPIdx); updateRepMarker(currentPIdx);
           log(`${p2.name}: Bodleian invitation used — +2 reputation!`);
         }
@@ -8637,13 +8641,13 @@ document.getElementById('reboard-area').addEventListener('click', (e) => {
 // ════════════════════════════════════════════════
 function changeRep(playerIdx, delta) {
   const p = players[playerIdx];
-  p.reputation = Math.max(0, Math.min(100, (p.reputation || 50) + delta));
+  p.reputation = Math.max(0, Math.min(10, (p.reputation ?? 5) + delta));
   updateRepMarker(playerIdx);
 }
 
 function updateRepMarker(i) {
   const marker = document.getElementById(`rep-p${i+1}`);
-  if (marker) marker.style.left = players[i].reputation + '%';
+  if (marker) marker.style.left = (players[i].reputation * 10) + '%';
 }
 
 // ════════════════════════════════════════════════
@@ -8742,10 +8746,10 @@ const SEA_CARD_TEMPLATES = [
   mkCard('images/dolphins.jpeg',         (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); }),
   // ── Seasick deckhand ×4 (pure flavour, no effect) ──
   ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,10); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
+  mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
   mkCard('images/whale_18_41_05.png',   (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); }),
   mkCard('images/moonbow.jpeg',          (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); }),
-  mkCard('images/captainstable.jpeg',    (p,i)=>{ changeRep(i,10); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
+  mkCard('images/captainstable.jpeg',    (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
   // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
   ...Array(12).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
@@ -8759,10 +8763,10 @@ const SEA_CARD_TEMPLATES = [
     { isBuy:true, oneOff:true, buyImg:'images/shipinbottle.png', buyName:'Ship in a Bottle', buyPrice:5 }),
   // ── Opportunity & social ── (tip-offs are generated below to match the op deck)
   mkCard('images/pox.jpeg', (p,i)=>{ log(`${p.name}: Inoculation offered!`); }, { isPox:true }),
-  mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,10); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
+  mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
   // (pickpocket cards moved to land deck)
-  mkCard('images/rats.jpeg',       (p,i)=>{ if(players[i].hasCat){changeRep(i,10);log(`${p.name}: Rats! Your cat earns its keep — +1 reputation.`);}else{log(`${p.name}: Rats! The ship's cat is lazy.`);} }),
-  mkCard('images/fight.jpeg',      (p,i)=>{ changeRep(i,10); log(`${p.name}: You cool a deck brawl with reason — +1 reputation.`); }),
+  mkCard('images/rats.jpeg',       (p,i)=>{ if(players[i].hasCat){changeRep(i,1);log(`${p.name}: Rats! Your cat earns its keep — +1 reputation.`);}else{log(`${p.name}: Rats! The ship's cat is lazy.`);} }),
+  mkCard('images/fight.jpeg',      (p,i)=>{ changeRep(i,1); log(`${p.name}: You cool a deck brawl with reason — +1 reputation.`); }),
   mkCard('images/captainsoffer.jpeg', (p,i)=>{ log(`${p.name}: A fellow captain hails your vessel!`); /* popup handled by showCard */ }, { isCaptainsOffer:true }),
   mkCard('images/captainsoffer.jpeg', (p,i)=>{ log(`${p.name}: A fellow captain hails your vessel!`); }, { isCaptainsOffer:true }),
   mkCard('images/ghostship.jpeg',  (p,i)=>{
@@ -9147,7 +9151,7 @@ function checkInviteRedemption(playerIdx, portName) { /* auto-trigger disabled *
 
 function redeemInvite(hc, playerIdx) {
   const p = players[playerIdx];
-  changeRep(playerIdx, 20); // +2 reputation
+  changeRep(playerIdx, 2); // +2 reputation
   log(`${p.name} attends the invitation at ${hc.dest} — +2 reputation!`);
   // Return card to land deck and remove from hand
   const tmpl = LAND_CARD_TEMPLATES.find(t => t.img === hc.img);
@@ -9163,10 +9167,10 @@ function redeemInvite(hc, playerIdx) {
 // ════════════════════════════════════════════════
 const LAND_CARD_TEMPLATES = [
   // ── Reputation events ──
-  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-10); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
-  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-10); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
-  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-10); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
-  { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,10);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
+  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Festivals (no trading) — doubled to thin the card flow ──
   ...Array(2).fill(null).map(()=> ({ img:'images/festcan.png', effect:(p,i)=>{ log(`${p.name}: Lunar New Year — no trading in Canton this turn.`); p.noTrading='Canton'; } })),
@@ -12118,7 +12122,7 @@ function _showBonusPlaque(layer, bonus, idx) {
 // ── Grand total plaque ─────────────────────────────────────────────────────
 function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
   const p        = players[playerIdx];
-  const repScore = Math.round((p.reputation || 50) / 10);
+  const repScore = Math.round(p.reputation ?? 5);
   const catBonus = p.hasCat ? 1 : 0;
   const bonusTotal = (bonuses || []).reduce((s, b) => s + b.pts, 0);
   const grand    = itemTotal + bonusTotal + repScore + catBonus;
@@ -13104,7 +13108,7 @@ function cabClearHighlights() {
       if (!seen[u]) { seen[u] = 1; list.push(u); }
     }
     // Load the intro's own chrome first so doors/plaque/scroll are ready.
-    var prioOrder = ['images/cabinetclosed.jpg', 'images/plaque.png', 'images/scroll.png'];
+    var prioOrder = ['images/cabinetclosed.jpg', 'images/plaque.png', 'images/scroll.jpeg'];
     var pri = [], rest = [];
     list.forEach(function(u) { (prioOrder.indexOf(u) >= 0 ? pri : rest).push(u); });
     pri.sort(function(a, b) { return prioOrder.indexOf(a) - prioOrder.indexOf(b); });
@@ -13195,7 +13199,7 @@ function cabClearHighlights() {
     if (scroll) {
       setTimeout(function() {
         scroll.classList.add('show');                          // scroll fades in...
-        setTimeout(function() { scrollArmed = true; }, 700);   // ...then becomes dismissable
+        setTimeout(function() { scrollArmed = true; }, 2200);   // ...then becomes dismissable
       }, 3900);
     } else {
       setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
@@ -13362,7 +13366,7 @@ function chooseRival() { _enterCharSelect(2); }
       <div id="intro-title">CABINETS<br>OF CURIOSITY</div>
       <div id="intro-rule-bot"></div>
     </div>
-    <img id="intro-scroll" src="images/scroll.png" alt="">
+    <img id="intro-scroll" src="images/scroll.jpeg" alt="">
     <div id="intro-plaque">
       <div id="intro-loadbar-track"><div id="intro-loadbar-fill"></div></div>
     </div>
