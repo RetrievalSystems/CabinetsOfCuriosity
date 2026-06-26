@@ -2198,48 +2198,16 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 #intro-anim {
   position: absolute; inset: 0;
   background: url('images/cabinetclosed.jpg') center/cover no-repeat;
-}
-/* Title — cross-fades in then out (controlled by .show) */
-#intro-title-wrap {
-  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
-  z-index: 2;
-  display: flex; flex-direction: column; align-items: center; gap: 18px;
-  text-align: center; padding: 0 40px;
-  opacity: 0; transition: opacity 1.3s ease;
-}
-#intro-title-wrap.show { opacity: 1; }
-/* Scroll — the letter; fades in mid-sequence, sits behind the plaque */
-#intro-scroll {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  z-index: 1;
-  height: 100vh; width: auto; max-width: 100vw;
-  opacity: 0;
-  clip-path: inset(0 0 calc(100% - 20px) 0);          /* start: only the top 20px strip */
-  transition: opacity 0.5s ease, clip-path 1.5s cubic-bezier(0.22,1,0.36,1) 0.45s;
-  filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
-  pointer-events: none;
-  will-change: clip-path, opacity;
-}
-#intro-scroll.show { opacity: 1; clip-path: inset(0 0 0 0); }   /* then unrolls down to full */
-/* Plaque — stretched along the bottom, holds the loading bar, sits in front */
-#intro-plaque {
-  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
-  z-index: 4;
-  width: min(900px, 96vw); height: 20px;
-  background: url('images/plaque.png') center/100% 100% no-repeat;
   display: flex; align-items: center; justify-content: center;
 }
-#intro-loadbar-track {
-  width: 86%; height: 10px;
-  background: rgba(35,24,12,0.40);
-  border: 1px solid rgba(35,24,12,0.55);
-  border-radius: 5px; overflow: hidden;
+#intro-title-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  text-align: center; padding: 0 40px;
+  animation: intro-title-in 1.2s ease 0.3s both;
 }
-#intro-loadbar-fill {
-  height: 100%; width: 0%;
-  background: linear-gradient(90deg, #7a5418, #caa233, #e8c860);
-  box-shadow: 0 0 8px rgba(212,168,50,0.7);
-  transition: width 0.25s ease;
+@keyframes intro-title-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 #intro-title {
   font-family: 'Cinzel Decorative', serif;
@@ -2685,7 +2653,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
     <!-- Haarlem conchologist sell area — left of postcard, vertical column -->
     <div id="haarlem-conch-area" style="display:none; position:absolute; left:3%; top:15%; flex-direction:column; align-items:center; gap:10px; max-width:180px; z-index:10;">
-      <img src="images/op-conchologist.jpeg" style="width:90px;height:126px;object-fit:cover;border-radius:4px;border:1.5px solid rgba(212,168,85,.5);box-shadow:0 4px 14px rgba(0,0,0,.7);">
+      <img src="images/op-conchologist.png" style="width:90px;height:126px;object-fit:cover;border-radius:4px;border:1.5px solid rgba(212,168,85,.5);box-shadow:0 4px 14px rgba(0,0,0,.7);">
       <div style="font-family:'Cinzel',serif;font-size:0.62rem;color:#e8c878;letter-spacing:0.06em;text-align:center;">Conchologist<br>Haarlem</div>
       <div style="font-family:'Cinzel',serif;font-size:0.5rem;color:#a87830;text-align:center;">Triple price for shells</div>
       <div id="haarlem-conch-items" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
@@ -2693,7 +2661,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
     <!-- Leiden mineralogist sell area — left of postcard, vertical column -->
     <div id="leiden-mineral-area" style="display:none; position:absolute; left:3%; top:15%; flex-direction:column; align-items:center; gap:10px; max-width:180px; z-index:10;">
-      <img src="images/op-minerologist.jpeg" style="width:90px;height:126px;object-fit:cover;border-radius:4px;border:1.5px solid rgba(212,168,85,.5);box-shadow:0 4px 14px rgba(0,0,0,.7);">
+      <img src="images/op-minerologist.png" style="width:90px;height:126px;object-fit:cover;border-radius:4px;border:1.5px solid rgba(212,168,85,.5);box-shadow:0 4px 14px rgba(0,0,0,.7);">
       <div style="font-family:'Cinzel',serif;font-size:0.68rem;color:#e8c878;letter-spacing:0.06em;text-align:center;">Mineralogist<br>Leiden</div>
       <div style="font-family:'Cinzel',serif;font-size:0.5rem;color:#a87830;text-align:center;">Double price for specimens</div>
       <div id="leiden-mineral-items" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
@@ -3076,7 +3044,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Lapidary barge — shown at Amsterdam with lapidary op card + raw nautilus -->
         <div id="lapidary-barge-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardLapidaryBarge()" title="Canal Barge to Lapidary Outskirts" style="background:#000;" data-route-id="lapidary">
-            <img src="images/op-lapidary.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+            <img src="images/op-lapidary.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Canal<br>→ Lapidary</span>
         </div>
@@ -3084,7 +3052,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Lapidary return — shown at Lapidary Outskirts port -->
         <div id="lapidary-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnLapidaryBarge()" title="Canal back to Amsterdam" style="background:#000;" data-route-id="lapidary_return">
-            <img src="images/op-lapidary.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+            <img src="images/op-lapidary.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Canal<br>← Amsterdam</span>
         </div>
@@ -3092,7 +3060,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Delft canal — shown at Amsterdam with silversmith op card + peeled nautilus -->
         <div id="delft-canal-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardDelftCanal()" title="Canal to Delft Silversmith" style="background:#000;" data-route-id="delft">
-            <img src="images/op-silvermith.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+            <img src="images/op-silvermith.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Canal<br>→ Delft</span>
         </div>
@@ -3100,7 +3068,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Delft return — shown at Delft port -->
         <div id="delft-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnDelftCanal()" title="Canal back to Amsterdam" style="background:#000;" data-route-id="delft_return">
-            <img src="images/op-silvermith.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+            <img src="images/op-silvermith.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Canal<br>← Amsterdam</span>
         </div>
@@ -3445,7 +3413,7 @@ const ROUTES = {
     circuit:   ['foshan'],
     nodes: [
       {x:1213, y:399, name:'Canton', isPort:true, portImg:'images/portcan.jpeg'},  // 0
-      {x:1199, y:403, name:'Foshan', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 1
+      {x:1199, y:403, name:'Foshan', isPort:true, portImg:'images/cantontofoshan.png'}, // 1
     ],
   },
 
@@ -3458,14 +3426,14 @@ const ROUTES = {
     lineColor:'rgba(80,160,110,0.55)', circuit:['whitecloudmtn'],
     nodes:[
       {x:1213,y:399, name:'Canton',              isPort:true,  portImg:'images/portcan.jpeg'},            // 0
-      {x:1204,y:385, name:'White Cloud Mountain', isPort:true, portImg:'images/cloud_mountain.jpeg'},      // 1
+      {x:1204,y:385, name:'White Cloud Mountain', isPort:true, portImg:'images/cloud_mountain.png'},      // 1
     ],
   },
   whitecloudmtn_return: {
     id:'whitecloudmtn_return', shipImg:'images/foshanship.png', shipName:'Junk back to Canton',
     lineColor:'rgba(80,160,110,0.55)', circuit:['whitecloudmtn_return'],
     nodes:[
-      {x:1204,y:385, name:'White Cloud Mountain', isPort:true, portImg:'images/cloud_mountain.jpeg'},      // 0
+      {x:1204,y:385, name:'White Cloud Mountain', isPort:true, portImg:'images/cloud_mountain.png'},      // 0
       {x:1213,y:399, name:'Canton',               isPort:true, portImg:'images/portcan.jpeg'},            // 1
     ],
   },
@@ -3475,14 +3443,14 @@ const ROUTES = {
     lineColor:'rgba(180,150,80,0.55)', circuit:['ancol'],
     nodes:[
       {x:1193,y:499, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'},       // 0
-      {x:1213,y:493, name:'Ancol Cove', isPort:true, portImg:'images/batavianuatilusdest.jpeg'},       // 1
+      {x:1213,y:493, name:'Ancol Cove', isPort:true, portImg:'images/batavianuatilusdest.png'},       // 1
     ],
   },
   ancol_return: {
     id:'ancol_return', shipImg:'images/foshanship.png', shipName:'Proa back to Batavia',
     lineColor:'rgba(180,150,80,0.55)', circuit:['ancol_return'],
     nodes:[
-      {x:1213,y:493, name:'Ancol Cove', isPort:true, portImg:'images/batavianuatilusdest.jpeg'},       // 0
+      {x:1213,y:493, name:'Ancol Cove', isPort:true, portImg:'images/batavianuatilusdest.png'},       // 0
       {x:1193,y:499, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'},         // 1
     ],
   },
@@ -3529,7 +3497,7 @@ const ROUTES = {
     id:'foshan_return', shipImg:'images/foshanship.png', shipName:'Sampan back to Canton',
     lineColor:'rgba(180,140,60,0.8)', circuit:['foshan_return'],
     nodes:[
-      {x:1163, y:404, name:'Foshan', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 0
+      {x:1163, y:404, name:'Foshan', isPort:true, portImg:'images/cantontofoshan.png'}, // 0
       {x:1213, y:399, name:'Canton', isPort:true, portImg:'images/portcan.jpeg'},       // 1
     ],
   },
@@ -3537,7 +3505,7 @@ const ROUTES = {
     id:'meetiyagoda_return', shipImg:'images/foshanship.png', shipName:'Dhow back to Ceylon',
     lineColor:'rgba(180,200,240,0.35)', circuit:['meetiyagoda_return'],
     nodes:[
-      {x:1088, y:422, name:'Meetiyagoda', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 0
+      {x:1088, y:422, name:'Meetiyagoda', isPort:true, portImg:'images/cantontofoshan.png'}, // 0
       {x:1105, y:461, name:'Ceylon',      isPort:true, portImg:'images/portcey.jpeg'},       // 1
     ],
   },
@@ -3545,7 +3513,7 @@ const ROUTES = {
     id:'bataviacove_return', shipImg:'images/rowboat.png', shipName:'Rowboat back to Batavia',
     lineColor:'rgba(200,220,180,0.35)', circuit:['bataviacove_return'],
     nodes:[
-      {x:1170, y:468, name:'Shell Cove', isPort:true, portImg:'images/shellcovedestination.jpeg'}, // 0
+      {x:1170, y:468, name:'Shell Cove', isPort:true, portImg:'images/shellcovedestination.png'}, // 0
       {x:1193, y:499, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'}, // 1
     ],
   },
@@ -3553,7 +3521,7 @@ const ROUTES = {
     id:'abrolhos_return', shipImg:'images/rowboat.png', shipName:'Rowboat back to Rio',
     lineColor:'rgba(40,180,120,0.35)', circuit:['abrolhos_return'],
     nodes:[
-      {x:548, y:538, name:'Abrolhos Reef', isPort:true, portImg:'images/albrohasdestination.jpeg'}, // 0
+      {x:548, y:538, name:'Abrolhos Reef', isPort:true, portImg:'images/albrohasdestination.png'}, // 0
       {x:529, y:563, name:'Rio',           isPort:true, portImg:'images/portbat.jpeg'}, // 1
     ],
   },
@@ -3601,7 +3569,7 @@ const ROUTES = {
     circuit:   ['meetiyagoda'],
     nodes: [
       {x:1105, y:461, name:'Ceylon',       isPort:true, portImg:'images/portcey.jpeg'},        // 0 — Galle
-      {x:1088, y:422, name:'Meetiyagoda',  isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 1 — inland gem mines
+      {x:1088, y:422, name:'Meetiyagoda',  isPort:true, portImg:'images/cantontofoshan.png'}, // 1 — inland gem mines
     ],
   },
 
@@ -3713,7 +3681,7 @@ const ROUTES = {
     shipName:  'Rhine Barge (downriver)',
     circuit:   ['rhine_return'],
     nodes: [
-      {x:855, y:294, name:'Nuremberg', isPort:true, portImg:'images/nuremberg.jpeg'}, // 0
+      {x:855, y:294, name:'Nuremberg', isPort:true, portImg:'images/nuremberg.png'}, // 0
       {x:850, y:290, name:'',          isPort:false},                               // 1
       {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'}, // 2
     ],
@@ -3728,7 +3696,7 @@ const ROUTES = {
     nodes: [
       {x:844, y:286, name:'Amsterdam',  isPort:true, portImg:'images/portams.jpeg'}, // 0
       {x:850, y:290, name:'',           isPort:false},                               // 1
-      {x:855, y:294, name:'Nuremberg',  isPort:true, portImg:'images/nuremberg.jpeg'}, // 2
+      {x:855, y:294, name:'Nuremberg',  isPort:true, portImg:'images/nuremberg.png'}, // 2
     ],
   },
 
@@ -3742,7 +3710,7 @@ const ROUTES = {
     circuit:   ['abrolhos'],
     nodes: [
       {x:529, y:563, name:'Rio',            isPort:true, portImg:'images/portbat.jpeg'}, // 0 — Rio de Janeiro
-      {x:548, y:538, name:'Abrolhos Reef',  isPort:true, portImg:'images/albrohasdestination.jpeg'}, // 1 — archipelago NE of Rio
+      {x:548, y:538, name:'Abrolhos Reef',  isPort:true, portImg:'images/albrohasdestination.png'}, // 1 — archipelago NE of Rio
     ],
   },
 
@@ -3828,7 +3796,7 @@ const ROUTES = {
     circuit:   ['caramujeira'],
     nodes: [
       {x:781, y:330, name:'Lisbon',      isPort:true, portImg:'images/portlis.jpg'},
-      {x:790, y:352, name:'Caramujeira', isPort:true, portImg:'images/caramujeiradestination.jpeg'},
+      {x:790, y:352, name:'Caramujeira', isPort:true, portImg:'images/caramujeiradestination.png'},
     ],
   },
   caramujeira_return: {
@@ -3840,7 +3808,7 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['caramujeira_return'],
     nodes: [
-      {x:790, y:352, name:'Caramujeira', isPort:true, portImg:'images/caramujeiradestination.jpeg'},
+      {x:790, y:352, name:'Caramujeira', isPort:true, portImg:'images/caramujeiradestination.png'},
       {x:781, y:330, name:'Lisbon',      isPort:true, portImg:'images/portlis.jpg'},
     ],
   },
@@ -3851,14 +3819,14 @@ const ROUTES = {
     lineColor:'rgba(150,120,90,0.45)', smallToken:true, nextRoute:null, circuit:['falsebay'],
     nodes: [
       {x:867, y:612, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
-      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
+      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.png'},
     ],
   },
   falsebay_return: {
     id:'falsebay_return', shipImg:'images/mule.png', shipName:'Mule back to the Cape',
     lineColor:'rgba(150,120,90,0.30)', smallToken:true, nextRoute:null, circuit:['falsebay_return'],
     nodes: [
-      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
+      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.png'},
       {x:867, y:612, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
     ],
   },
@@ -3873,14 +3841,14 @@ const ROUTES = {
       {x:534,y:543, name:'',            isPort:false },                                           // 2
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 3 — intermediate
       {x:540,y:523, name:'',            isPort:false },                                           // 4
-      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 5
+      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.png'}, // 5
     ],
   },
   minasgerais_return: {
     id:'minasgerais_return', shipImg:'images/mule2.png', shipName:'Mule train back to Rio',
     lineColor:'rgba(160,100,200,0.25)', smallToken:true, nextRoute:null, circuit:['minasgerais_return'],
     nodes:[
-      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 0
+      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.png'}, // 0
       {x:540,y:523, name:'',            isPort:false },                                           // 1
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 2 — intermediate
       {x:534,y:543, name:'',            isPort:false },                                           // 3
@@ -3916,14 +3884,14 @@ const ROUTES = {
     nodes:[
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 0
       {x:540,y:523, name:'',            isPort:false },                                           // 1
-      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 2
+      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.png'}, // 2
     ],
   },
   minas_cont_return: {
     id:'minas_cont_return', shipImg:'images/mule2.png', shipName:'Mule back to Ouro Preto',
     lineColor:'rgba(160,100,200,0.25)', smallToken:true, nextRoute:null, circuit:['minas_cont_return'],
     nodes:[
-      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 0
+      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.png'}, // 0
       {x:540,y:523, name:'',            isPort:false },                                           // 1
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 2
     ],
@@ -3971,7 +3939,7 @@ const ROUTES = {
     nodes: [
       {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 0
       {x:1086, y:449, name:'',           isPort:false },                                // 1
-      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 2
+      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.png'}, // 2
     ],
   },
   kongumadras_return: {
@@ -3983,7 +3951,7 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['kongumadras_return'],
     nodes: [
-      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 0
+      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.png'}, // 0
       {x:1086, y:449, name:'',           isPort:false },                                // 1
       {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 2
     ],
@@ -3999,8 +3967,8 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['baramahal'],
     nodes: [
-      {x:1081, y:451, name:'Kongu Nadu',  isPort:true,  portImg:'images/kongudest.jpeg'},      // 0
-      {x:1077, y:452, name:'Baramahal',   isPort:true,  portImg:'images/baramahaldest.jpeg'},  // 1
+      {x:1081, y:451, name:'Kongu Nadu',  isPort:true,  portImg:'images/kongudest.png'},      // 0
+      {x:1077, y:452, name:'Baramahal',   isPort:true,  portImg:'images/baramahaldest.png'},  // 1
     ],
   },
   baramahal_return: {
@@ -4012,8 +3980,8 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['baramahal_return'],
     nodes: [
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 0
-      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'},      // 1
+      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.png'}, // 0
+      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.png'},      // 1
     ],
   },
 
@@ -4025,14 +3993,14 @@ const ROUTES = {
       {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'},      // 0
       {x:1086, y:449, name:'',           isPort:false },                                     // 1
       {x:1081, y:451, name:'Kongu Nadu', isPort:false },                                     // 2 — pass through, no stop
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 3
+      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.png'}, // 3
     ],
   },
   baramahal_direct_return: {
     id:'baramahal_direct_return', shipImg:'images/mule.png', shipName:'Mule journey back to Madras',
     lineColor:'rgba(140,100,60,0.25)', smallToken:true, nextRoute:null, circuit:['baramahal_direct_return'],
     nodes: [
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 0
+      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.png'}, // 0
       {x:1081, y:451, name:'Kongu Nadu', isPort:false },                                     // 1 — pass through
       {x:1086, y:449, name:'',           isPort:false },                                     // 2
       {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'},      // 3
@@ -4051,7 +4019,7 @@ const ROUTES = {
     nodes: [
       {x:1090, y:447, name:'Madras',       isPort:true,  portImg:'images/portmad.jpeg'},         // 0
       {x:1086, y:445, name:'',             isPort:false },                                        // 1
-      {x:1081, y:443, name:'Poonamallee',  isPort:true,  portImg:'images/poonamalleedest.jpeg'},   // 2
+      {x:1081, y:443, name:'Poonamallee',  isPort:true,  portImg:'images/poonamalleedest.png'},   // 2
     ],
   },
   poonamallee_return: {
@@ -4063,7 +4031,7 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['poonamallee_return'],
     nodes: [
-      {x:1081, y:443, name:'Poonamallee', isPort:true,  portImg:'images/poonamalleedest.jpeg'},   // 0
+      {x:1081, y:443, name:'Poonamallee', isPort:true,  portImg:'images/poonamalleedest.png'},   // 0
       {x:1086, y:445, name:'',            isPort:false },                                         // 1
       {x:1090, y:447, name:'Madras',      isPort:true,  portImg:'images/portmad.jpeg'},           // 2
     ],
@@ -4079,7 +4047,7 @@ const ROUTES = {
     circuit:   ['bataviacove'],
     nodes: [
       {x:1193, y:499, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'}, // 0
-      {x:1170, y:468, name:'Shell Cove', isPort:true, portImg:'images/shellcovedestination.jpeg'}, // 1 — bay NW of Batavia
+      {x:1170, y:468, name:'Shell Cove', isPort:true, portImg:'images/shellcovedestination.png'}, // 1 — bay NW of Batavia
     ],
   },
 
@@ -4201,7 +4169,7 @@ function _makePlayerObj(i) {
   return {
     id:i, name:PLAYER_DEFAULTS[i].name, color:PLAYER_DEFAULTS[i].color,
     shipId:null, cardDrawn:false, arrivedAtPort:false, pendingPortOpen:null,
-    reputation:5, silver:20, ingots:10, items:[], hasCat:false, poxImmune:false,
+    reputation:50, silver:20, ingots:10, items:[], hasCat:false, poxImmune:false,
     disembarked:false, heldCards:[], freePass:[], noTrading:null, skipActions:false,
   };
 }
@@ -4219,7 +4187,7 @@ let players = Array.from({length: NUM_PLAYERS}, (_, i) => ({
   cardDrawn:    false,
   arrivedAtPort: false,   // true only the turn a player first arrives at a port
   pendingPortOpen: null,  // { name, portImg } — set on arrival, consumed by dismissCard
-  reputation:    5,
+  reputation:   50,
   silver:       20,
   ingots:       10,
   items:        [],
@@ -5376,14 +5344,13 @@ function spinGhostShipDial(pIdx) {
     const inPirate   = inBottom && norm >= 30 && norm <= pirateArcHi && pirateArcHi > 30;
 
     const p = players[pIdx];
-    const ghostHaul = 5 * (1 + Math.floor(Math.random() * 4));  // non-ambush reward: random 5/10/15/20 ingots (20 = jackpot)
 
     if (inPirate) {
       // ── AMBUSH — battle starts, no silver, -3 reputation ──
       firePiratesBanner(pIdx);
       flashAstrolabe(pIdx, 'hit');
       // Reputation penalty for falling into a ghost ship ambush
-      p.reputation = Math.max(0, (p.reputation ?? 5) - 3);
+      p.reputation = Math.max(0, (p.reputation || 50) - 3);
       updateRepMarker(pIdx);
       setStatus(`💀 ${p.name}: AMBUSH — the ghost ship attacks! −3 reputation.`);
       log(`${p.name}: AMBUSH! Caught off guard — −3 reputation, dial hit pirate zone at ${norm.toFixed(0)}°.`);
@@ -5398,7 +5365,7 @@ function spinGhostShipDial(pIdx) {
 
     } else if (inBottom) {
       // ── Bottom third, safe — 6 ingots ──
-      p.ingots = (p.ingots || 0) + ghostHaul;
+      p.ingots = (p.ingots || 0) + 6;
       flashAstrolabe(pIdx, 'miss');
       if (!s.inBattle) { // only clear battle UI if no real pirate battle was ongoing
         document.getElementById('ast-stack-p' + pIdx)?.classList.remove('ast-battle');
@@ -5407,12 +5374,12 @@ function spinGhostShipDial(pIdx) {
         unzoomAstrolabe(pIdx);
       }
       updateHUD();
-      setStatus(`${p.name}: The ghost ship's hold is full of silver! +${ghostHaul} ingots.`);
-      log(`${p.name}: Ghost ship bottom (${norm.toFixed(0)}°) — +${ghostHaul} ingots.`);
+      setStatus(`${p.name}: The ghost ship's hold is full of silver! +6 ingots.`);
+      log(`${p.name}: Ghost ship bottom (${norm.toFixed(0)}°) — +6 ingots.`);
 
     } else if (inLeft) {
       // ── Left third — 2 ingots ──
-      p.ingots = (p.ingots || 0) + ghostHaul;
+      p.ingots = (p.ingots || 0) + 2;
       flashAstrolabe(pIdx, 'miss');
       if (!s.inBattle) {
         document.getElementById('ast-stack-p' + pIdx)?.classList.remove('ast-battle');
@@ -5421,12 +5388,12 @@ function spinGhostShipDial(pIdx) {
         unzoomAstrolabe(pIdx);
       }
       updateHUD();
-      setStatus(`${p.name}: You pick through the ghost ship's stores — +${ghostHaul} ingots.`);
-      log(`${p.name}: Ghost ship left third (${norm.toFixed(0)}°) — +${ghostHaul} ingots.`);
+      setStatus(`${p.name}: A modest find — +2 ingots from the ghost ship's stores.`);
+      log(`${p.name}: Ghost ship left third (${norm.toFixed(0)}°) — +2 ingots.`);
 
     } else if (inRight) {
       // ── Right third — 4 ingots but pox (sulphur scrub; skip next card draw) ──
-      p.ingots = (p.ingots || 0) + ghostHaul;
+      p.ingots = (p.ingots || 0) + 4;
       p.skipCardDraw = true;   // misses card draw next turn — sulphur scrub treatment
       flashAstrolabe(pIdx, 'hit');
       document.getElementById('ast-stack-p' + pIdx)?.classList.remove('ast-battle');
@@ -5434,8 +5401,8 @@ function spinGhostShipDial(pIdx) {
       setBattleOverlay(false);
       unzoomAstrolabe(pIdx);
       updateHUD();
-      setStatus(`⚠ ${p.name}: The ship's sick! +${ghostHaul} ingots but you contract ship fever — sulphur scrub next turn, no card draw.`);
-      log(`${p.name}: Ghost ship right third (${norm.toFixed(0)}°) — +${ghostHaul} ingots, pox/sulphur scrub (skip card draw next turn).`);
+      setStatus(`⚠ ${p.name}: The ship's sick! +4 ingots but you contract ship fever — sulphur scrub next turn, no card draw.`);
+      log(`${p.name}: Ghost ship right third (${norm.toFixed(0)}°) — +4 ingots, pox/sulphur scrub (skip card draw next turn).`);
     }
   }, 3700);
 }
@@ -6198,29 +6165,29 @@ const PORT_IMAGES = {
   'Batavia':          'images/portbat.jpeg',
   'Nagasaki':         'images/portnag.jpeg',
   'Ceylon':           'images/portcey.jpeg',
-  'Foshan':           'images/cantontofoshan.jpeg',
-  'Meetiyagoda':      'images/cantontofoshan.jpeg',
+  'Foshan':           'images/cantontofoshan.png',
+  'Meetiyagoda':      'images/cantontofoshan.png',
   'Ratnapura':        'images/ratnapura.jpg',
-  'White Cloud Mountain':'images/cloud_mountain.jpeg',
-  'Ancol Cove':       'images/batavianuatilusdest.jpeg',
+  'White Cloud Mountain':'images/cloud_mountain.png',
+  'Ancol Cove':       'images/batavianuatilusdest.png',
   'Lapidary Outskirts':'images/shell-nautiloushalf.png',
   'Delft':            'images/silversmithstudio.jpg',
-  'Shell Cove':       'images/shellcovedestination.jpeg',
-  'Nuremberg':        'images/nuremberg.jpeg',
-  'Abrolhos Reef':    'images/albrohasdestination.jpeg',
+  'Shell Cove':       'images/shellcovedestination.png',
+  'Nuremberg':        'images/nuremberg.png',
+  'Abrolhos Reef':    'images/albrohasdestination.png',
   'Goto Islands':     'images/gotodestination.jpg',
   'Dahel Gorge':      'images/treeagatedest.jpg',
   'Cambay':           'images/cambay.png',
   'Sand Dunes':       'images/sanddunes.png',
   'Rio':              'images/portbat.jpeg',
   'Lisbon':           'images/portlis.jpg',
-  'Kongu Nadu':       'images/kongudest.jpeg',
-  'Baramahal':        'images/baramahaldest.jpeg',
-  'Poonamallee':      'images/poonamalleedest.jpeg',
-  'Caramujeira':      'images/caramujeiradestination.jpeg',
-  'False Bay':        'images/falsecapedestination.jpeg',
+  'Kongu Nadu':       'images/kongudest.png',
+  'Baramahal':        'images/baramahaldest.png',
+  'Poonamallee':      'images/poonamalleedest.png',
+  'Caramujeira':      'images/caramujeiradestination.png',
+  'False Bay':        'images/falsecapedestination.png',
   'Ouro Preto':       'images/imperialtopazdestination.jpg',
-  'Minas Gerais':     'images/amethystdestination.jpeg',
+  'Minas Gerais':     'images/amethystdestination.png',
   'Central Sierras':  'images/sierras.jpg',
 };
 
@@ -6424,7 +6391,7 @@ function openPort(portName, portImg) {
 
   // ── Lisbon — Sierras mule (muleteer op card) ──
   if (playerIsHere && portName === 'Lisbon') {
-    const hasMuleCard = (p.heldCards||[]).some(hc => hc.img === 'images/op-apetite-miner.jpeg');
+    const hasMuleCard = (p.heldCards||[]).some(hc => hc.img === 'images/op-apetite-miner.png');
     if (hasMuleCard) document.getElementById('sierras-mule-area').style.display = 'flex';
   }
   // ── Central Sierras — return mule ──
@@ -6436,7 +6403,7 @@ function openPort(portName, portImg) {
     const hasVaseCard   = (p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-dragonvase'));
     if (hasVaseCard) document.getElementById('foshan-sampan-area').style.display = 'flex';
     // Show junk journey with card only — telescope is only required to BUY the jade ball at the destination
-    const hasPuzzleCard = (p.heldCards||[]).some(hc => hc.img === 'images/puzzleball.jpeg');
+    const hasPuzzleCard = (p.heldCards||[]).some(hc => hc.img === 'images/puzzleball.png');
     if (hasPuzzleCard) document.getElementById('whitecloudmtn-junk-area').style.display = 'flex';
   }
   if (playerIsHere && portName === 'White Cloud Mountain') {
@@ -6522,7 +6489,7 @@ function openPort(portName, portImg) {
   }
   // ── Batavia proa — shown at Batavia when player holds the sea shells opp card ──
   if (playerIsHere && portName === 'Batavia') {
-    const hasAncolCard = (p.heldCards||[]).some(hc => hc.img === 'images/op-nautilusdiver.jpeg');
+    const hasAncolCard = (p.heldCards||[]).some(hc => hc.img === 'images/op-nautilusdiver.png');
     if (hasAncolCard) document.getElementById('ancol-proa-area').style.display = 'flex';
     const hasShellCard = (p.heldCards || []).some(hc => hc.img && hc.img.includes('op-seashells'));
     if (hasShellCard) document.getElementById('batavia-proa-area').style.display = 'flex';
@@ -6539,11 +6506,11 @@ function openPort(portName, portImg) {
     const hasNurCard = (p.heldCards||[]).some(hc => hc.img&&(hc.img.includes('nuremberg')||hc.dest==='Nuremberg'));
     if (hasNurCard) document.getElementById('amsterdam-rhine-area').style.display = 'flex';
     // Lapidary barge: needs lapidary op card AND raw nautilus in cabinet
-    const hasLapCard  = (p.heldCards||[]).some(hc => hc.img === 'images/op-lapidary.jpeg');
+    const hasLapCard  = (p.heldCards||[]).some(hc => hc.img === 'images/op-lapidary.png');
     const hasRawShell = (p.items||[]).some(gi => gi.img === 'images/shellnaut.png');
     if (hasLapCard && hasRawShell) document.getElementById('lapidary-barge-area').style.display = 'flex';
     // Delft canal: needs silversmith op card AND peeled nautilus in cabinet
-    const hasSmithCard   = (p.heldCards||[]).some(hc => hc.img === 'images/op-silvermith.jpeg');
+    const hasSmithCard   = (p.heldCards||[]).some(hc => hc.img === 'images/op-silvermith.png');
     const hasPeeledShell = (p.items||[]).some(gi => gi.img === 'images/shellnautpeeled.png');
     if (hasSmithCard && hasPeeledShell) document.getElementById('delft-canal-area').style.display = 'flex';
   }
@@ -7578,7 +7545,7 @@ function openBodleianPort() {
         const idx2 = (p2.heldCards||[]).findIndex(hc => hc.isBodleianInvite);
         if (idx2 >= 0) {
           p2.heldCards.splice(idx2, 1);
-          p2.reputation = Math.min(10, (p2.reputation ?? 5) + 2);
+          p2.reputation = Math.min(100, (p2.reputation||50) + 20);
           renderHeldCards(currentPIdx); updateRepMarker(currentPIdx);
           log(`${p2.name}: Bodleian invitation used — +2 reputation!`);
         }
@@ -8166,7 +8133,7 @@ function openBataviaShells() {
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" onclick="buySeaShell()" style="cursor:pointer;">
-        <img src="images/seashell.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/op-seashells.jpeg'">
+        <img src="images/seashell.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/op-seashells.png'">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Sea Shell</span>
@@ -8295,7 +8262,7 @@ function returnMinasGeraisMule() {
 function boardSierrasMule() {
   const p = cp();
   if (!p.cardDrawn) { triggerPeekBounce(); return; }
-  if (!(p.heldCards||[]).some(hc => hc.img === 'images/op-apetite-miner.jpeg')) return;
+  if (!(p.heldCards||[]).some(hc => hc.img === 'images/op-apetite-miner.png')) return;
   const s = { id:nextShipId++, routeId:'sierras', nodeIndex:0, unmanned:false };
   ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   log(`${p.name} sets off east into the Central Sierras with their mule guide.`);
@@ -8641,13 +8608,13 @@ document.getElementById('reboard-area').addEventListener('click', (e) => {
 // ════════════════════════════════════════════════
 function changeRep(playerIdx, delta) {
   const p = players[playerIdx];
-  p.reputation = Math.max(0, Math.min(10, (p.reputation ?? 5) + delta));
+  p.reputation = Math.max(0, Math.min(100, (p.reputation || 50) + delta));
   updateRepMarker(playerIdx);
 }
 
 function updateRepMarker(i) {
   const marker = document.getElementById(`rep-p${i+1}`);
-  if (marker) marker.style.left = (players[i].reputation * 10) + '%';
+  if (marker) marker.style.left = players[i].reputation + '%';
 }
 
 // ════════════════════════════════════════════════
@@ -8743,56 +8710,56 @@ function mkCard(img, effect, opts={}) {
 
 const SEA_CARD_TEMPLATES = [
   // ── Omens & flavour ──
-  mkCard('images/dolphins.jpeg',         (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); }),
+  mkCard('images/dolphins.png',         (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); }),
   // ── Seasick deckhand ×4 (pure flavour, no effect) ──
-  ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
+  ...Array(3).fill(null).map(()=> mkCard('images/seasick.png', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
+  mkCard('images/stelmo.png', (p,i)=>{ changeRep(i,10); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
   mkCard('images/whale_18_41_05.png',   (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); }),
-  mkCard('images/moonbow.jpeg',          (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); }),
-  mkCard('images/captainstable.jpeg',    (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
+  mkCard('images/moonbow.png',          (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); }),
+  mkCard('images/captainstable.png',    (p,i)=>{ changeRep(i,10); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
   // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
-  ...Array(12).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
-  ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
+  ...Array(12).fill(null).map(()=> mkCard('images/seagulls.png',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
+  ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.png', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
   // ── Dominoes win ×5, loss ×5 ──
-  ...[1,2,3,4,5].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
-  ...[1,2,3,4,5].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
+  ...[1,2,3,4,5].map(()=> mkCard('images/dominoeswin.png',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
+  ...[1,2,3,4,5].map(()=> mkCard('images/dominoesloss.png', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
   // ── Purchasable items (one-offs) ──
-  mkCard('images/sailiorscrimshaw.jpeg', (p,i)=>{ log(`${p.name}: A sailor offers fine scrimshaw.`); },
+  mkCard('images/sailiorscrimshaw.png', (p,i)=>{ log(`${p.name}: A sailor offers fine scrimshaw.`); },
     { isBuy:true, oneOff:true, buyImg:'images/scrimshaw.png', buyName:'Whale Tooth Scrimshaw', buyPrice:4 }),
-  mkCard('images/sailorshipbottle.jpeg', (p,i)=>{ log(`${p.name}: The bosun offers a ship-in-a-bottle.`); },
+  mkCard('images/sailorshipbottle.png', (p,i)=>{ log(`${p.name}: The bosun offers a ship-in-a-bottle.`); },
     { isBuy:true, oneOff:true, buyImg:'images/shipinbottle.png', buyName:'Ship in a Bottle', buyPrice:5 }),
   // ── Opportunity & social ── (tip-offs are generated below to match the op deck)
-  mkCard('images/pox.jpeg', (p,i)=>{ log(`${p.name}: Inoculation offered!`); }, { isPox:true }),
-  mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
+  mkCard('images/pox.png', (p,i)=>{ log(`${p.name}: Inoculation offered!`); }, { isPox:true }),
+  mkCard('images/fireondeck.png', (p,i)=>{ changeRep(i,10); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
   // (pickpocket cards moved to land deck)
-  mkCard('images/rats.jpeg',       (p,i)=>{ if(players[i].hasCat){changeRep(i,1);log(`${p.name}: Rats! Your cat earns its keep — +1 reputation.`);}else{log(`${p.name}: Rats! The ship's cat is lazy.`);} }),
-  mkCard('images/fight.jpeg',      (p,i)=>{ changeRep(i,1); log(`${p.name}: You cool a deck brawl with reason — +1 reputation.`); }),
-  mkCard('images/captainsoffer.jpeg', (p,i)=>{ log(`${p.name}: A fellow captain hails your vessel!`); /* popup handled by showCard */ }, { isCaptainsOffer:true }),
-  mkCard('images/captainsoffer.jpeg', (p,i)=>{ log(`${p.name}: A fellow captain hails your vessel!`); }, { isCaptainsOffer:true }),
-  mkCard('images/ghostship.jpeg',  (p,i)=>{
+  mkCard('images/rats.png',       (p,i)=>{ if(players[i].hasCat){changeRep(i,10);log(`${p.name}: Rats! Your cat earns its keep — +1 reputation.`);}else{log(`${p.name}: Rats! The ship's cat is lazy.`);} }),
+  mkCard('images/fight.png',      (p,i)=>{ changeRep(i,10); log(`${p.name}: You cool a deck brawl with reason — +1 reputation.`); }),
+  mkCard('images/captainsoffer.png', (p,i)=>{ log(`${p.name}: A fellow captain hails your vessel!`); /* popup handled by showCard */ }, { isCaptainsOffer:true }),
+  mkCard('images/captainsoffer.png', (p,i)=>{ log(`${p.name}: A fellow captain hails your vessel!`); }, { isCaptainsOffer:true }),
+  mkCard('images/ghostship.png',  (p,i)=>{
     // Retire template (one ghost ship per game). Popup is shown by showCard — NOT here.
-    const _gsTmpl = SEA_CARD_TEMPLATES.find(t => t.img === 'images/ghostship.jpeg');
+    const _gsTmpl = SEA_CARD_TEMPLATES.find(t => t.img === 'images/ghostship.png');
     if (_gsTmpl) _gsTmpl.globallyRetired = true;
     log(`${p.name}: A ghost ship materialises from the fog!`);
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
   // ── Pirates ×5 ──
-  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(()=> mkCard('images/pirates.png', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   mkCard('images/wss.png',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wssw.png', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wsse.png', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
   mkCard('images/wsw.png',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
-  mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
-  mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
-  mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
-  mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
+  mkCard('images/whirln.png',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
+  mkCard('images/whirlne.png', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
+  mkCard('images/whirle.png',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
+  mkCard('images/whirlw.png',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
   // ── Indian Ocean storm — cardinals only: S, W ──
-  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
-  mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
-  mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
-  mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
+  mkCard('images/storm2_s.png', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
+  mkCard('images/storm2_w.png', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
+  mkCard('images/storm2_n.png', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
+  mkCard('images/storm2_e.png', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
 ];
 
 function shuffle(arr) {
@@ -9026,54 +8993,54 @@ function closeHeldDetail() {
 // ════════════════════════════════════════════════
 const OPPORTUNITY_CARDS = [
   // ── Amethyst geode ×2 — Minas Gerais, 8 ingots ──
-  ...Array(2).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-amethyst2.png',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
   // ── Dragon vase workshop ×3 — Hangzhou, 5 ingots ──
-  ...Array(2).fill({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-dragonvaseworkshop.png', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots' }),
   // ── Nuremberg model maker ×2 — Nuremberg, 5 ingots ──
   // Central Sierras apatite miner ×3 — one op card per crystal available
-  ...Array(3).fill({ img:'images/op-apetite-miner.jpeg', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' }),
+  ...Array(3).fill({ img:'images/op-apetite-miner.png', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' }),
   // Nuremberg model maker ×3 — one per model, player gets random version on purchase
-  ...Array(3).fill({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-nurembergmodel.png', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
   // ── Lapidary ×3 — Amsterdam, variable pricing ──
-  ...Array(3).fill({ img:'images/op-lapidary.jpeg',          label:'Lapidary — Nautilus Work', location:'Amsterdam',       price:1,  currency:'ingots', note:'Peeled 1 ingot / Bisected 3 ingots' }),
+  ...Array(3).fill({ img:'images/op-lapidary.png',          label:'Lapidary — Nautilus Work', location:'Amsterdam',       price:1,  currency:'ingots', note:'Peeled 1 ingot / Bisected 3 ingots' }),
   // ── Silversmith ×2 — Delft, 4 ingots ──
-  ...Array(4).fill({ img:'images/op-silvermith.jpeg',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' }),
+  ...Array(4).fill({ img:'images/op-silvermith.png',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' }),
   // ── Tourmaline ×1 — Ratnapura, 10 ingots ──
-  ...Array(1).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
+  ...Array(1).fill({ img:'images/op-tourmaline.png',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
   // ── Batavia sea shells ×4 — Batavia, 3 coins each ──
-  ...Array(4).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
+  ...Array(4).fill({ img:'images/op-seashells.png',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
-  ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
+  ...Array(3).fill({ img:'images/op-seafandiver.png',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
-  { img:'images/coral_copy.jpeg', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' },
+  { img:'images/coral_copy.png', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' },
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
-  ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
+  ...Array(2).fill({ img:'images/op-treeagate.png', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
   // ── Cambay mother-of-pearl casket ×1 — UNIQUE: the guild master's final, secret work ──
-  { img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. Only one exists.' },
+  { img:'images/op-motherofpearlcasket.png', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. Only one exists.' },
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
-  ...Array(3).fill({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
+  ...Array(3).fill({ img:'images/op-nautilusdiver.png',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
   // ── Violet sea shells ×5 — Praia do Guincho, 5 coins ──
-  ...Array(4).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
+  ...Array(4).fill({ img:'images/op-violetseasnail.png',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
   // ── Apatite ×3 — Central Sierras (single entry — duplicated above, remove) ──
   // ── Imperial Topaz ×1 — Minas Gerais, 12 ingots ──
-  ...Array(2).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-imperialtopaz.png',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
-  ...Array(3).fill({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-moonstone_copy.png',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' }),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
-  { img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + telescope required' },
+  { img:'images/puzzleball.png', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + telescope required' },
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
-  ...Array(3).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-rubyminer.png', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
   // ── Iron Ore ×3 — Baramahal, 3 coins ──
-  ...Array(3).fill({ img:'images/op-ironore.jpeg', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
+  ...Array(3).fill({ img:'images/op-ironore.png', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
   // ── Netti Carver ×3 — Poonamallee, 6 ingots ──
-  ...Array(3).fill({ img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-netticarver.png', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' }),
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
-  ...Array(4).fill({ img:'images/op-mandrake.jpeg', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' }),
+  ...Array(4).fill({ img:'images/op-mandrake.png', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' }),
   // ── Brain Coral x1 — False Bay, 3 ingots (a once-in-a-lifetime find) ──
-  { img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots' },
+  { img:'images/op-braincoral.png', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots' },
 ].map((c, i) => ({ ...c, _id: i }));
 
 let oppDeck      = [];
@@ -9151,7 +9118,7 @@ function checkInviteRedemption(playerIdx, portName) { /* auto-trigger disabled *
 
 function redeemInvite(hc, playerIdx) {
   const p = players[playerIdx];
-  changeRep(playerIdx, 2); // +2 reputation
+  changeRep(playerIdx, 20); // +2 reputation
   log(`${p.name} attends the invitation at ${hc.dest} — +2 reputation!`);
   // Return card to land deck and remove from hand
   const tmpl = LAND_CARD_TEMPLATES.find(t => t.img === hc.img);
@@ -9167,40 +9134,40 @@ function redeemInvite(hc, playerIdx) {
 // ════════════════════════════════════════════════
 const LAND_CARD_TEMPLATES = [
   // ── Reputation events ──
-  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
-  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
-  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
-  { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
+  { img:'images/slander1.png',      effect:(p,i)=>{ changeRep(i,-10); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander1.png',      effect:(p,i)=>{ changeRep(i,-10); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander1.png',      effect:(p,i)=>{ changeRep(i,-10); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/fire.png',          effect:(p,i)=>{ changeRep(i,10);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Festivals (no trading) — doubled to thin the card flow ──
   ...Array(2).fill(null).map(()=> ({ img:'images/festcan.png', effect:(p,i)=>{ log(`${p.name}: Lunar New Year — no trading in Canton this turn.`); p.noTrading='Canton'; } })),
-  ...Array(2).fill(null).map(()=> ({ img:'images/festnag.jpeg', effect:(p,i)=>{ log(`${p.name}: Nagasaki Kunchi Festival — no trading in Nagasaki today.`); p.noTrading='Nagasaki'; } })),
-  ...Array(2).fill(null).map(()=> ({ img:'images/festrio.jpeg', effect:(p,i)=>{ log(`${p.name}: Corpus Christi — no trading in Rio this turn.`); p.noTrading='Rio'; } })),
+  ...Array(2).fill(null).map(()=> ({ img:'images/festnag.png', effect:(p,i)=>{ log(`${p.name}: Nagasaki Kunchi Festival — no trading in Nagasaki today.`); p.noTrading='Nagasaki'; } })),
+  ...Array(2).fill(null).map(()=> ({ img:'images/festrio.png', effect:(p,i)=>{ log(`${p.name}: Corpus Christi — no trading in Rio this turn.`); p.noTrading='Rio'; } })),
 
   // ── Specialist buyers — Haarlem conchologist (×3) and Leiden mineralogist (×3) ──
-  ...Array(3).fill(null).map(()=> ({ img:'images/op-conchologist.jpeg',
+  ...Array(3).fill(null).map(()=> ({ img:'images/op-conchologist.png',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('conchologist'))) { log(`${p.name}: Conchologist card already held — returned to deck.`); return; }
-      p.heldCards.push({id:'conch_'+Date.now(),img:'images/op-conchologist.jpeg',faceUp:false,type:'opportunity',label:'Conchologist — Haarlem',dest:'Haarlem',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Conchologist in Haarlem — triple price for shells. Kept face down.`); } })),
-  ...Array(3).fill(null).map(()=> ({ img:'images/op-minerologist.jpeg',
+      p.heldCards.push({id:'conch_'+Date.now(),img:'images/op-conchologist.png',faceUp:false,type:'opportunity',label:'Conchologist — Haarlem',dest:'Haarlem',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Conchologist in Haarlem — triple price for shells. Kept face down.`); } })),
+  ...Array(3).fill(null).map(()=> ({ img:'images/op-minerologist.png',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('minerologist'))) { log(`${p.name}: Mineralogist card already held — returned to deck.`); return; }
-      p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
+      p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.png',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   { img:'images/wss.png',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
   { img:'images/wssw.png', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SW.`); advanceStormToken('atlantic','SW'); } },
   { img:'images/wsse.png', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SE.`); advanceStormToken('atlantic','SE'); } },
   { img:'images/wsw.png',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves W.`);  advanceStormToken('atlantic','W');  } },
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
-  { img:'images/whirln.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves N.`);  advanceStormToken('whirlpool','N');  } },
-  { img:'images/whirlne.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves NE.`); advanceStormToken('whirlpool','NE'); } },
-  { img:'images/whirle.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves E.`);  advanceStormToken('whirlpool','E');  } },
-  { img:'images/whirlw.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves W.`);  advanceStormToken('whirlpool','W');  } },
+  { img:'images/whirln.png',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves N.`);  advanceStormToken('whirlpool','N');  } },
+  { img:'images/whirlne.png', effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves NE.`); advanceStormToken('whirlpool','NE'); } },
+  { img:'images/whirle.png',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves E.`);  advanceStormToken('whirlpool','E');  } },
+  { img:'images/whirlw.png',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves W.`);  advanceStormToken('whirlpool','W');  } },
   // ── Indian Ocean storm — cardinals only: S, W, N, E ──
-  { img:'images/storm2_s.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves S.`); advanceStormToken('indian','S'); } },
-  { img:'images/storm2_w.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves W.`); advanceStormToken('indian','W'); } },
-  { img:'images/storm2_n.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves N.`); advanceStormToken('indian','N'); } },
-  { img:'images/storm2_e.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves E.`); advanceStormToken('indian','E'); } },
+  { img:'images/storm2_s.png', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves S.`); advanceStormToken('indian','S'); } },
+  { img:'images/storm2_w.png', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves W.`); advanceStormToken('indian','W'); } },
+  { img:'images/storm2_n.png', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves N.`); advanceStormToken('indian','N'); } },
+  { img:'images/storm2_e.png', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves E.`); advanceStormToken('indian','E'); } },
 
   // ── Tip-offs are generated below (see "FINITE TIP-OFFS") to match the op deck ──
 
@@ -9211,30 +9178,30 @@ const LAND_CARD_TEMPLATES = [
     isBuy:true, oneOff:true, buyImg:'images/dodgyvase.png', buyName:'Ming Dynasty Vase', buyPrice:3 },
 
   // ── Cat (kept, face up) — only ONE cat exists in the whole pack ──
-  { img:'images/cat.jpeg', isKept:true, alwaysFaceUp:true, heldType:'cat', heldLabel:'Street Cat',
+  { img:'images/cat.png', isKept:true, alwaysFaceUp:true, heldType:'cat', heldLabel:'Street Cat',
     oneOff:true, // only one cat ever exists — removed from deck the moment it is drawn
     effect:(p,i)=>{
       catDrawn = true; // module-level flag — survives deck rebuilds
       if(players.some(pl=>pl.hasCat)){ return; } // already claimed — cat retired, nothing more to do
       players[i].hasCat=true;
-      const _catTmpl = LAND_CARD_TEMPLATES.find(c=>c.img==='images/cat.jpeg');
+      const _catTmpl = LAND_CARD_TEMPLATES.find(c=>c.img==='images/cat.png');
       giveHeldCard(i, _catTmpl);
       log(`${p.name} has a new companion — a street cat follows them aboard!`);
     } },
 
   // ── Free passage (kept, face down) ──
-  { img:'images/freepassams.jpeg', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'Amsterdam', heldLabel:'Free Passage from Amsterdam',
-    effect:(p,i)=>{ if((players[i].freePass||[]).includes('Amsterdam')){log(`${p.name} already holds free passage from Amsterdam — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('Amsterdam'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepassams.jpeg')); log(`${p.name} has free passage from Amsterdam.`); } },
-  { img:'images/freepasscan.jpeg', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'Canton', heldLabel:'Free Passage from Canton',
-    effect:(p,i)=>{ if((players[i].freePass||[]).includes('Canton')){log(`${p.name} already holds free passage from Canton — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('Canton'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepasscan.jpeg')); log(`${p.name} has free passage from Canton.`); } },
-  { img:'images/freepasslnd.jpeg', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'London', heldLabel:'Free Passage from London',
-    effect:(p,i)=>{ if((players[i].freePass||[]).includes('London')){log(`${p.name} already holds free passage from London — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('London'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepasslnd.jpeg')); log(`${p.name} has free passage from London.`); } },
+  { img:'images/freepassams.png', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'Amsterdam', heldLabel:'Free Passage from Amsterdam',
+    effect:(p,i)=>{ if((players[i].freePass||[]).includes('Amsterdam')){log(`${p.name} already holds free passage from Amsterdam — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('Amsterdam'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepassams.png')); log(`${p.name} has free passage from Amsterdam.`); } },
+  { img:'images/freepasscan.png', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'Canton', heldLabel:'Free Passage from Canton',
+    effect:(p,i)=>{ if((players[i].freePass||[]).includes('Canton')){log(`${p.name} already holds free passage from Canton — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('Canton'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepasscan.png')); log(`${p.name} has free passage from Canton.`); } },
+  { img:'images/freepasslnd.png', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'London', heldLabel:'Free Passage from London',
+    effect:(p,i)=>{ if((players[i].freePass||[]).includes('London')){log(`${p.name} already holds free passage from London — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('London'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepasslnd.png')); log(`${p.name} has free passage from London.`); } },
 
   // ── Invitations (kept, face down, redeemed at destination) — 2 of 3 types ──
-  { img:'images/invitenag.jpeg', isKept:true, heldType:'invite', dest:'Nagasaki', heldLabel:'Nagasaki Bugyō Invitation',
-    effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Nagasaki')){log(`${p.name}: Already holds a Nagasaki invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/invitenag.jpeg')); log(`${p.name} receives an invitation to Nagasaki — keep this card!`); } },
-  { img:'images/inviterio.jpeg', isKept:true, heldType:'invite', dest:'Rio', heldLabel:'Viceroy\'s Invitation',
-    effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Rio')){log(`${p.name}: Already holds a Rio invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/inviterio.jpeg')); log(`${p.name} receives a Viceroy's invitation to Rio — keep this card!`); } },
+  { img:'images/invitenag.png', isKept:true, heldType:'invite', dest:'Nagasaki', heldLabel:'Nagasaki Bugyō Invitation',
+    effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Nagasaki')){log(`${p.name}: Already holds a Nagasaki invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/invitenag.png')); log(`${p.name} receives an invitation to Nagasaki — keep this card!`); } },
+  { img:'images/inviterio.png', isKept:true, heldType:'invite', dest:'Rio', heldLabel:'Viceroy\'s Invitation',
+    effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Rio')){log(`${p.name}: Already holds a Rio invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/inviterio.png')); log(`${p.name} receives a Viceroy's invitation to Rio — keep this card!`); } },
   // ── Bodleian Library extra invite — 2 in the land deck (gives card if not already held) ──
   { img:'images/bodleian.png', isKept:true, oneOff:true, heldType:'opportunity', dest:'Bodleian Library', heldLabel:'Bodleian Library — Invitation',
     effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.png',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
@@ -9242,12 +9209,12 @@ const LAND_CARD_TEMPLATES = [
     effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.png',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
 
   // ── Pickpocket cards — happen in busy ports (land deck) ──
-  ...Array(2).fill(null).map(() => mkCard('images/pickpocket.jpeg',  (p,i) => {
+  ...Array(2).fill(null).map(() => mkCard('images/pickpocket.png',  (p,i) => {
     const lost = Math.min(p.silver||0, 2);
     p.silver = (p.silver||0) - lost;
     log(`${p.name}: Pickpocketed! −${lost} silver coins.`); updateHUD();
   })),
-  mkCard('images/pickpocket2.jpeg', (p,i) => {
+  mkCard('images/pickpocket2.png', (p,i) => {
     const lost = Math.min(p.silver||0, 5);
     p.silver = (p.silver||0) - lost;
     log(`${p.name}: Badly pickpocketed! −${lost} silver coins.`); updateHUD();
@@ -9272,17 +9239,17 @@ const LAND_CARD_TEMPLATES = [
 const BODLEIAN_ACCESS = 4; // 2 start invites + 2 mixed into the land deck
 const TIPOFF_TARGET   = Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS);
 const _SEA_TIP_SRC = [
-  { img:'images/tipoff8.jpeg', msg:'A senior officer tips you off — opportunity card!' },
-  { img:'images/tipoff4.jpeg', msg:"The ship's clerk has useful information — opportunity card!" },
-  { img:'images/surgeon.jpeg', msg:'The surgeon shares his library — opportunity card!' },
+  { img:'images/tipoff8.png', msg:'A senior officer tips you off — opportunity card!' },
+  { img:'images/tipoff4.png', msg:"The ship's clerk has useful information — opportunity card!" },
+  { img:'images/surgeon.png', msg:'The surgeon shares his library — opportunity card!' },
 ];
 const _LAND_TIP_SRC = [
-  { img:'images/tipoff1.jpeg', msg:'A fellow merchant shares valuable info.' },
-  { img:'images/tipoff2.jpeg', msg:'A fellow merchant shares valuable info.' },
-  { img:'images/tipoff3.jpeg', msg:'A fellow merchant shares valuable info.' },
-  { img:'images/tipoff5.jpeg', msg:'A fine art dealer shares a contact.' },
-  { img:'images/tipoff6.jpeg', msg:'A bookshop owner may prove fruitful.' },
-  { img:'images/tipoff7.jpeg', msg:'A local trader shares a contact.' },
+  { img:'images/tipoff1.png', msg:'A fellow merchant shares valuable info.' },
+  { img:'images/tipoff2.png', msg:'A fellow merchant shares valuable info.' },
+  { img:'images/tipoff3.png', msg:'A fellow merchant shares valuable info.' },
+  { img:'images/tipoff5.png', msg:'A fine art dealer shares a contact.' },
+  { img:'images/tipoff6.png', msg:'A bookshop owner may prove fruitful.' },
+  { img:'images/tipoff7.png', msg:'A local trader shares a contact.' },
 ];
 const _seaTipCount  = Math.round(TIPOFF_TARGET / 3);
 const _landTipCount = TIPOFF_TARGET - _seaTipCount;
@@ -9312,8 +9279,8 @@ function nextLandCard() {
   while (landDeck[landDeckIndex] === null) {
     landDeckIndex = (landDeckIndex + 1) % landDeck.length;
     if (++attempts > landDeck.length) {
-      landDeck.forEach((c,i) => { const _t=LAND_CARD_TEMPLATES[i]; if (c===null && _t && !_t.globallyRetired && !(_t.img==='images/cat.jpeg' && catDrawn)) landDeck[i]={..._t,_id:i}; });
-      landDeck = shuffle(LAND_CARD_TEMPLATES.filter(t=>!(t.img==='images/cat.jpeg' && catDrawn) && !t.globallyRetired).map((c,i)=>({...c,_id:i})));
+      landDeck.forEach((c,i) => { const _t=LAND_CARD_TEMPLATES[i]; if (c===null && _t && !_t.globallyRetired && !(_t.img==='images/cat.png' && catDrawn)) landDeck[i]={..._t,_id:i}; });
+      landDeck = shuffle(LAND_CARD_TEMPLATES.filter(t=>!(t.img==='images/cat.png' && catDrawn) && !t.globallyRetired).map((c,i)=>({...c,_id:i})));
       landDeckIndex = 0;
       log('Land deck reshuffled (all one-offs drawn).');
       break;
@@ -9440,10 +9407,9 @@ function showCard(imgSrc, buyCard, isPox, isGhostShip, isCaptainsOffer, opts) {
   document.getElementById('captains-offer-popup').classList.remove('visible');
   document.getElementById('card-dismiss').style.display = 'none';
   const disp = document.getElementById('card-display');
-  overlay.classList.add('open');
   disp.style.animation = 'none';
-  void disp.offsetWidth;            // force reflow so the deal animation restarts exactly once
-  disp.style.animation = '';
+  requestAnimationFrame(() => { disp.style.animation = ''; });
+  overlay.classList.add('open');
 
   overlay.onclick = null;
   if (opts?.autoClose) {
@@ -9474,7 +9440,7 @@ function acceptPox() {
   // Give pox card as kept face-up immunity marker
   players[i].heldCards = players[i].heldCards || [];
   players[i].heldCards.push({
-    id: 'pox_immunity', img: 'images/pox.jpeg',
+    id: 'pox_immunity', img: 'images/pox.png',
     faceUp: true, alwaysFaceUp: true,
     type: 'pox', dest: null, redeemed: false,
   });
@@ -9553,7 +9519,7 @@ const ITEM_POOLS_ALL = {
   lisbon_jar: Array(5).fill('images/lisbonjar.png'),
   lisbon_guitar: Array(5).fill('images/lisbonsmallguitar.png'),
   caramujeira_mandrakes: ['images/mandrake.png','images/mandrake1.png','images/mandrake2.png','images/mandrake3.png'],
-  falsebay_coral: ['images/braincoral.jpg'],
+  falsebay_coral: ['images/braincoral.png'],
   rio_cup: Array(5).fill('images/riocup.png'),
   rio_moringa: Array(5).fill('images/riomoringa.png'),
   // Central Sierras apatite — 3 versions, one per op card drawn
@@ -9589,11 +9555,11 @@ const PORT_ITEMS = {
   ],
   'Caramujeira': [
     { img:'images/mandrake.png', label:'Mandrake Root', price:3, currency:'ingots',
-      reqCard:'images/op-mandrake.jpeg', pool:'caramujeira_mandrakes', note:'4 roots — one per card held' },
+      reqCard:'images/op-mandrake.png', pool:'caramujeira_mandrakes', note:'4 roots — one per card held' },
   ],
   'False Bay': [
-    { img:'images/braincoral.jpg', label:'Brain Coral', price:3, currency:'ingots',
-      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', note:'A once-in-a-lifetime find' },
+    { img:'images/braincoral.png', label:'Brain Coral', price:3, currency:'ingots',
+      reqCard:'images/op-braincoral.png', pool:'falsebay_coral', note:'A once-in-a-lifetime find' },
   ],
   'Rio': [
     { img:'images/riocup.png', label:'Coconut Cup', price:2, currency:'ingots', pool:'rio_cup', repeatable:true, note:'5 available — one purchase per turn' },
@@ -9622,21 +9588,21 @@ const PORT_ITEMS = {
   ],
   'Cambay': [
     { img:'images/inlaidbox.png', label:'Mother-of-Pearl Casket', price:25, currency:'ingots',
-      reqCard:'images/op-motherofpearlcasket.jpeg' },
+      reqCard:'images/op-motherofpearlcasket.png' },
   ],
   'Ouro Preto': [
     { img:'images/imperialtopaz1.png', label:'Imperial Topaz Cluster', price:12, currency:'ingots',
-      reqCard:'images/op-imperialtopaz.jpeg', pool:'ouro_preto_topaz',
+      reqCard:'images/op-imperialtopaz.png', pool:'ouro_preto_topaz',
       note:'2 specimens in the world — one per card held' },
   ],
   'Minas Gerais': [
     { img:'images/amethyst1.png', label:'Amethyst Geode', price:8, currency:'ingots',
-      reqCard:'images/op-amethyst2.jpeg', pool:'minas_amethysts',
+      reqCard:'images/op-amethyst2.png', pool:'minas_amethysts',
       note:'2 specimens in the world — one per card held' },
   ],
   'Central Sierras': [
     { img:'images/apatite1a.png', label:'Apatite — Asparagus Stone', price:4, currency:'ingots',
-      reqCard:'images/op-apetite-miner.jpeg', pool:'sierras_apatite', repeatable:true,
+      reqCard:'images/op-apetite-miner.png', pool:'sierras_apatite', repeatable:true,
       note:'3 specimens — one per card held, one per turn' },
   ],
   'Canton': [
@@ -9645,39 +9611,39 @@ const PORT_ITEMS = {
   ],
   'Kongu Nadu': [
     { img:'images/ruby1.png', label:'Raw Ruby Crystal', price:12, currency:'ingots',
-      reqCard:'images/op-rubyminer.jpeg', pool:'kongu_rubies',
+      reqCard:'images/op-rubyminer.png', pool:'kongu_rubies',
       note:'3 specimens — one per card held' },
   ],
   'Baramahal': [
     { img:'images/ironore.png', label:'Iron-Ore Nodule', price:8, currency:'coins',
-      reqCard:'images/op-ironore.jpeg', pool:'baramahal_ironore' },
+      reqCard:'images/op-ironore.png', pool:'baramahal_ironore' },
   ],
   'Poonamallee': [
-    { img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', price:6, currency:'ingots',
-      reqCard:'images/op-netticarver.jpeg', pool:'poonamallee_netti' },
+    { img:'images/op-netticarver.png', label:'Pith-Root Carving', price:6, currency:'ingots',
+      reqCard:'images/op-netticarver.png', pool:'poonamallee_netti' },
   ],
   'Ceylon': [
     { img:'images/ceylonjar.png', label:'Lashka Painted Jar', price:4, currency:'ingots' },
   ],
   // ── Op-card gated items ──
   'Nuremberg': [
-    { img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', price:5, currency:'ingots',
-      reqCard:'images/op-nurembergModel.jpeg', pool:'nuremberg_models',
+    { img:'images/op-nurembergmodel.png', label:'Nuremberg Geometric Model', price:5, currency:'ingots',
+      reqCard:'images/op-nurembergmodel.png', pool:'nuremberg_models',
       note:'Random model selected from remaining stock' },
   ],
   'White Cloud Mountain': [
     { img:'images/jadeball.png', label:'Jade Puzzle Ball — 8-Layer Serpentine', price:8, currency:'ingots',
-      reqCard:'images/puzzleball.jpeg', reqItem:'images/telescope.png', consumes:'images/telescope.png' },
+      reqCard:'images/puzzleball.png', reqItem:'images/telescope.png', consumes:'images/telescope.png' },
   ],
   // ── Nautilus journey ports ──
   'Ancol Cove': [
     { img:'images/shellnaut.png', label:'Raw Nautilus Shell', price:5, currency:'coins',
-      reqCard:'images/op-nautilusdiver.jpeg', repeatable:true,
+      reqCard:'images/op-nautilusdiver.png', repeatable:true,
       note:'One per card held — one purchase per turn' },
   ],
   'Sand Dunes': [
     { img:'images/snail.png', label:'Violet Sea Snail', price:2, currency:'coins',
-      reqCard:'images/op-violetseasnail.jpeg', repeatable:true, pool:'violet_shells',
+      reqCard:'images/op-violetseasnail.png', repeatable:true, pool:'violet_shells',
       note:'5 available in total — one per card held per turn' },
   ],
   'Lapidary Outskirts': [
@@ -10557,7 +10523,7 @@ const _AI_NAMES_ES_F = [
 ];
 const _AI_NAMES_NL_F = [
   'Saskia van der Meer','Anneke Visser','Cornelia de Vries','Geertruida van Leeuwen','Margriet Bakker',
-  'Hendrickje Vermeer','Catharina van Loon','Wilhelmina Bicker','Aaltje Mossel','Femke van Eyke',
+  'Hendrickje Vermeer','Catharina van Loon','Wilhelmina Bicker','Aaltje Mossel','Femke van Dijck',
 ];
 const _MERCHANT_NAMES = [_AI_NAMES_JP_F, _AI_NAMES_NG_M, _AI_NAMES_IN_M, _AI_NAMES_ES_F, _AI_NAMES_NL_F, _AI_NAMES_M];
 function _aiMerchantName(idx) {
@@ -11685,7 +11651,7 @@ const SCORE_CRITERIA = [
 // Each bonus has: id, name, pts, desc, and a test(scoredItems) → bool
 const BONUS_DEFS = [
   {
-    id: 'miscellanea', name: 'Miscellanea', pts: 30,
+    id: 'miscellanea', name: 'Miscellanea', pts: 20,
     desc: 'No two items of the same kind',
     test(items) {
       // Strip trailing numbers so 'Amethyst Geode 2' and 'Amethyst Geode 3' count as same type
@@ -11694,7 +11660,7 @@ const BONUS_DEFS = [
     },
   },
   {
-    id: 'conchylomania', name: 'Conchylomaniac', pts: 15,
+    id: 'conchylomania', name: 'Conchylomaniac', pts: 10,
     desc: 'One of every shell family',
     test(items) {
       const shells = items.filter(i => i.sc.itemType === 'shell');
@@ -11715,7 +11681,7 @@ const BONUS_DEFS = [
     },
   },
   {
-    id: 'mineralogist', name: 'Mineralogist', pts: 20,
+    id: 'mineralogist', name: 'Mineralogist', pts: 10,
     desc: 'All 7 mineral types',
     test(items) {
       const minerals = items.filter(i => i.sc.itemType === 'mineral');
@@ -12071,18 +12037,10 @@ function _runItemReveal(layer, playerIdx, onComplete) {
   bonusResults.forEach((b, bi) => {
     setTimeout(() => _showBonusPlaque(layer, b, bi), t + bi * 700);
   });
-  const lastBonusIn = bonusResults.length ? (bonusResults.length - 1) * 700 + 600 : 0;
-  const BONUS_HOLD  = bonusResults.length ? 1000 : 0;   // let the player read the plaques
-  const BONUS_FADE  = bonusResults.length ? 650  : 0;   // fade them out before the total
-  if (bonusResults.length) {
-    setTimeout(() => {
-      layer.querySelectorAll('.cab-bonus-plaque').forEach(el => { el.style.opacity = '0'; });
-    }, t + lastBonusIn + BONUS_HOLD);
-  }
+  const bonusDelay = bonusResults.length * 700 + (bonusResults.length ? 500 : 0);
   setTimeout(() => {
-    layer.querySelectorAll('.cab-bonus-plaque').forEach(el => el.remove());
     _showGrandTotal(layer, playerIdx, itemTotal, bonusResults, onComplete);
-  }, t + lastBonusIn + BONUS_HOLD + BONUS_FADE + 250);
+  }, t + bonusDelay + 500);
 }
 
 // ── Evaluate which bonuses are earned ─────────────────────────────────────
@@ -12101,7 +12059,6 @@ function _calcBonuses(scoredItems) {
 // ── Show a single bonus plaque, cascading down from the centre ─────────────
 function _showBonusPlaque(layer, bonus, idx) {
   const el = document.createElement('div');
-  el.className = 'cab-bonus-plaque';
   el.style.cssText =
     'position:fixed;left:50%;top:' + (28 + idx * 13) + '%;' +
     'transform:translateX(-50%);' +
@@ -12122,7 +12079,7 @@ function _showBonusPlaque(layer, bonus, idx) {
 // ── Grand total plaque ─────────────────────────────────────────────────────
 function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
   const p        = players[playerIdx];
-  const repScore = Math.round(p.reputation ?? 5);
+  const repScore = Math.round((p.reputation || 50) / 10);
   const catBonus = p.hasCat ? 1 : 0;
   const bonusTotal = (bonuses || []).reduce((s, b) => s + b.pts, 0);
   const grand    = itemTotal + bonusTotal + repScore + catBonus;
@@ -12136,6 +12093,7 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
     ...(bonuses || []).map(b => ({ label: b.name, val: '+' + b.pts })),
     { label: 'Reputation', val: repScore  },
     ...(catBonus ? [{ label: 'The Cat', val: '+1' }] : []),
+    ...(NUM_PLAYERS === 1 ? [{ label: 'Weeks', val: roundNumber }] : []),
   ];
 
   el.innerHTML =
@@ -12149,8 +12107,6 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
     `</div>` +
     `<div style="font-family:'Cinzel Decorative',serif;font-size:clamp(2.2rem,5vw,3.4rem);` +
     `color:#1a0c04;line-height:1;text-shadow:0 1px 0 rgba(255,220,120,0.3);">${grand}</div>` +
-    `<div style="font-family:'Cinzel',serif;font-size:0.5rem;color:#5a3010;` +
-        `letter-spacing:.2em;margin-top:5px;">IN ${roundNumber} ${roundNumber === 1 ? 'WEEK' : 'WEEKS'}</div>` +
     `<div style="font-family:'Cinzel',serif;font-size:0.58rem;color:#3a1e08;` +
     `letter-spacing:.18em;margin-top:6px;">${p.name.toUpperCase()}</div>` +
     `<div style="font-family:'Cinzel',serif;font-size:0.42rem;color:#5a3010;` +
@@ -13064,26 +13020,6 @@ function cabClearHighlights() {
 }
 
 // ── Intro controller ─────────────────────────────────────────────────────
-// Image retry net: any <img> that ends up blank re-fetches itself, so a
-// cold-CDN miss self-heals during play instead of leaving a gap.
-(function() {
-  var MAX = 4, pkc = 0;
-  document.addEventListener('error', function(e) {
-    var img = e.target;
-    if (!img || img.tagName !== 'IMG') return;
-    var src = img.getAttribute('src') || '';
-    if (!src || src.charAt(0) === '#' || src.lastIndexOf('data:', 0) === 0) return;
-    if (img.__pk == null) img.__pk = ++pkc;
-    img.__retries = (img.__retries || 0) + 1;
-    if (img.__retries > MAX) return;          // genuinely stuck — stop, leave as-is
-    var base = src.split('?')[0], n = img.__retries;
-    setTimeout(function() {
-      img.style.display = '';                 // undo any inline onerror hide
-      img.src = base + '?r=' + n;             // cache-bust to force a fresh fetch
-    }, 350 * n);                              // gentle backoff
-  }, true);   // capture phase — image error events don't bubble
-})();
-
 (function() {
   function bye() {
     var ov = document.getElementById('intro-overlay');
@@ -13098,112 +13034,11 @@ function cabClearHighlights() {
     }, 700);
   }
 
-  // Scan the page source once for every image the game references.
-  function gatherImages() {
-    var html = document.documentElement.outerHTML;
-    var re = /(?:images\/[\w@.\-]+\.(?:png|jpe?g|gif|webp))|cabinetempty\.png/gi;
-    var seen = {}, list = [], m;
-    while ((m = re.exec(html)) !== null) {
-      var u = m[0];
-      if (!seen[u]) { seen[u] = 1; list.push(u); }
-    }
-    // Load the intro's own chrome first so doors/plaque/scroll are ready.
-    var prioOrder = ['images/cabinetclosed.jpg', 'images/plaque.png', 'images/scroll.jpeg'];
-    var pri = [], rest = [];
-    list.forEach(function(u) { (prioOrder.indexOf(u) >= 0 ? pri : rest).push(u); });
-    pri.sort(function(a, b) { return prioOrder.indexOf(a) - prioOrder.indexOf(b); });
-    return pri.concat(rest);
-  }
-
-  // Preload with capped concurrency so we don't re-create the request-storm
-  // that causes timeouts. Each image resolves on load, error, OR timeout, so
-  // a single missing/slow file can never freeze the loader.
-  function preload(urls, onProgress, onDone) {
-    var total = urls.length, done = 0, i = 0;
-    var CONCURRENCY = 8, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 3;
-    if (total === 0) { onDone(); return; }
-    function finishOne() {
-      done++; onProgress(done, total);
-      if (done >= total) { onDone(); return; }
-      pump();
-    }
-    function loadOne(url, attempt) {
-      var img = new Image(), settled = false;
-      function fail() {
-        if (settled) return; settled = true;
-        if (attempt < MAX_RETRIES) {
-          // Straggler — give it another go. A cold CDN edge usually warms up
-          // between attempts, so a retry typically succeeds where the first stalled.
-          setTimeout(function() { loadOne(url, attempt + 1); }, 600);
-        } else {
-          try { console.warn('[preload] gave up after retries:', url); } catch (e) {}
-          finishOne();
-        }
-      }
-      var t = setTimeout(fail, PER_IMG_TIMEOUT);
-      img.onload  = function() { if (!settled) { settled = true; clearTimeout(t); finishOne(); } };
-      img.onerror = function() { clearTimeout(t); fail(); };
-      img.src = url;
-    }
-    function pump() { while (i < total && (i - done) < CONCURRENCY) { loadOne(urls[i++], 0); } }
-    pump();
-  }
-
   function initIntro() {
     var ov = document.getElementById('intro-overlay');
     if (!ov) { bye(); return; }
-
-    var titleWrap = document.getElementById('intro-title-wrap');
-    var scroll    = document.getElementById('intro-scroll');
-    var fill      = document.getElementById('intro-loadbar-fill');
-
-    var urls   = gatherImages();
-    var total  = urls.length, done = 0;
-    var startT = Date.now();
-    var MIN_FILL = 4000;   // floor that smooths the bar fill; real load may take longer
-    var ready = false, scrollArmed = false, dismissing = false;
-
-    preload(urls, function(d, t) { done = d; total = t; }, function() {});
-
-    // Bar reflects real load progress (floored by a short minimum so it animates
-    // smoothly rather than snapping to full on a warm cache).
-    function tick() {
-      if (ready) return;
-      var loadFrac = total ? done / total : 1;
-      var timeFrac = Math.min(1, (Date.now() - startT) / MIN_FILL);
-      if (fill) fill.style.width = (Math.min(loadFrac, timeFrac) * 100).toFixed(1) + '%';
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-
-    // Hold on the doors (bar visible) until the very last image has loaded, then
-    // fade the doors and begin. Honours \"wait for all images\".
-    function finishWhenLoaded() {
-      if (ready) return;
-      if (done >= total) { ready = true; if (fill) fill.style.width = '100%'; setTimeout(bye, 400); return; }
-      setTimeout(finishWhenLoaded, 150);
-    }
-
-    // Click anywhere once the scroll is up to dismiss it and enter the game.
-    ov.style.cursor = 'pointer';
-    ov.addEventListener('click', function() {
-      if (!scrollArmed || dismissing) return;
-      dismissing = true;
-      if (scroll) scroll.classList.remove('show');   // scroll fades out
-      setTimeout(finishWhenLoaded, 600);             // then wait for load -> doors fade -> game
-    });
-
-    // Title flourish, then reveal the scroll and leave it up for the reader.
-    if (titleWrap) titleWrap.classList.add('show');                                       // title fades in
-    setTimeout(function() { if (titleWrap) titleWrap.classList.remove('show'); }, 2600);  // title fades out
-    if (scroll) {
-      setTimeout(function() {
-        scroll.classList.add('show');                          // scroll fades in...
-        setTimeout(function() { scrollArmed = true; }, 2200);   // ...then becomes dismissable
-      }, 3900);
-    } else {
-      setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
-    }
+    ov.addEventListener('click', bye);
+    setTimeout(bye, 4000);
   }
 
   // Run after DOM is parsed (the overlay div is declared after this script block)
@@ -13365,10 +13200,6 @@ function chooseRival() { _enterCharSelect(2); }
       <div id="intro-rule-top"></div>
       <div id="intro-title">CABINETS<br>OF CURIOSITY</div>
       <div id="intro-rule-bot"></div>
-    </div>
-    <img id="intro-scroll" src="images/scroll.jpeg" alt="">
-    <div id="intro-plaque">
-      <div id="intro-loadbar-track"><div id="intro-loadbar-fill"></div></div>
     </div>
   </div>
   <div id="intro-black"></div>
