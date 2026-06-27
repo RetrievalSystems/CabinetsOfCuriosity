@@ -11693,7 +11693,7 @@ const BONUS_DEFS = [
     },
   },
   {
-    id: 'conchylomania', name: 'Conchylomaniac', pts: 15,
+    id: 'conchylomania', name: 'Conchylomaniac', pts: 20,
     desc: 'One of every shell family',
     test(items) {
       const shells = items.filter(i => i.sc.itemType === 'shell');
@@ -11714,12 +11714,12 @@ const BONUS_DEFS = [
     },
   },
   {
-    id: 'mineralogist', name: 'Mineralogist', pts: 20,
-    desc: 'All 7 mineral types',
+    id: 'mineralogist', name: 'Mineralogist', pts: 25,
+    desc: 'All 8 mineral types',
     test(items) {
       const minerals = items.filter(i => i.sc.itemType === 'mineral');
       const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
-      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore'];
+      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore','agate'];
       return ALL_MINERALS.every(m => types.has(m));
     },
   },
@@ -11763,7 +11763,7 @@ function itemScoreTotal(item) {
 
 // ── Live bonus-set progress from the CURRENT player's placed cabinet items ──
 const _CONCH_SET  = ['nautilus','cone','wentletrap','conch','murex'];
-const _MIN_SET    = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore'];
+const _MIN_SET    = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore','agate'];
 const _REGION_SET = ['europe','asia','americas','africa','atsea','oceania'];
 const _CORAL_SET  = ['seafan','redcoral','braincoral'];
 function _cabinetPlacedScored(playerIdx) {
@@ -11793,7 +11793,7 @@ function _itemBonusLines(sc, playerIdx) {
   const models   = scs.filter(s=>(s.label||'').replace(/\s*\d+$/,'').trim()==='Nuremberg Model').length;
   const lines = [];
   if (sc.itemType==='shell'   && _CONCH_SET.includes(sc.shellFamily)) lines.push(`Conchylomaniac ${shells.size}/5`);
-  if (sc.itemType==='mineral' && _MIN_SET.includes(sc.mineralType))   lines.push(`Mineralogist ${minerals.size}/7`);
+  if (sc.itemType==='mineral' && _MIN_SET.includes(sc.mineralType))   lines.push(`Mineralogist ${minerals.size}/8`);
   if (sc.itemType==='coral'   && _CORAL_SET.includes(sc.coralType))   lines.push(`Zoophytologist ${corals.size}/3`);
   if ((sc.label||'').replace(/\s*\d+$/,'').trim()==='Nuremberg Model') lines.push(`Geometrist ${Math.min(models,3)}/3`);
   return lines;
@@ -13108,6 +13108,9 @@ function cabClearHighlights() {
     }
     // Load the intro's own chrome first so doors/plaque/scroll are ready.
     var prioOrder = ['images/cabinetclosed.jpg', 'images/plaque.png', 'images/scroll.jpeg'];
+    // …then every port/destination background, so a port is never blank on arrival.
+    var _portRe = /portImg:\s*'(images\/[^']+)'/g, _pm;
+    while ((_pm = _portRe.exec(html)) !== null) { if (prioOrder.indexOf(_pm[1]) < 0) prioOrder.push(_pm[1]); }
     var pri = [], rest = [];
     list.forEach(function(u) { (prioOrder.indexOf(u) >= 0 ? pri : rest).push(u); });
     pri.sort(function(a, b) { return prioOrder.indexOf(a) - prioOrder.indexOf(b); });
@@ -13119,7 +13122,7 @@ function cabClearHighlights() {
   // a single missing/slow file can never freeze the loader.
   function preload(urls, onProgress, onDone) {
     var total = urls.length, done = 0, i = 0;
-    var CONCURRENCY = 8, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 3;
+    var CONCURRENCY = 12, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 3;
     if (total === 0) { onDone(); return; }
     function finishOne() {
       done++; onProgress(done, total);
