@@ -3869,11 +3869,9 @@ const ROUTES = {
     lineColor:'rgba(160,100,200,0.4)', smallToken:true, nextRoute:null, circuit:['minasgerais'],
     nodes:[
       {x:529,y:563, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 0
-      {x:531,y:553, name:'',            isPort:false },                                           // 1
-      {x:534,y:543, name:'',            isPort:false },                                           // 2
-      {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 3 — intermediate
-      {x:540,y:523, name:'',            isPort:false },                                           // 4
-      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 5
+      {x:533,y:548, name:'',            isPort:false },                                           // 1
+      {x:537,y:533, name:'Ouro Preto',  isPort:true,  stopCard:'op-imperialtopaz', portImg:'images/imperialtopazdestination.jpg'}, // 2 — topaz (conditional)
+      {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}
     ],
   },
   minasgerais_return: {
@@ -3881,11 +3879,9 @@ const ROUTES = {
     lineColor:'rgba(160,100,200,0.25)', smallToken:true, nextRoute:null, circuit:['minasgerais_return'],
     nodes:[
       {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 0
-      {x:540,y:523, name:'',            isPort:false },                                           // 1
-      {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 2 — intermediate
-      {x:534,y:543, name:'',            isPort:false },                                           // 3
-      {x:531,y:553, name:'',            isPort:false },                                           // 4
-      {x:529,y:563, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 5
+      {x:537,y:533, name:'Ouro Preto',  isPort:true,  stopCard:'op-imperialtopaz', portImg:'images/imperialtopazdestination.jpg'}, // 1 — topaz (conditional)
+      {x:533,y:548, name:'',            isPort:false },                                           // 2
+      {x:529,y:563, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'}
     ],
   },
   // ── Ouro Preto (topaz journey): Rio → Ouro Preto (4 nodes, 3 hops) ──
@@ -8779,8 +8775,8 @@ const SEA_CARD_TEMPLATES = [
   // ── Pirates ×5 ──
   ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
-  mkCard('images/wss.png',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wssw.png', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
+  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
+  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wsse.png', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
   mkCard('images/wsw.png',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
@@ -9187,8 +9183,8 @@ const LAND_CARD_TEMPLATES = [
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('minerologist'))) { log(`${p.name}: Mineralogist card already held — returned to deck.`); return; }
       p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
-  { img:'images/wss.png',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
-  { img:'images/wssw.png', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SW.`); advanceStormToken('atlantic','SW'); } },
+  { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
+  { img:'images/wssw.jpeg', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SW.`); advanceStormToken('atlantic','SW'); } },
   { img:'images/wsse.png', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SE.`); advanceStormToken('atlantic','SE'); } },
   { img:'images/wsw.png',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves W.`);  advanceStormToken('atlantic','W');  } },
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
@@ -9553,7 +9549,7 @@ const ITEM_POOLS_ALL = {
   lisbon_jar: Array(5).fill('images/lisbonjar.png'),
   lisbon_guitar: Array(5).fill('images/lisbonsmallguitar.png'),
   caramujeira_mandrakes: ['images/mandrake.png','images/mandrake1.png','images/mandrake2.png','images/mandrake3.png'],
-  falsebay_coral: ['images/braincoral.jpg'],
+  falsebay_coral: ['images/braincoral.png'],
   rio_cup: Array(5).fill('images/riocup.png'),
   rio_moringa: Array(5).fill('images/riomoringa.png'),
   // Central Sierras apatite — 3 versions, one per op card drawn
@@ -9592,7 +9588,7 @@ const PORT_ITEMS = {
       reqCard:'images/op-mandrake.jpeg', pool:'caramujeira_mandrakes', note:'4 roots — one per card held' },
   ],
   'False Bay': [
-    { img:'images/braincoral.jpg', label:'Brain Coral', price:3, currency:'ingots',
+    { img:'images/braincoral.png', label:'Brain Coral', price:3, currency:'ingots',
       reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', note:'A once-in-a-lifetime find' },
   ],
   'Rio': [
@@ -9728,7 +9724,10 @@ function advanceShip(s) {
 
   if (hasPassenger) {
     log(`${names} sail to ${dest.name || 'open waters'}.`);
-    if (dest.isPort) {
+    const _stopHere = !dest.stopCard || players.some(pl => pl.shipId === s.id && (pl.heldCards||[]).some(hc => hc.img && hc.img.includes(dest.stopCard)));
+    if (dest.isPort && !_stopHere) {
+      log(`${names} pass through ${dest.name} without stopping.`);
+    } else if (dest.isPort) {
       log(`${names} arrive at ${dest.name}!`);
       // Mark each passenger as freshly arrived so the port auto-opens after card draw
       players.forEach((pl,idx) => {
