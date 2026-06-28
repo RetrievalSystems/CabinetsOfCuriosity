@@ -3182,7 +3182,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-28b · batavia + ceylon + 20-pirates + S/SW-storms + blob-cache';
+const COC_BUILD = '2026-06-28d · blob-cache · 1-hop-amsterdam · rivals-hidden';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -3430,7 +3430,7 @@ const ROUTES = {
     ]
   },
 
-  // ── North Sea Packet: London → Amsterdam (2 moves across the North Sea) ──
+  // ── North Sea Packet: London → Amsterdam (1 move across the North Sea) ──
   north_sea: {
     id:        'north_sea',
     shipImg:   'images/img-ship-bei.png',   // placeholder — replace with a packet-boat image
@@ -3440,8 +3440,7 @@ const ROUTES = {
     circuit:   ['north_sea'],
     nodes: [
       {x:837, y:290, name:'London',    isPort:true, portImg:'images/portlon.jpeg'}, // 0
-      {x:850, y:280, name:''},                                                       // 1
-      {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'}, // 2
+      {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'}, // 1
     ]
   },
 
@@ -4123,8 +4122,7 @@ const ROUTES = {
     circuit:   ['north_sea_return'],
     nodes: [
       {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'}, // 0
-      {x:850, y:280, name:''},                                                       // 1
-      {x:837, y:290, name:'London',    isPort:true, portImg:'images/portlon.jpeg'}, // 2
+      {x:837, y:290, name:'London',    isPort:true, portImg:'images/portlon.jpeg'}, // 1
     ]
   },
 
@@ -9002,7 +9000,8 @@ function renderHeldCards(playerIdx) {
 
     const img = document.createElement('img');
     // Show face if owner's turn, or card is always face up (cat)
-    const showFace = isOwner || hc.alwaysFaceUp;
+    const ownerIsAI = (typeof aiPlayers !== 'undefined' && aiPlayers && aiPlayers[playerIdx]);
+    const showFace = (isOwner && !ownerIsAI) || hc.alwaysFaceUp;   // a rival's hand is always backs
     img.src = showFace ? hc.img : 'images/img-card-back.jpg';
     el.appendChild(img);
 
@@ -9170,10 +9169,16 @@ function drawOpportunityCard(playerIdx) {
     ? `${card.price} silver ${card.currency}`
     : (card.note || 'enquire locally');
 
-  log(`${players[playerIdx].name} draws an Opportunity: ${card.label} — ${card.location}, ${priceStr}. Kept face down.`);
-
-  // Show the card visually in the card overlay
-  showCard(card.img, null);
+  const _drawerIsAI = (typeof aiPlayers !== 'undefined' && aiPlayers && aiPlayers[playerIdx]);
+  if (_drawerIsAI) {
+    // A rival's opportunity card stays secret — announce the draw, but reveal nothing.
+    log(`${players[playerIdx].name} draws an Opportunity card — kept face down.`);
+    showCard('images/img-card-back.jpg', null);
+  } else {
+    log(`${players[playerIdx].name} draws an Opportunity: ${card.label} — ${card.location}, ${priceStr}. Kept face down.`);
+    // Show the card visually in the card overlay
+    showCard(card.img, null);
+  }
 }
 
 // Call this from tipoff card effects once images are in
@@ -13234,7 +13239,7 @@ function cabClearHighlights() {
   // a single missing/slow file can never freeze the loader.
   function preload(urls, onProgress, onDone) {
     var total = urls.length, done = 0, i = 0;
-    var CONCURRENCY = 4, PER_IMG_TIMEOUT = 30000, MAX_RETRIES = 4;
+    var CONCURRENCY = 3, PER_IMG_TIMEOUT = 60000, MAX_RETRIES = 6;
     if (total === 0) { onDone(); return; }
     function finishOne() {
       done++; onProgress(done, total);
@@ -13243,26 +13248,31 @@ function cabClearHighlights() {
     }
     function loadOne(url, attempt) {
       var settled = false;
-      function fail() {
+      // Transient failures (timeout, dropped connection) retry patiently so a slow image
+      // still ends up cached. A real 404/403 is fatal — no retry, or it would stall the bar.
+      function fail(fatal) {
         if (settled) return; settled = true;
-        if (attempt < MAX_RETRIES) {
-          // Straggler — give it another go; a slow first attempt usually clears on a retry.
+        if (!fatal && attempt < MAX_RETRIES) {
           setTimeout(function() { loadOne(url, attempt + 1); }, 600);
         } else {
-          try { console.warn('[preload] gave up after retries:', url); } catch (e) {}
+          if (fatal) { try { console.warn('[preload] missing:', url); } catch (e) {} }
           finishOne();
         }
       }
       var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      var t = setTimeout(function() { if (ctrl) { try { ctrl.abort(); } catch (e) {} } fail(); }, PER_IMG_TIMEOUT);
+      var t = setTimeout(function() { if (ctrl) { try { ctrl.abort(); } catch (e) {} } fail(false); }, PER_IMG_TIMEOUT);
       fetch(url, ctrl ? { signal: ctrl.signal } : undefined)
-        .then(function(r) { if (!r.ok) throw 0; return r.blob(); })
+        .then(function(r) {
+          if (!r.ok) { clearTimeout(t); fail(r.status === 404 || r.status === 403); return null; }
+          return r.blob();
+        })
         .then(function(b) {
-          if (settled) return; settled = true; clearTimeout(t);
-          try { _imgBlob[_imgKey(url)] = URL.createObjectURL(b); } catch (e) {}  // now lives in memory for good
+          if (!b || settled) return;
+          settled = true; clearTimeout(t);
+          try { _imgBlob[_imgKey(url)] = URL.createObjectURL(b); } catch (e) {}  // cached in memory for the session
           finishOne();
         })
-        .catch(function() { clearTimeout(t); fail(); });
+        .catch(function() { clearTimeout(t); fail(false); });   // network/abort = transient → retry
     }
     function pump() { while (i < total && (i - done) < CONCURRENCY) { loadOne(urls[i++], 0); } }
     pump();
