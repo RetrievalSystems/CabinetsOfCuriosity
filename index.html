@@ -3182,9 +3182,34 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-28 · batavia-box + ceylon-pair + 20-pirates + S/SW-storms';
+const COC_BUILD = '2026-06-28b · batavia + ceylon + 20-pirates + S/SW-storms + blob-cache';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
+
+// ════════════════════════════════════════════════
+//  IN-MEMORY IMAGE CACHE
+//  Each image is fetched once into a blob URL that lives in memory for the whole
+//  session. Every <img>.src is transparently redirected to that blob, so once a
+//  picture has loaded it is NEVER fetched again — no re-download when GitHub Pages'
+//  short HTTP cache expires mid-game, which is what made revisited ports go cold.
+// ════════════════════════════════════════════════
+const _imgBlob = Object.create(null);                 // 'images/x.png' -> blob: URL
+function _imgKey(v) {
+  if (!v) return '';
+  v = String(v).replace(/[?#].*$/, '');               // strip ?r= cache-busters etc.
+  var i = v.indexOf('images/');
+  return i >= 0 ? v.slice(i) : v;                      // normalise to 'images/x.ext'
+}
+(function () {
+  var d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (!d || !d.set) return;
+  Object.defineProperty(HTMLImageElement.prototype, 'src', {
+    configurable: true, enumerable: d.enumerable,
+    get: function () { return this._origSrc != null ? this._origSrc : d.get.call(this); },
+    set: function (v) { this._origSrc = v; var b = _imgBlob[_imgKey(v)]; d.set.call(this, b || v); }
+  });
+})();
+
 // ════════════════════════════════════════════════
 //  ROUTE NODE DEBUGGER
 // ════════════════════════════════════════════════
@@ -13217,22 +13242,27 @@ function cabClearHighlights() {
       pump();
     }
     function loadOne(url, attempt) {
-      var img = new Image(), settled = false;
+      var settled = false;
       function fail() {
         if (settled) return; settled = true;
         if (attempt < MAX_RETRIES) {
-          // Straggler — give it another go. A cold CDN edge usually warms up
-          // between attempts, so a retry typically succeeds where the first stalled.
+          // Straggler — give it another go; a slow first attempt usually clears on a retry.
           setTimeout(function() { loadOne(url, attempt + 1); }, 600);
         } else {
           try { console.warn('[preload] gave up after retries:', url); } catch (e) {}
           finishOne();
         }
       }
-      var t = setTimeout(fail, PER_IMG_TIMEOUT);
-      img.onload  = function() { if (!settled) { settled = true; clearTimeout(t); finishOne(); } };
-      img.onerror = function() { clearTimeout(t); fail(); };
-      img.src = url;
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var t = setTimeout(function() { if (ctrl) { try { ctrl.abort(); } catch (e) {} } fail(); }, PER_IMG_TIMEOUT);
+      fetch(url, ctrl ? { signal: ctrl.signal } : undefined)
+        .then(function(r) { if (!r.ok) throw 0; return r.blob(); })
+        .then(function(b) {
+          if (settled) return; settled = true; clearTimeout(t);
+          try { _imgBlob[_imgKey(url)] = URL.createObjectURL(b); } catch (e) {}  // now lives in memory for good
+          finishOne();
+        })
+        .catch(function() { clearTimeout(t); fail(); });
     }
     function pump() { while (i < total && (i - done) < CONCURRENCY) { loadOne(urls[i++], 0); } }
     pump();
