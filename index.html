@@ -1717,9 +1717,12 @@ body:has(#cab-overlay.open) #cabinet-btn { display: none !important; }
    Look at what you've placed and which shells you still need — but no touching. ── */
 /* Belt-and-braces: no interaction in any planning style */
 #cab-overlay.cab-plan .cab-cell,
+#cab-overlay.cab-plan #cab-return-zone { pointer-events:none !important; cursor:default !important; }
+/* Placed items + inventory stay hoverable (score plaque) even when away, but can't be placed:
+   drop targets above are disabled and cabDoPlace is guarded. */
 #cab-overlay.cab-plan .cab-filled,
 #cab-overlay.cab-plan #cab-inv-list,
-#cab-overlay.cab-plan #cab-return-zone { pointer-events:none !important; cursor:default !important; }
+#cab-overlay.cab-plan #cab-inv-list .cab-inv-item { pointer-events:auto !important; cursor:default !important; }
 #cab-overlay.cab-plan #cab-return-zone { opacity:.4; }
 
 /* Blueprint variant — cool blue technical drawing on grid paper */
@@ -2771,7 +2774,6 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
 
         <!-- ── Dynamic route departures (auto-populated for every port) ── -->
-        <div id="port-dynamic-stack" style="display:contents;"></div>
         <div id="meetiyagoda-dhow-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardMeetiyagodaDhow()" title="River Dhow to Meetiyagoda" style="background:#000;" data-route-id="meetiyagoda">
             <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
@@ -2942,28 +2944,28 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Ouro Preto / Topaz mule — shown at Rio when player holds the topaz op card -->
         <div id="ouroupreto-mule-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardOuroPretoMule()" title="Mule train to Ouro Preto" style="background:#1a0f0a;" data-route-id="ouroupreto">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>→ Ouro Preto</span>
         </div>
         <!-- Ouro Preto return mule -->
         <div id="ouroupreto-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnOuroPretoMule()" title="Return to Rio" style="background:#1a0f0a;" data-route-id="ouroupreto_return">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>← Rio</span>
         </div>
         <!-- Continue to Minas Gerais from Ouro Preto (for topaz travelers with amethyst card) -->
         <div id="minas-cont-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardMinasCont()" title="Continue to Minas Gerais" style="background:#1a0f0a;" data-route-id="minas_cont">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>→ Minas Gerais</span>
         </div>
         <!-- Minas Gerais mule — shown at Rio when player holds the amethyst op card -->
         <div id="minasgerais-mule-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardMinasGeraisMule()" title="Mule train to Minas Gerais" style="background:#1a0f0a;" data-route-id="minasgerais">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>→ Minas Gerais</span>
         </div>
@@ -2971,7 +2973,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Minas Gerais return mule -->
         <div id="minasgerais-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnMinasGeraisMule()" title="Return to Rio" style="background:#1a0f0a;" data-route-id="minasgerais_return">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>← Rio</span>
         </div>
@@ -2979,7 +2981,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Sierras mule — shown at Lisbon when player holds the muleteer op card -->
         <div id="sierras-mule-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardSierrasMule()" title="Mule train to Central Sierras" style="background:#000;" data-route-id="sierras">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>→ Sierras</span>
         </div>
@@ -2987,7 +2989,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Sierras return mule — shown at Central Sierras -->
         <div id="sierras-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnSierrasMule()" title="Return to Lisbon" style="background:#000;" data-route-id="sierras_return">
-            <img src="images/inlandbrazil.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="images/inlandbrazil.jpeg" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>← Lisbon</span>
         </div>
@@ -3126,6 +3128,9 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
       <!-- ── MAIN SHIP STACK: ocean-going East India Company ships ── -->
       <div id="port-ship-stack">
+
+        <!-- Dynamic liner legs (main sea routes) populate here — right-hand column -->
+        <div id="port-dynamic-stack" style="display:contents;"></div>
 
         <!-- Board ship (on land, card drawn) -->
         <div id="board-ship-area">
@@ -3561,7 +3566,7 @@ const ROUTES = {
     id:'violettrip_return', shipImg:'images/rowboat.png', shipName:'Rowboat back to Lisbon',
     lineColor:'rgba(160,140,220,0.35)', circuit:['violettrip_return'],
     nodes:[
-      {x:776, y:319, name:'Sand Dunes', isPort:true, portImg:'images/sanddunes.png'}, // 0
+      {x:776, y:319, name:'Sand Dunes', isPort:true, portImg:'images/sanddunes.jpeg'}, // 0
       {x:781, y:330, name:'Lisbon',        isPort:true, portImg:'images/portlis.jpg'},  // 1
     ],
   },
@@ -6207,7 +6212,7 @@ const PORT_IMAGES = {
   'Goto Islands':     'images/gotodestination.jpg',
   'Dahel Gorge':      'images/treeagatedest.jpg',
   'Cambay':           'images/cambay.png',
-  'Sand Dunes':       'images/sanddunes.png',
+  'Sand Dunes':       'images/sanddunes.jpeg',
   'Rio':              'images/portbat.jpeg',
   'Lisbon':           'images/portlis.jpg',
   'Kongu Nadu':       'images/kongudest.jpeg',
@@ -6382,7 +6387,9 @@ function openPort(portName, portImg) {
         'bei','voc','atlantic','north_sea',
         'bei_return','voc_return','atlantic_return','north_sea_return',
       ];
+      const _dynLegs = PORT_EXTRA_ROUTES[portName] || [];
       for (const routeId of outboundOrder) {
+        if (_dynLegs.includes(routeId)) continue;   // dynamic stack already lists this leg
         const r = ROUTES[routeId];
         if (!r?.nodes) continue;
         const idx = r.nodes.findIndex(n => n.name === portName && n.isPort);
@@ -6402,8 +6409,9 @@ function openPort(portName, portImg) {
       }
     }
 
-    // Re-board after going inland
-    if (p.disembarked && dockedShips.length > 0) {
+    // Re-board after going inland (skip if the dynamic stack already lists this ship's leg)
+    if (p.disembarked && dockedShips.length > 0
+        && !(PORT_EXTRA_ROUTES[portName] || []).includes(dockedShips[0].routeId)) {
       const s = dockedShips[0];
       const r = ROUTES[s.routeId];
       rba.classList.add('visible');
@@ -8743,7 +8751,7 @@ const SEA_CARD_TEMPLATES = [
   // ── Seasick deckhand ×4 (pure flavour, no effect) ──
   ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
   mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
-  mkCard('images/whale_18_41_05.png',   (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); }),
+  mkCard('images/whale_18_41_05.jpeg',   (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); }),
   mkCard('images/moonbow.jpeg',          (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); }),
   mkCard('images/captainstable.jpeg',    (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
   // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
@@ -8773,18 +8781,21 @@ const SEA_CARD_TEMPLATES = [
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
   // ── Pirates ×5 ──
-  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
+  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
-  mkCard('images/wsse.png', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
-  mkCard('images/wsw.png',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
+  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
+  mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
+  mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
   mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
   mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
   mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
   // ── Indian Ocean storm — cardinals only: S, W ──
+  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
   mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
@@ -9169,7 +9180,7 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Festivals (no trading) — doubled to thin the card flow ──
-  ...Array(2).fill(null).map(()=> ({ img:'images/festcan.png', effect:(p,i)=>{ log(`${p.name}: Lunar New Year — no trading in Canton this turn.`); p.noTrading='Canton'; } })),
+  ...Array(2).fill(null).map(()=> ({ img:'images/festcan.jpeg', effect:(p,i)=>{ log(`${p.name}: Lunar New Year — no trading in Canton this turn.`); p.noTrading='Canton'; } })),
   ...Array(2).fill(null).map(()=> ({ img:'images/festnag.jpeg', effect:(p,i)=>{ log(`${p.name}: Nagasaki Kunchi Festival — no trading in Nagasaki today.`); p.noTrading='Nagasaki'; } })),
   ...Array(2).fill(null).map(()=> ({ img:'images/festrio.jpeg', effect:(p,i)=>{ log(`${p.name}: Corpus Christi — no trading in Rio this turn.`); p.noTrading='Rio'; } })),
 
@@ -9184,15 +9195,18 @@ const LAND_CARD_TEMPLATES = [
       p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
+  { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
   { img:'images/wssw.jpeg', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SW.`); advanceStormToken('atlantic','SW'); } },
-  { img:'images/wsse.png', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SE.`); advanceStormToken('atlantic','SE'); } },
-  { img:'images/wsw.png',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves W.`);  advanceStormToken('atlantic','W');  } },
+  { img:'images/wssw.jpeg', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SW.`); advanceStormToken('atlantic','SW'); } },
+  { img:'images/wsse.jpeg', effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves SE.`); advanceStormToken('atlantic','SE'); } },
+  { img:'images/wsw.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves W.`);  advanceStormToken('atlantic','W');  } },
   // ── Atlantic Whirlpool — kept: N, NE, E, W ──
   { img:'images/whirln.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves N.`);  advanceStormToken('whirlpool','N');  } },
   { img:'images/whirlne.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves NE.`); advanceStormToken('whirlpool','NE'); } },
   { img:'images/whirle.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves E.`);  advanceStormToken('whirlpool','E');  } },
   { img:'images/whirlw.jpeg',  effect:(p,i)=>{ log(`${p.name}: Word of a whirlpool — it moves W.`);  advanceStormToken('whirlpool','W');  } },
   // ── Indian Ocean storm — cardinals only: S, W, N, E ──
+  { img:'images/storm2_s.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves S.`); advanceStormToken('indian','S'); } },
   { img:'images/storm2_s.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves S.`); advanceStormToken('indian','S'); } },
   { img:'images/storm2_w.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves W.`); advanceStormToken('indian','W'); } },
   { img:'images/storm2_n.jpeg', effect:(p,i)=>{ log(`${p.name}: Word of an Indian Ocean storm — it moves N.`); advanceStormToken('indian','N'); } },
@@ -9201,9 +9215,9 @@ const LAND_CARD_TEMPLATES = [
   // ── Tip-offs are generated below (see "FINITE TIP-OFFS") to match the op deck ──
 
   // ── Backstreet buy deals (one-off) ──
-  { img:'images/backstreetdeal1.png', effect:(p,i)=>{ log(`${p.name}: A shifty fellow offers a Greek bust...`); },
+  { img:'images/backstreetdeal1.jpeg', effect:(p,i)=>{ log(`${p.name}: A shifty fellow offers a Greek bust...`); },
     isBuy:true, oneOff:true, buyImg:'images/homer.png', buyName:'Bust of Homer', buyPrice:3 },
-  { img:'images/backstreetdeal2.png', effect:(p,i)=>{ log(`${p.name}: A dishevelled chap offers a Ming vase...`); },
+  { img:'images/backstreetdeal2.jpeg', effect:(p,i)=>{ log(`${p.name}: A dishevelled chap offers a Ming vase...`); },
     isBuy:true, oneOff:true, buyImg:'images/dodgyvase.png', buyName:'Ming Dynasty Vase', buyPrice:3 },
 
   // ── Cat (kept, face up) — only ONE cat exists in the whole pack ──
@@ -9232,10 +9246,10 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/inviterio.jpeg', isKept:true, heldType:'invite', dest:'Rio', heldLabel:'Viceroy\'s Invitation',
     effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Rio')){log(`${p.name}: Already holds a Rio invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/inviterio.jpeg')); log(`${p.name} receives a Viceroy's invitation to Rio — keep this card!`); } },
   // ── Bodleian Library extra invite — 2 in the land deck (gives card if not already held) ──
-  { img:'images/bodleian.png', isKept:true, oneOff:true, heldType:'opportunity', dest:'Bodleian Library', heldLabel:'Bodleian Library — Invitation',
-    effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.png',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
-  { img:'images/bodleian.png', isKept:true, oneOff:true, heldType:'opportunity', dest:'Bodleian Library', heldLabel:'Bodleian Library — Invitation',
-    effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.png',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
+  { img:'images/bodleian.jpeg', isKept:true, oneOff:true, heldType:'opportunity', dest:'Bodleian Library', heldLabel:'Bodleian Library — Invitation',
+    effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.jpeg',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
+  { img:'images/bodleian.jpeg', isKept:true, oneOff:true, heldType:'opportunity', dest:'Bodleian Library', heldLabel:'Bodleian Library — Invitation',
+    effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.jpeg',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
 
   // ── Pickpocket cards — happen in busy ports (land deck) ──
   ...Array(2).fill(null).map(() => mkCard('images/pickpocket.jpeg',  (p,i) => {
@@ -9653,7 +9667,11 @@ const PORT_ITEMS = {
       reqCard:'images/op-netticarver.jpeg', pool:'poonamallee_netti' },
   ],
   'Ceylon': [
-    { img:'images/ceylonjar.png', label:'Lashka Painted Jar', price:4, currency:'ingots' },
+    { img:'images/ceylonjar.png', label:'Kandyan Painted Jar', price:4, currency:'ingots' },
+    { img:'images/ceylonwaterpot.png', label:'Engraved Brass Kettle', price:5, currency:'ingots' },
+  ],
+  'Batavia': [
+    { img:'images/bataviabox.png', label:'Filigree Silver Casket', price:5, currency:'ingots' },
   ],
   // ── Op-card gated items ──
   'Nuremberg': [
@@ -10364,8 +10382,8 @@ function endTurn() {
 //  CHARACTER SELECTION
 // ════════════════════════════════════════════════
 const MERCHANT_IMGS = {
-  red:   'images/merchantsred.png',
-  green: 'images/merchantsgreen.png',
+  red:   'images/merchantsred.jpeg',
+  green: 'images/merchantsgreen.jpeg',
 };
 const chosenMerchant = [null, null]; // {src, bx, by} per player
 
@@ -11165,6 +11183,7 @@ function _aiCabinetItems(me) {
     cabInitPlayer(me);
     const prev = cabActivePIdx;
     cabActivePIdx = me;                          // point the cab* shorthands at the AI
+    const _prevInLondon = cabInLondon; cabInLondon = true;   // AI only banks at London — satisfy the place-guard
     const p = players[me];
     const carried = [...(p.items || [])];        // copy — cabDoPlace removes placed items from p.items
     const _isApat = (it) => {
@@ -11204,7 +11223,7 @@ function _aiCabinetItems(me) {
       // Cabinet full & nothing fit: if this is a treasure, swap out the weakest cheap filler.
       if (!placed) _aiTrySwapIn(me, gi, ci, size);
     });
-    cabActivePIdx = prev;
+    cabActivePIdx = prev; cabInLondon = _prevInLondon;
   } catch (e) { console.error('AI cabinet error', e); }
 }
 
@@ -11287,7 +11306,7 @@ function _dealBodleianInvite(pIdx) {
     players[pIdx].heldCards = players[pIdx].heldCards || [];
     players[pIdx].heldCards.push({
       id: 'bodleian_invite_' + pIdx + '_' + Date.now(),
-      img: 'images/bodleian.png',
+      img: 'images/bodleian.jpeg',
       faceUp: true, type: 'opportunity',
       label: 'Bodleian Library — Invitation',
       dest: 'Bodleian Library',
@@ -11309,7 +11328,7 @@ function _dealBodleianInvite(pIdx) {
     setStatus(`${players[pIdx].name}: Your invitation arrived. Board a ship or end your turn.`);
   };
 
-  showCard('images/bodleian.png', null, false, false, false, { autoClose: 2200 });
+  showCard('images/bodleian.jpeg', null, false, false, false, { autoClose: 2200 });
 }
 
 // Tracks which player still needs their opening Bodleian invite
@@ -11405,7 +11424,9 @@ const CAB_META = {
   polyhedra2:  { size:'tall',   name:'Polyhedra Model II',     origin:'Nuremberg',          desc:'Carved walnut icosahedron — twenty equilateral triangular faces on a turned stand.' },
   polyhedra3:  { size:'tall',   name:'Polyhedra Model III',    origin:'Nuremberg',          desc:'Great stellated dodecahedron — twelve pentagrammic faces, star-like spines, carved walnut.' },
   'op-NurembergModel': { size:'tall', name:'Polyhedra Model', origin:'Nuremberg',          desc:'Geometric model carved in Nuremberg — a masterwork in walnut.' },
-  ceylonjar:   { size:'tall',   name:'Lashka Painted Jar',     origin:'Ceylon',            desc:'Lacquered and gilded jar with fire-hued arabesques.' },
+  ceylonjar:   { size:'tall',   name:'Kandyan Painted Jar',    origin:'Ceylon',            desc:'Hand-painted earthenware, banded with bold geometric ornament.' },
+  ceylonwaterpot:{ size:'medium', name:'Engraved Brass Kettle',  origin:'Ceylon',            desc:'Repoussé brass kettle with a swung handle and pierced foot.' },
+  bataviabox:  { size:'medium', name:'Filigree Silver Casket', origin:'Batavia · Java',    desc:'Octagonal box worked in fine silver filigree by Batavia smiths.' },
   jadeball:    { size:'tall',   name:'Jade Puzzle Ball',       origin:'Canton · China',    desc:'Carved nephrite ball with interlocking rings on hardwood stand.' },
   dodgyvase:   { size:'tall',   name:'Ming Dynasty Vase',      origin:'Canton · China',    desc:'Authentic Ming dynasty vase — provenance somewhat uncertain.' },
   anatomicalmodeltorso: { size:'tall', name:'Anatomical Ceroplastic Torso', origin:'Italian States · Amsterdam', desc:'Full-torso wax anatomical model with removable organs, by Florentine ceroplasters.' },
@@ -11567,11 +11588,11 @@ const ITEM_SCORES = {
     itemType:'shell',     shellFamily:'cone',  mineralType:null,   region:'asia'     },
   'nurembergmodel':       { w:7,  c:10, s:7,  a:8,  total:32, label:'Nuremberg Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra1':           { w:7,  c:10, s:7,  a:8,  total:32, label:'Nuremberg Model',
+  'polyhedra1':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nuremberg Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra2':           { w:8,  c:10, s:7,  a:8,  total:33, label:'Nuremberg Model',
+  'polyhedra2':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nuremberg Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra3':           { w:8,  c:10, s:8,  a:8,  total:34, label:'Nuremberg Model',
+  'polyhedra3':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nuremberg Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
   'op-nurembergmodel':    { w:7,  c:10, s:7,  a:8,  total:32, label:'Nuremberg Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
@@ -11587,13 +11608,17 @@ const ITEM_SCORES = {
     itemType:'mineral',   shellFamily:null,    mineralType:'phosphate',region:'europe'},
   'shell-nautiloushalf':  { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nautilus — Bisected',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'europe'  },
-  'shellnautpeeled':      { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nautilus — Peeled',
+  'shellnautpeeled':      { w:6,  c:7,  s:5,  a:8,  total:26, label:'Nautilus — Peeled',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'europe'  },
   'shellnaut':            { w:6,  c:8,  s:5,  a:6,  total:25, label:'Raw Nautilus Shell',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'asia'   },
   'scrimshaw':            { w:4,  c:6,  s:7,  a:5,  total:22, label:'Whale Tooth Scrimshaw',
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'atsea'   },
-  'ceylonjar':            { w:7,  c:5,  s:4,  a:4,  total:20, label:'Lashka Painted Jar',
+  'ceylonjar':            { w:5,  c:5,  s:4,  a:4,  total:18, label:'Kandyan Painted Jar',
+    itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
+  'ceylonwaterpot':       { w:7,  c:6,  s:4,  a:5,  total:22, label:'Engraved Brass Kettle',
+    itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
+  'bataviabox':           { w:8,  c:7,  s:5,  a:6,  total:26, label:'Filigree Silver Casket',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
   'telescope':            { w:3,  c:3,  s:1,  a:3,  total:10, label:'Telescope',
     itemType:'instrument',shellFamily:null,    mineralType:null,   region:'europe'  },
@@ -11641,7 +11666,7 @@ const ITEM_SCORES = {
     itemType:'shell',     shellFamily:'violet',mineralType:null,   region:'europe'  },
   'shopping':             { w:5,  c:3,  s:2,  a:3,  total:13, label:'Blue & White Jar',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
-  'protearaw':            { w:6,  c:3,  s:1,  a:2,  total:12, label:'King Protea',
+  'protearaw':            { w:4,  c:2,  s:1,  a:1,  total:8,  label:'King Protea',
     itemType:'botanical', shellFamily:null,    mineralType:null,   region:'africa'  },
   'protea':               { w:6,  c:3,  s:2,  a:3,  total:14, label:'Protea under Glass',
     itemType:'botanical', shellFamily:null,    mineralType:null,   region:'africa'  },
@@ -11757,7 +11782,7 @@ function _normItemId(itemOrId) {
 
 // Total prestige score for an item (or null if unscored) — used for hover tooltips.
 function itemScoreTotal(item) {
-  const sc = getItemScore((item && (item.gameItemId || item.id || item.img)) || item || '');
+  const sc = getItemScore((item && (item.gameItemId || item.img || item.id)) || item || '');
   return sc ? (sc.total || 0) : null;
 }
 
@@ -11826,6 +11851,7 @@ function _hideScoreTip() { if (_scoreTipEl) _scoreTipEl.style.opacity = '0'; }
 document.addEventListener('mouseover', e => {
   const host = e.target.closest && e.target.closest('[data-score]');
   if (host) _showScoreTip(host);
+  else _hideScoreTip();   // moved onto a non-score element (or list re-rendered) — clear any stuck plaque
 });
 document.addEventListener('mouseout', e => {
   const host = e.target.closest && e.target.closest('[data-score]');
@@ -12137,7 +12163,7 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
     ...(catBonus ? [{ label: 'The Cat', val: '+1' }] : []),
   ];
 
-  el.innerHTML =
+  const _bodyHTML =
     `<div style="font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.28em;` +
     `color:#2a1404;margin-bottom:6px;">TOTAL PRESTIGE</div>` +
     `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px 24px;margin-bottom:8px;">` +
@@ -12151,9 +12177,14 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
     `<div style="font-family:'Cinzel',serif;font-size:0.5rem;color:#5a3010;` +
         `letter-spacing:.2em;margin-top:5px;">IN ${roundNumber} ${roundNumber === 1 ? 'WEEK' : 'WEEKS'}</div>` +
     `<div style="font-family:'Cinzel',serif;font-size:0.58rem;color:#3a1e08;` +
-    `letter-spacing:.18em;margin-top:6px;">${p.name.toUpperCase()}</div>` +
+    `letter-spacing:.18em;margin-top:6px;">${p.name.toUpperCase()}</div>`;
+  _plaqueHTML[playerIdx]  = _bodyHTML;
+  _plaqueGrand[playerIdx] = grand;
+  const _footer = !onComplete ? 'Click to close'
+                : (NUM_PLAYERS >= 2 ? 'Click to continue →' : 'Click to set aside →');
+  el.innerHTML = _bodyHTML +
     `<div style="font-family:'Cinzel',serif;font-size:0.42rem;color:#5a3010;` +
-    `letter-spacing:.12em;margin-top:10px;">${onComplete ? 'Click to continue →' : 'Click to close'}</div>`;
+    `letter-spacing:.12em;margin-top:10px;">${_footer}</div>`;
 
   layer.appendChild(el);
   requestAnimationFrame(() => { el.style.opacity = '1'; });
@@ -12172,6 +12203,8 @@ function _showGrandTotal(layer, playerIdx, itemTotal, bonuses, onComplete) {
 let _appraisalQueue  = [];
 let _appraisalScores = {};
 let _appraisalActive = false;
+let _plaqueHTML      = {};   // remembered plaque body per player (for re-enlarge)
+let _plaqueGrand     = {};   // remembered grand total per player
 
 // True only when EVERY cabinet slot is occupied.
 function _slotIsFull(sl) {
@@ -12267,6 +12300,11 @@ function _finishAppraisal() {
   idxs.forEach(i => { if (_appraisalScores[i] > _appraisalScores[winner]) winner = i; });
   const tie = idxs.length === 2 && _appraisalScores[idxs[0]] === _appraisalScores[idxs[1]];
   _switchCabinetTo(winner);
+
+  // Solo — no extra banner. Reveal the cabinet and dock the plaque on the right.
+  if (idxs.length < 2) { _dockFinalPlaque(winner); return; }
+
+  // Two players — reveal the winner, hold, then dock the winning plaque.
   const layer = document.createElement('div');
   layer.id = 'cab-score-layer';
   layer.style.background = 'rgba(8,4,2,0.55)';
@@ -12274,28 +12312,67 @@ function _finishAppraisal() {
   const banner = document.createElement('div');
   banner.className = 'cab-score-title';
   banner.style.top = '15%';
-  banner.textContent = (idxs.length >= 2)
-    ? (tie ? 'A tie — both score ' + _appraisalScores[winner] + ' prestige'
-           : players[winner].name + ' wins with ' + _appraisalScores[winner] + ' prestige!')
-    : 'Final prestige: ' + _appraisalScores[winner];
+  banner.textContent = tie
+    ? 'A tie \u2014 both score ' + _appraisalScores[winner] + ' prestige'
+    : players[winner].name + ' wins with ' + _appraisalScores[winner] + ' prestige!';
   layer.appendChild(banner);
   requestAnimationFrame(() => { banner.style.opacity = '1'; });
-  if (idxs.length >= 2) {
-    const board = document.createElement('div');
-    board.style.cssText = "position:fixed;top:30%;left:50%;transform:translateX(-50%);z-index:2001;display:flex;gap:34px;opacity:0;transition:opacity 1s;font-family:'Cinzel',serif;text-align:center;";
-    board.innerHTML = idxs.map(i => {
-      const win = (i === winner && !tie);
-      return `<div style="color:${win ? '#ffd86a' : '#c89a4a'};"><div style="font-size:0.66rem;letter-spacing:.14em;">${players[i].name.toUpperCase()}</div><div style="font-family:'Cinzel Decorative',serif;font-size:2.4rem;line-height:1.1;">${_appraisalScores[i]}</div>${win ? '<div style="font-size:0.5rem;letter-spacing:.24em;">★ WINNER ★</div>' : ''}</div>`;
-    }).join('');
-    layer.appendChild(board);
-    setTimeout(() => { board.style.opacity = '1'; }, 350);
-    // Hold the plaque, then fade everything to reveal the winner's glowing cabinet.
-    setTimeout(() => { board.style.opacity = '0'; banner.style.opacity = '0'; layer.style.opacity = '0'; setTimeout(() => layer.remove(), 1200); }, 4600);
-    setTimeout(_showNewGameButton, 5400);
-  } else {
-    setTimeout(() => { banner.style.opacity = '0'; layer.style.opacity = '0'; setTimeout(() => layer.remove(), 1200); }, 3200);
-    setTimeout(_showNewGameButton, 4000);
-  }
+  const board = document.createElement('div');
+  board.style.cssText = "position:fixed;top:30%;left:50%;transform:translateX(-50%);z-index:2001;display:flex;gap:34px;opacity:0;transition:opacity 1s;font-family:'Cinzel',serif;text-align:center;";
+  board.innerHTML = idxs.map(i => {
+    const win = (i === winner && !tie);
+    return `<div style="color:${win ? '#ffd86a' : '#c89a4a'};"><div style="font-size:0.66rem;letter-spacing:.14em;">${players[i].name.toUpperCase()}</div><div style="font-family:'Cinzel Decorative',serif;font-size:2.4rem;line-height:1.1;">${_appraisalScores[i]}</div>${win ? '<div style="font-size:0.5rem;letter-spacing:.24em;">\u2605 WINNER \u2605</div>' : ''}</div>`;
+  }).join('');
+  layer.appendChild(board);
+  setTimeout(() => { board.style.opacity = '1'; }, 350);
+  setTimeout(() => { board.style.opacity = '0'; banner.style.opacity = '0'; layer.style.opacity = '0'; setTimeout(() => layer.remove(), 1200); }, 4600);
+  setTimeout(() => _dockFinalPlaque(winner), 5400);
+}
+
+// Dock the final score as a small plaque in the right panel (in place of the
+// inventory list), with the New Game button beneath it. Click it to enlarge.
+function _dockFinalPlaque(pIdx) {
+  const panel = document.getElementById('cab-inv-panel');
+  if (!panel) return;
+  const grand = _appraisalScores[pIdx] ?? _plaqueGrand[pIdx] ?? 0;
+  panel.innerHTML =
+    `<div id="cab-final-dock" title="Click to enlarge" style="` +
+      `background:url('images/plaque.png') center/100% 100% no-repeat;` +
+      `padding:24px 16px 20px;text-align:center;cursor:pointer;border-radius:4px;` +
+      `box-shadow:0 4px 18px rgba(0,0,0,0.6);transition:transform 0.18s;margin-bottom:16px;">` +
+        `<div style="font-family:'Cinzel',serif;font-size:0.5rem;letter-spacing:.24em;color:#2a1404;">FINAL PRESTIGE</div>` +
+        `<div style="font-family:'Cinzel Decorative',serif;font-size:2.5rem;line-height:1.05;color:#1a0c04;margin:3px 0;">${grand}</div>` +
+        `<div style="font-family:'Cinzel',serif;font-size:0.5rem;letter-spacing:.14em;color:#3a1e08;">${players[pIdx].name.toUpperCase()}</div>` +
+        `<div style="font-family:'Cinzel',serif;font-size:0.4rem;letter-spacing:.1em;color:#6a4416;margin-top:10px;">click to enlarge</div>` +
+    `</div>` +
+    `<button id="cab-newgame-btn" style="` +
+      `width:100%;font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:.14em;color:#f0d878;` +
+      `background:linear-gradient(135deg,#3a1e08,#1a0e04);border:1px solid #c8923a;border-radius:4px;` +
+      `padding:12px 0;cursor:pointer;transition:box-shadow 0.3s;box-shadow:0 4px 16px rgba(0,0,0,0.6);">\u21bb New Game</button>`;
+  const dock = document.getElementById('cab-final-dock');
+  dock.addEventListener('mouseenter', () => { dock.style.transform = 'scale(1.03)'; });
+  dock.addEventListener('mouseleave', () => { dock.style.transform = 'scale(1)'; });
+  dock.addEventListener('click', () => _enlargePlaque(pIdx));
+  const ng = document.getElementById('cab-newgame-btn');
+  ng.addEventListener('mouseenter', () => { ng.style.boxShadow = '0 0 18px rgba(255,215,0,0.7)'; });
+  ng.addEventListener('mouseleave', () => { ng.style.boxShadow = '0 4px 16px rgba(0,0,0,0.6)'; });
+  ng.addEventListener('click', () => location.reload());
+}
+
+// Re-open the full plaque over the cabinet; click anywhere to set it aside again.
+function _enlargePlaque(pIdx) {
+  if (document.getElementById('cab-score-layer')) return;
+  const layer = document.createElement('div');
+  layer.id = 'cab-score-layer';
+  layer.style.background = 'rgba(8,4,2,0.78)';
+  document.body.appendChild(layer);
+  const el = document.createElement('div');
+  el.id = 'cab-score-grand';
+  el.innerHTML = (_plaqueHTML[pIdx] || '') +
+    `<div style="font-family:'Cinzel',serif;font-size:0.42rem;color:#5a3010;letter-spacing:.12em;margin-top:10px;">Click to close</div>`;
+  layer.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '1'; });
+  layer.addEventListener('click', () => { layer.style.opacity = '0'; setTimeout(() => layer.remove(), 500); });
 }
 
 function _showNewGameButton() {
@@ -12948,6 +13025,7 @@ function cabCanDropCheck(cellId, side, itemSize) {
   }
 }
 function cabDoPlace(cellId, side, item) {
+  if (!cabInLondon) return;   // planning view away from London — look, don't place
   const def=CAB_SLOT_DEFS.find(d=>d.id===cellId), cs=cabSlot(cellId);
   if (def.type==='flexbay') {
     if (item.size==='slim') {
@@ -13066,7 +13144,7 @@ function cabClearHighlights() {
 // Image retry net: any <img> that ends up blank re-fetches itself, so a
 // cold-CDN miss self-heals during play instead of leaving a gap.
 (function() {
-  var MAX = 4, pkc = 0;
+  var MAX = 6, pkc = 0;
   document.addEventListener('error', function(e) {
     var img = e.target;
     if (!img || img.tagName !== 'IMG') return;
@@ -13079,7 +13157,7 @@ function cabClearHighlights() {
     setTimeout(function() {
       img.style.display = '';                 // undo any inline onerror hide
       img.src = base + '?r=' + n;             // cache-bust to force a fresh fetch
-    }, 350 * n);                              // gentle backoff
+    }, 700 * n);                              // gentle backoff (lets a cold edge warm)
   }, true);   // capture phase — image error events don't bubble
 })();
 
@@ -13111,10 +13189,15 @@ function cabClearHighlights() {
     // …then every port/destination background, so a port is never blank on arrival.
     var _portRe = /portImg:\s*'(images\/[^']+)'/g, _pm;
     while ((_pm = _portRe.exec(html)) !== null) { if (prioOrder.indexOf(_pm[1]) < 0) prioOrder.push(_pm[1]); }
-    var pri = [], rest = [];
-    list.forEach(function(u) { (prioOrder.indexOf(u) >= 0 ? pri : rest).push(u); });
+    var deferLast = ['images/seafanred.png','images/seafanpurple.png','images/seafan.png','images/amethyst1.png','images/amethyst2.png','images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png','images/inlaidbox.png','images/brassjalibox.png','images/lisbonjar.png','images/ceylonjar.png','images/dragonvase.png','images/silverewer.png','images/cinnabar.png','images/ruby1.png','images/jadeball.png','images/brasshookah.png','images/wenteltrap.png','images/polyhedra1.png','images/shellnautmount.png','images/shell-nautiloushalf.png','images/imperialtopaz1.png','images/imperialtopaz2.png','images/riocup.png','images/anatomicalmodeltorso.png','images/mandrake.png','images/tree-agate-slice-a.png','images/tree-agate-slice-b.png'];
+    var pri = [], rest = [], defer = [];
+    list.forEach(function(u) {
+      if (prioOrder.indexOf(u) >= 0) pri.push(u);
+      else if (deferLast.indexOf(u) >= 0) defer.push(u);   // rare collectible art — load last
+      else rest.push(u);
+    });
     pri.sort(function(a, b) { return prioOrder.indexOf(a) - prioOrder.indexOf(b); });
-    return pri.concat(rest);
+    return pri.concat(rest, defer);
   }
 
   // Preload with capped concurrency so we don't re-create the request-storm
@@ -13122,7 +13205,7 @@ function cabClearHighlights() {
   // a single missing/slow file can never freeze the loader.
   function preload(urls, onProgress, onDone) {
     var total = urls.length, done = 0, i = 0;
-    var CONCURRENCY = 12, PER_IMG_TIMEOUT = 12000, MAX_RETRIES = 3;
+    var CONCURRENCY = 4, PER_IMG_TIMEOUT = 30000, MAX_RETRIES = 4;
     if (total === 0) { onDone(); return; }
     function finishOne() {
       done++; onProgress(done, total);
