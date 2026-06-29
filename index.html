@@ -3182,7 +3182,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-29b · port-dots-v2 · paired-routes · wider-overview';
+const COC_BUILD = '2026-06-29c · dot-nudges-v3';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -5800,8 +5800,9 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {
-  'London': { x:-6, y:0 },   // ~12px west
-  'Bombay': { x:0,  y:3 },   // ~7px south, onto the port
+  'London':            { x:-9, y:-3 },   // west + north
+  'Cape of Good Hope': { x:5,  y:-5 },   // east + north
+  'Bombay':            { x:0,  y:-2 },   // north
 };
 
 function renderPortHotspots() {
