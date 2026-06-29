@@ -3182,7 +3182,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-29 · port-dots · cropped-overview · trackers-off';
+const COC_BUILD = '2026-06-29b · port-dots-v2 · paired-routes · wider-overview';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -5798,14 +5798,20 @@ function _isMainPort(name){
 // The slice of the world actually in play (Rio in the west to Nagasaki in the east),
 // used to frame the zoomed-out overview instead of the whole empty map.
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
+// Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
+const PORT_DOT_NUDGE = {
+  'London': { x:-6, y:0 },   // ~12px west
+  'Bombay': { x:0,  y:3 },   // ~7px south, onto the port
+};
 
 function renderPortHotspots() {
   document.querySelectorAll('.port-hotspot').forEach(el => el.remove());
   const hcx = MAP_W / 2, hcy = MAP_H / 2;
   registeredPorts.forEach(p => {
     // Same coordinate adjustment as route lines, ships, and zoom targets
-    const rx = hcx + (p.x + ROUTE_X_OFFSET - hcx) * ROUTE_SCALE;
-    const ry = hcy + (p.y                  - hcy) * ROUTE_SCALE;
+    const _nu = PORT_DOT_NUDGE[p.name] || {x:0,y:0};
+    const rx = hcx + (p.x + _nu.x + ROUTE_X_OFFSET - hcx) * ROUTE_SCALE;
+    const ry = hcy + (p.y + _nu.y                  - hcy) * ROUTE_SCALE;
     const {sx, sy} = toScreen(rx, ry);
     const screenX = sx * currentZoomScale + currentZoomTx;
     const screenY = sy * currentZoomScale + currentZoomTy;
@@ -6000,17 +6006,32 @@ function showPortConnectionsTooltip(portName, anchorEl) {
   if (!portRoutes.length) return;
 
   let html = `<div class="rtt-ship-name">${portName}</div>`;
+  // Group each destination's outbound & inbound together, label by final destination
+  // (ship names dropped — the last stop is what matters), longest voyages first.
+  const _grp = {}, _ord = [];
   portRoutes.forEach(route => {
     const stops = route.nodes.filter(n => n.name && n.isPort).map(n => n.name);
     if (!stops.length) return;
-    // Outbound routes start here; inbound/return routes end here
     const startsHere = route.nodes[0]?.name === portName;
-    const cls = startsHere ? 'rtt-outbound' : 'rtt-return';
-    const dir = startsHere ? '→' : '←';
-    html += `<div class="rtt-leg ${cls}">`;
-    html += `<div class="rtt-leg-title">${route.shipName} ${dir}</div>`;
-    stops.forEach(s => { html += `<div class="rtt-stop">${s}</div>`; });
-    html += `</div>`;
+    const base = route.id.replace(/_return$/, '');
+    if (!_grp[base]) { _grp[base] = { out:null, in:null, len:0 }; _ord.push(base); }
+    const leg = { stops, finalDest: startsHere ? stops[stops.length-1] : stops[0],
+                  dir: startsHere ? 'outbound' : 'inbound' };
+    if (startsHere) _grp[base].out = leg; else _grp[base].in = leg;
+    _grp[base].len = Math.max(_grp[base].len, stops.length);
+  });
+  _ord.sort((a,b) => _grp[b].len - _grp[a].len);
+  _ord.forEach(base => {
+    [_grp[base].out, _grp[base].in].forEach(leg => {
+      if (!leg) return;
+      const title = leg.dir === 'outbound'
+        ? `${portName} — ${leg.finalDest} · outbound`
+        : `${leg.finalDest} — ${portName} · inbound`;
+      const cls = leg.dir === 'outbound' ? 'rtt-outbound' : 'rtt-return';
+      html += `<div class="rtt-leg ${cls}"><div class="rtt-leg-title">${title}</div>`;
+      leg.stops.forEach(s => { html += `<div class="rtt-stop">${s}</div>`; });
+      html += `</div>`;
+    });
   });
 
   // Card-gated side trip: any opportunity card the current player holds whose trek
@@ -6076,8 +6097,8 @@ function zoomOut() {
   const bx0 = Math.min(p0.sx,p1.sx), bx1 = Math.max(p0.sx,p1.sx);
   const by0 = Math.min(p0.sy,p1.sy), by1 = Math.max(p0.sy,p1.sy);
   const bw = Math.max(1,bx1-bx0), bh = Math.max(1,by1-by0);
-  let scale = Math.min(window.innerWidth/bw, window.innerHeight/bh) * 0.92;
-  scale = Math.max(1, Math.min(scale, 2.6));
+  let scale = Math.min(window.innerWidth/bw, window.innerHeight/bh) * 0.68;
+  scale = Math.max(0.8, Math.min(scale, 2.6));
   currentZoomScale = scale;
   currentZoomTx = Math.round(window.innerWidth/2  - (bx0+bx1)/2 * scale);
   currentZoomTy = Math.round(window.innerHeight/2 - (by0+by1)/2 * scale);
