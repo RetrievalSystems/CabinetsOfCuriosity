@@ -3182,7 +3182,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-28d · blob-cache · 1-hop-amsterdam · rivals-hidden';
+const COC_BUILD = '2026-06-29 · port-dots · cropped-overview · trackers-off';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -5779,38 +5779,7 @@ document.addEventListener('keydown', e => {
     previewRouteId = OVERVIEW_ROUTES;
     buildSVG();
     zoomOut();
-    document.getElementById('overview-coords')?.remove();
-    const oc = document.createElement('div');
-    oc.id = 'overview-coords';
-    oc.style.cssText = `position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
-      z-index:9999;font-family:'Courier New',monospace;font-size:0.8rem;letter-spacing:.06em;
-      background:rgba(8,4,2,0.88);color:#e8c860;padding:5px 16px;
-      border:1px solid rgba(212,168,85,0.4);border-radius:3px;pointer-events:none;
-      white-space:nowrap;`;
-    oc.textContent = 'move mouse over map · click to copy coordinates';
-    document.body.appendChild(oc);
-
-    function _screenToGame(mx, my) {
-      const vpW=window.innerWidth, vpH=window.innerHeight;
-      const ma=MAP_W/MAP_H, va=vpW/vpH;
-      let rW,rH,oX,oY;
-      if(va>ma){rH=vpH;rW=vpH*ma;oX=(vpW-rW)/2;oY=0;}
-      else{rW=vpW;rH=vpW/ma;oX=0;oY=(vpH-rH)/2;}
-      const sx=(mx-currentZoomTx)/currentZoomScale;
-      const sy=(my-currentZoomTy)/currentZoomScale;
-      return{x:Math.round((sx-oX)*MAP_W/rW), y:Math.round((sy-oY)*MAP_H/rH)};
-    }
-
-    function _ovMove(e){ const {x,y}=_screenToGame(e.clientX,e.clientY); oc.textContent=`x:${x}  y:${y}`; }
-    function _ovClick(e){
-      const {x,y}=_screenToGame(e.clientX,e.clientY); const s=`{x:${x}, y:${y}}`;
-      navigator.clipboard?.writeText(s);
-      oc.textContent=`✓ copied  ${s}`;
-      setTimeout(()=>{ oc.textContent=`x:${x}  y:${y}`; },1400);
-    }
-    document.addEventListener('mousemove', _ovMove);
-    document.addEventListener('click', _ovClick);
-    oc._cleanup = () => { document.removeEventListener('mousemove',_ovMove); document.removeEventListener('click',_ovClick); };
+    /* overview coordinate tracker removed — was a dev tool, confusing in play */
   } else {
     // Exit overview
     _spaceOverviewOn = false;
@@ -5821,6 +5790,14 @@ document.addEventListener('keydown', e => {
     if (oc) { oc._cleanup?.(); oc.remove(); }
   }
 });
+
+// A "main port" is any ocean-liner hub (sits on a liner route). Trek-only stops are not.
+function _isMainPort(name){
+  return Object.values(ROUTES).some(r => _AI_LINERS.has(r.id) && (r.nodes||[]).some(n => n.name===name && n.isPort));
+}
+// The slice of the world actually in play (Rio in the west to Nagasaki in the east),
+// used to frame the zoomed-out overview instead of the whole empty map.
+const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 
 function renderPortHotspots() {
   document.querySelectorAll('.port-hotspot').forEach(el => el.remove());
@@ -5844,15 +5821,25 @@ function renderPortHotspots() {
       cursor:pointer;
       z-index:${zIdx};
     `;
+    // Visible brown dot marks each MAIN port; trek-only stops stay invisible.
+    if (_isMainPort(p.name)) {
+      const dot = document.createElement('div');
+      dot.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        + 'width:15px;height:15px;border-radius:50%;pointer-events:none;'
+        + 'background:radial-gradient(circle at 35% 30%, #9c6b3f, #5e3a1c 70%, #3a2210);'
+        + 'border:1px solid rgba(38,20,6,0.85);'
+        + 'box-shadow:0 1px 3px rgba(0,0,0,0.55), 0 0 0 2px rgba(245,225,185,0.22);';
+      div.appendChild(dot);
+    }
     // Click — only opens if current player is at this port
     div.addEventListener('click', () => {
       if (!playerCanAccessPort(p.name)) return;
       if (!cp()?.cardDrawn) { triggerPeekBounce(); return; }
       openPort(p.name, p.portImg);
     });
-    // Hover — show connection list for ports the player can't enter
+    // Hover — always show the destination list (returns early for non-liner ports)
     div.addEventListener('mouseenter', () => {
-      if (!playerCanAccessPort(p.name)) showPortConnectionsTooltip(p.name, div);
+      showPortConnectionsTooltip(p.name, div);
     });
     div.addEventListener('mouseleave', hideRouteTooltip);
     document.body.appendChild(div);
@@ -6026,6 +6013,19 @@ function showPortConnectionsTooltip(portName, anchorEl) {
     html += `</div>`;
   });
 
+  // Card-gated side trip: any opportunity card the current player holds whose trek
+  // starts at THIS port. Without the card, only the liner legs above show.
+  try {
+    const me = cp(); const seen = {};
+    (me?.heldCards || []).forEach(hc => {
+      const hub = _aiCardHub(hc), dest = hc.dest || hc.location;
+      if (hub === portName && dest && !seen[dest]) {
+        seen[dest] = 1;
+        html += `<div class="rtt-leg rtt-return"><div class="rtt-leg-title">⤳ Side trip — your card</div><div class="rtt-stop">${dest}</div></div>`;
+      }
+    });
+  } catch(e) {}
+
   tt.innerHTML = html;
   tt.style.display = 'block';
   // Position to the right of the hotspot, clamp to viewport
@@ -6068,8 +6068,20 @@ function zoomToNode(n, scale) {
 }
 
 function zoomOut() {
-  currentZoomTx = 0; currentZoomTy = 0; currentZoomScale = 1;
-  viewport.style.transform = 'translate(0,0) scale(1)';
+  // Frame just the used playing area (Rio → Nagasaki) rather than the whole empty map.
+  const cx = MAP_W/2, cy = MAP_H/2;
+  const adj = (x,y) => ({ x: cx + (x + ROUTE_X_OFFSET - cx)*ROUTE_SCALE, y: cy + (y - cy)*ROUTE_SCALE });
+  const a = adj(USED_AREA.x0, USED_AREA.y0), b = adj(USED_AREA.x1, USED_AREA.y1);
+  const p0 = toScreen(a.x, a.y), p1 = toScreen(b.x, b.y);
+  const bx0 = Math.min(p0.sx,p1.sx), bx1 = Math.max(p0.sx,p1.sx);
+  const by0 = Math.min(p0.sy,p1.sy), by1 = Math.max(p0.sy,p1.sy);
+  const bw = Math.max(1,bx1-bx0), bh = Math.max(1,by1-by0);
+  let scale = Math.min(window.innerWidth/bw, window.innerHeight/bh) * 0.92;
+  scale = Math.max(1, Math.min(scale, 2.6));
+  currentZoomScale = scale;
+  currentZoomTx = Math.round(window.innerWidth/2  - (bx0+bx1)/2 * scale);
+  currentZoomTy = Math.round(window.innerHeight/2 - (by0+by1)/2 * scale);
+  viewport.style.transform = `translate(${currentZoomTx}px,${currentZoomTy}px) scale(${scale})`;
   _zoomEndsAt = Date.now() + ZOOM_DURATION_MS;
   requestAnimationFrame(renderPortHotspots);
 }
@@ -11389,7 +11401,7 @@ window.addEventListener('load', () => {
   // ── Live coordinate display ────────────────────────────────────────────
   const _mapImg   = document.getElementById('map-img');
   const _coordDiv = document.getElementById('map-coords');
-  if (_mapImg && _coordDiv) {
+  if (false && _mapImg && _coordDiv) {  // coordinate tracker disabled (dev tool)
     const _gc = e => {
       const r = _mapImg.getBoundingClientRect();
       return { x: Math.round((e.clientX-r.left)/r.width*1456),
