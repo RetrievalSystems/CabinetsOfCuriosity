@@ -3182,7 +3182,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-29c · dot-nudges-v3';
+const COC_BUILD = '2026-06-29d · zoom-scaled-dots · bodleian-preview';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -5800,9 +5800,10 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {
-  'London':            { x:-9, y:-3 },   // west + north
-  'Cape of Good Hope': { x:5,  y:-5 },   // east + north
-  'Bombay':            { x:0,  y:-2 },   // north
+  'London':            { x:-9, y:-3 },
+  'Cape of Good Hope': { x:5,  y:-13 },  // further north
+  'Bombay':            { x:0,  y:-2 },
+  'Madras':            { x:9,  y:-9 },   // north-east
 };
 
 function renderPortHotspots() {
@@ -5816,8 +5817,12 @@ function renderPortHotspots() {
     const {sx, sy} = toScreen(rx, ry);
     const screenX = sx * currentZoomScale + currentZoomTx;
     const screenY = sy * currentZoomScale + currentZoomTy;
-    const r = 23;   // ~5% larger clickable area (invisible)
-    const zIdx = (p.name === 'London') ? 27 : 25;
+    // Shrink the hover circle + dot when zoomed out so clustered ports don't overlap and
+    // steal each other's hover (the cause of merged/"missing" ports in the overview).
+    const _zf = Math.max(0.4, Math.min(1, currentZoomScale / 3.8));
+    const r = Math.round(23 * _zf);
+    const _dotSz = Math.max(8, Math.round(15 * _zf));
+    const zIdx = (p.name === 'London') ? 34 : 33;   // above side panels (z30) so edge ports stay live
     const div = document.createElement('div');
     div.className = 'port-hotspot';
     div.style.cssText = `
@@ -5832,7 +5837,7 @@ function renderPortHotspots() {
     if (_isMainPort(p.name)) {
       const dot = document.createElement('div');
       dot.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
-        + 'width:15px;height:15px;border-radius:50%;pointer-events:none;'
+        + `width:${_dotSz}px;height:${_dotSz}px;border-radius:50%;pointer-events:none;`
         + 'background:radial-gradient(circle at 35% 30%, #9c6b3f, #5e3a1c 70%, #3a2210);'
         + 'border:1px solid rgba(38,20,6,0.85);'
         + 'box-shadow:0 1px 3px rgba(0,0,0,0.55), 0 0 0 2px rgba(245,225,185,0.22);';
@@ -7591,6 +7596,40 @@ function returnLondonCart() {
   closePort();
 }
 
+// Bodleian: hovering a face-up choice blows it up full-screen so the text is readable,
+// shrinking back when the cursor leaves. The overlay is pointer-transparent so the slot
+// underneath keeps the hover (no flicker) and a click still selects.
+function _bodPreviewEl() {
+  let el = document.getElementById('bod-preview');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'bod-preview';
+    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:none;align-items:center;'
+      + 'justify-content:center;pointer-events:none;background:rgba(8,5,2,0.80);';
+    const img = document.createElement('img');
+    img.id = 'bod-preview-img';
+    img.style.cssText = 'max-height:90vh;max-width:74vw;object-fit:contain;border-radius:8px;'
+      + 'box-shadow:0 14px 54px rgba(0,0,0,0.72);border:1px solid rgba(212,168,85,0.45);';
+    el.appendChild(img);
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function _showBodPreview(src) {
+  if (!src || /img-card-back/.test(src)) return;   // never enlarge a face-down card
+  const el = _bodPreviewEl();
+  el.querySelector('#bod-preview-img').src = src;
+  el.style.display = 'flex';
+}
+function _hideBodPreview() {
+  const el = document.getElementById('bod-preview');
+  if (el) el.style.display = 'none';
+}
+function _wireBodHover(slot, cardImg) {
+  slot.onmouseenter = () => _showBodPreview(cardImg);
+  slot.onmouseleave = () => _hideBodPreview();
+}
+
 function openBodleianPort() {
   const p = cp();
   const bodKey = `bodleian_selected_${currentPIdx}`;
@@ -7633,9 +7672,11 @@ function openBodleianPort() {
       if (img) { img.style.transition = 'none'; img.style.opacity = '1';
                  img.src = visit.cards[i] ? visit.cards[i].img : 'images/img-card-back.jpg'; }
       slot.onclick = () => selectBodleianCard(i);
+      _wireBodHover(slot, visit.cards[i] ? visit.cards[i].img : null);
     } else {
       // Face-down — first click reveals all three and spends the invitation once
       if (img) { img.style.transition = 'none'; img.style.opacity = '1'; img.src = 'images/img-card-back.jpg'; }
+      slot.onmouseenter = null; slot.onmouseleave = null;
       slot.onclick = () => {
         const v = _bodleianVisits[currentPIdx];
         if (!v || v.revealed) return;
@@ -7680,11 +7721,13 @@ function _revealBodleianCards(slots) {
     setTimeout(() => {
       slot.style.pointerEvents = '';
       slot.onclick = () => selectBodleianCard(i);
+      _wireBodHover(slot, card.img);
     }, 650);
   });
 }
 
 function selectBodleianCard(idx) {
+  _hideBodPreview();
   const bodKey = `bodleian_selected_${currentPIdx}`;
   const _visit = _bodleianVisits[currentPIdx];
   const _cards = _visit ? _visit.cards : _bodleianPeeked;
