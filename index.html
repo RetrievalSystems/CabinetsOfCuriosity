@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-30a · curved-routes-shorter-legs';
+const COC_BUILD = '2026-06-30b · unified-route-coords';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -3239,6 +3239,18 @@ let NUM_PLAYERS = 2; // set to 1 by chooseSolo(), 2 by chooseRival() before begi
 // Route overlay fine-tuning — tweak these if routes drift vs map image:
 const ROUTE_X_OFFSET = -2;   // +east / -west (map units, ≈ screen px at 1440px wide)
 const ROUTE_SCALE    = 1.10; // expand route 10% from map centre to match geographic spread
+// Fine geographic alignment onto the drawn ports — applied UNIFORMLY to routes, ships, dots, zoom
+// via _routeXY so they can never drift apart from each other:
+const DOT_SX       = 0.96;   // shrink east-west spread ~4% around centre (nodes overshoot to the east)
+const DOT_GLOBAL_Y = 5;      // small uniform push south onto the ports
+const DOT_YSHEAR   = 0.018;  // eastern ports read low -> pull north in proportion to east-ness
+function _routeXY(x, y){
+  const cx = MAP_W/2, cy = MAP_H/2;
+  return {
+    rx: cx + (x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE * DOT_SX,
+    ry: cy + (y + DOT_GLOBAL_Y   - cy) * ROUTE_SCALE - DOT_YSHEAR * (x - cx)
+  };
+}
 
 // ════════════════════════════════════════════════
 //  ROUTE BOARDING COSTS
@@ -5650,8 +5662,7 @@ function buildSVG() {
     const routeOpacity = (hasPassenger || inPreview) ? 1 : 0;
 
     const pts = r.nodes.map(n => {
-      const rx = cx + (n.x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE;
-      const ry = cy + (n.y               - cy) * ROUTE_SCALE;
+      const {rx, ry} = _routeXY(n.x, n.y);
       return toScreen(rx, ry);
     });
     const _dpath = _smoothRoutePath(pts);
@@ -5679,8 +5690,7 @@ function buildSVG() {
     let dotIdx = 0;
     r.nodes.forEach(n => {
       if (n.isPort) return;
-      const rx = cx + (n.x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE;
-      const ry = cy + (n.y               - cy) * ROUTE_SCALE;
+      const {rx, ry} = _routeXY(n.x, n.y);
       const {sx,sy} = toScreen(rx, ry);
       const dotKey = `dot_${r.id}_${dotIdx}`;
       let d = pool[dotKey];
@@ -5825,18 +5835,10 @@ function _isMainPort(name){
 // used to frame the zoomed-out overview instead of the whole empty map.
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
-const PORT_DOT_NUDGE = {
-  'London':            { x:-9, y:-3 },
-  'Cape of Good Hope': { x:5,  y:-13 },  // further north
-  'Bombay':            { x:0,  y:3 },    // down onto the port
-  'Madras':            { x:9,  y:-9 },   // north-east
-};
+const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
 
 // Glue the dot layer to the board by mirroring the map's transform onto it.
 function _syncPortDots(){ const pd=document.getElementById('port-dots'), vp=document.getElementById('map-viewport'); if(pd&&vp) pd.style.transform = vp.style.transform; }
-const DOT_GLOBAL_Y = 10;  // push ALL dots down onto the drawn ports (route nodes sit a touch high)
-const DOT_SX = 0.96;      // shrink the dots' east-west spread ~4% around map centre — the routes'
-                          // 10% expansion overshoots the drawn ports more the further east you go
 
 function renderPortHotspots() {
   // #port-dots sits ABOVE the map-click-overlay (so hover/clicks reach the dots) but mirrors
@@ -5849,8 +5851,7 @@ function renderPortHotspots() {
   const inv = 1 / (currentZoomScale || 1);
   registeredPorts.forEach(p => {
     const _nu = PORT_DOT_NUDGE[p.name] || {x:0,y:0};
-    const rx = hcx + (p.x + _nu.x + ROUTE_X_OFFSET - hcx) * ROUTE_SCALE * DOT_SX;
-    const ry = hcy + (p.y + _nu.y + DOT_GLOBAL_Y   - hcy) * ROUTE_SCALE;
+    const {rx, ry} = _routeXY(p.x + _nu.x, p.y + _nu.y);
     const {sx, sy} = toScreen(rx, ry);          // board-space px — identical path to routes & ships
     const r = 22;                                // constant on-screen hit radius (after counter-scale)
     const div = document.createElement('div');
@@ -5903,8 +5904,7 @@ function _renderPawnHit() {
   const p = cp(); if (!p) return;
   const node = playerNode(p); if (!node || node.x === undefined) return;
   const hcx = MAP_W / 2, hcy = MAP_H / 2;
-  const rx = hcx + (node.x + ROUTE_X_OFFSET - hcx) * ROUTE_SCALE;
-  const ry = hcy + (node.y                  - hcy) * ROUTE_SCALE;
+  const {rx, ry} = _routeXY(node.x, node.y);
   const { sx, sy } = toScreen(rx, ry);
   const ox = (currentPIdx === 0 ? -4 : 4);
   // pawn is drawn centred at (sx+ox) with its top near sy-10 → visual centre ~ sy-4
@@ -6100,8 +6100,7 @@ function safeZoomDelay() {
 function zoomToNode(n, scale) {
   // Apply same coordinate adjustment as route lines & ships
   const cx = MAP_W / 2, cy = MAP_H / 2;
-  const rx = cx + (n.x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE;
-  const ry = cy + (n.y               - cy) * ROUTE_SCALE;
+  const {rx, ry} = _routeXY(n.x, n.y);
   const {sx,sy} = toScreen(rx, ry);
   // Round to whole pixels — non-integer translate causes subpixel anti-aliasing blur
   currentZoomTx    = Math.round(window.innerWidth/2  - sx*scale);
@@ -6120,7 +6119,7 @@ function zoomToNode(n, scale) {
 function zoomOut() {
   // Frame just the used playing area (Rio → Nagasaki) rather than the whole empty map.
   const cx = MAP_W/2, cy = MAP_H/2;
-  const adj = (x,y) => ({ x: cx + (x + ROUTE_X_OFFSET - cx)*ROUTE_SCALE, y: cy + (y - cy)*ROUTE_SCALE });
+  const adj = (x,y) => { const _r = _routeXY(x,y); return { x:_r.rx, y:_r.ry }; };
   const a = adj(USED_AREA.x0, USED_AREA.y0), b = adj(USED_AREA.x1, USED_AREA.y1);
   const p0 = toScreen(a.x, a.y), p1 = toScreen(b.x, b.y);
   const bx0 = Math.min(p0.sx,p1.sx), bx1 = Math.max(p0.sx,p1.sx);
@@ -6180,8 +6179,7 @@ function renderShips() {
 
     const node = route.nodes[s.nodeIndex];
     const cx = MAP_W / 2, cy = MAP_H / 2;
-    const rx = cx + (node.x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE;
-    const ry = cy + (node.y               - cy) * ROUTE_SCALE;
+    const {rx, ry} = _routeXY(node.x, node.y);
     const {sx,sy} = toScreen(rx, ry);
     const off = SHIP_OFFSETS[idx % SHIP_OFFSETS.length];
     img.style.left = (sx + off.x) + 'px';
@@ -6209,8 +6207,7 @@ function renderPlayerPawns() {
     if (!node || node.x === undefined) return;
 
     const cx = MAP_W / 2, cy = MAP_H / 2;
-    const rx = cx + (node.x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE;
-    const ry = cy + (node.y               - cy) * ROUTE_SCALE;
+    const {rx, ry} = _routeXY(node.x, node.y);
     const { sx, sy } = toScreen(rx, ry);
     const ox = i === 0 ? -4 : 4;
 
