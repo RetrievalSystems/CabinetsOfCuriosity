@@ -104,11 +104,11 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 }
 
 #port-dots {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  position: fixed; inset: 0;
+  transform-origin: 0 0;         /* match #map-viewport so the mirrored transform aligns */
+  transition: transform 0.7s cubic-bezier(0.4,0,0.2,1);
   pointer-events: none;          /* layer is transparent; only the dots catch input */
-  z-index: 5;                    /* above routes, below ships/storms */
+  z-index: 5;                    /* above the click-overlay (z2), below side panels (z30) */
 }
 #port-dots .port-hotspot { pointer-events: auto; }
 #map-svg {
@@ -2289,12 +2289,12 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
     <img id="storm-overlay" src="" alt="" style="display:none">
     <svg id="map-svg"></svg>
     <div id="storm-tokens"></div>
-    <div id="port-dots"></div>
     <div id="ship-tokens"></div>
   </div>
 </div>
 <!-- Fixed overlay catches all map clicks and routes to correct port -->
 <div id="map-click-overlay"></div>
+<div id="port-dots"></div>
 <div id="sell-mode-banner"><button onclick="captainsOfferCancel()" title="Cancel offer" style="background:transparent;border:1px solid rgba(212,168,85,0.4);color:rgba(212,168,85,0.7);font-size:0.8rem;padding:4px 10px;cursor:pointer;border-radius:2px;font-family:'Cinzel',serif;">✕</button></div>
 
 <!-- ══ PLAYER 1 PANEL — top left ══ -->
@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-29f · dots-locked-to-board';
+const COC_BUILD = '2026-06-30a · curved-routes-shorter-legs';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -3365,14 +3365,14 @@ const ROUTES = {
     nodes: [
       {x:837,  y:290, name:'London',             isPort:true, portImg:'images/portlon.jpeg'},  // 0
       {x:766,  y:323, name:'English Channel'},                                                     // 1
-      {x:729,  y:380, name:'Bay of Biscay'},                                                       // 2
+                                                             // 2
       {x:717,  y:441, name:'West African Coast'},                                                   // 3
       {x:749,  y:539, name:'Southern Atlantic'},                                                    // 4
       {x:867,  y:612, name:'Cape of Good Hope',  isPort:true, portImg:'images/portcape.jpeg'},    // 5
       {x:938,  y:635, name:'Mozambique Channel'},                                                   // 6
       {x:1020, y:612, name:'Arabian Sea'},                                                          // 7
       {x:1057, y:518, name:'Indian Ocean'},                                                         // 8
-      {x:1059, y:469, name:'Malabar Coast'},                                                        // 9
+                                                              // 9
       {x:1069, y:428, name:'Bombay',             isPort:true, portImg:'images/portbom.jpeg'},  // 10
       {x:1082, y:471, name:'Strait Approaches'},                                                    // 11
       {x:1122, y:489, name:'South China Sea'},                                                      // 12
@@ -3394,11 +3394,11 @@ const ROUTES = {
       {x: 844, y:286, name:'Amsterdam',       isPort:true, portImg:'images/portams.jpeg'},  // 0
       {x: 782, y:309, name:''},                                                              // 1
       {x: 731, y:386, name:''},                                                              // 2
-      {x: 734, y:511, name:''},                                                              // 3
+                                                                    // 3
       {x: 791, y:579, name:''},                                                              // 4
       {x: 875, y:600, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'}, // 5
       {x: 918, y:634, name:''},                                                              // 6
-      {x:1060, y:630, name:''},                                                              // 7
+                                                                    // 7
       {x:1152, y:630, name:''},                                                              // 8
       {x:1177, y:580, name:''},                                                              // 9
       {x:1177, y:524, name:''},                                                              // 10
@@ -5611,6 +5611,22 @@ function toScreen(x, y) {
 //  Route lines only draw when a ship is on them.
 //  Port click areas deduplicated by name.
 // ════════════════════════════════════════════════
+// Draw a route as a smooth curve through its nodes (Catmull-Rom -> beziers) so legs
+// still bend around Africa etc. even with fewer waypoints. pts = [{sx,sy}, ...].
+function _smoothRoutePath(pts){
+  if(!pts.length) return '';
+  if(pts.length===1) return `M${pts[0].sx},${pts[0].sy}`;
+  if(pts.length===2) return `M${pts[0].sx},${pts[0].sy} L${pts[1].sx},${pts[1].sy}`;
+  let d = `M${pts[0].sx},${pts[0].sy}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    const c1x=p1.sx+(p2.sx-p0.sx)/6, c1y=p1.sy+(p2.sy-p0.sy)/6;
+    const c2x=p2.sx-(p3.sx-p1.sx)/6, c2y=p2.sy-(p3.sy-p1.sy)/6;
+    d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2.sx},${p2.sy}`;
+  }
+  return d;
+}
+
 function buildSVG() {
   const svg = document.getElementById('map-svg');
   // Update elements IN PLACE rather than clearing — prevents compositor blank-rasterise flash
@@ -5636,24 +5652,25 @@ function buildSVG() {
     const pts = r.nodes.map(n => {
       const rx = cx + (n.x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE;
       const ry = cy + (n.y               - cy) * ROUTE_SCALE;
-      const {sx,sy} = toScreen(rx, ry);
-      return `${sx},${sy}`;
-    }).join(' ');
+      return toScreen(rx, ry);
+    });
+    const _dpath = _smoothRoutePath(pts);
 
     // Polyline — update or create
     const polyKey = `poly_${r.id}`;
     let poly = pool[polyKey];
     if (!poly) {
-      poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      poly = document.createElementNS('http://www.w3.org/2000/svg','path');
       poly.setAttribute('stroke-width','3');
       poly.setAttribute('stroke-dasharray','9 6');
       poly.setAttribute('fill','none');
       poly.setAttribute('stroke-linecap','round');
+      poly.setAttribute('stroke-linejoin','round');
       poly.setAttribute('pointer-events','none');
       poly.dataset.key = polyKey;
       svg.appendChild(poly);
     }
-    poly.setAttribute('points', pts);
+    poly.setAttribute('d', _dpath);
     poly.setAttribute('stroke', r.lineColor || 'rgba(200,120,30,0.55)');
     poly.setAttribute('opacity', routeOpacity);
     delete poly.dataset.stale;
@@ -5815,19 +5832,25 @@ const PORT_DOT_NUDGE = {
   'Madras':            { x:9,  y:-9 },   // north-east
 };
 
+// Glue the dot layer to the board by mirroring the map's transform onto it.
+function _syncPortDots(){ const pd=document.getElementById('port-dots'), vp=document.getElementById('map-viewport'); if(pd&&vp) pd.style.transform = vp.style.transform; }
+const DOT_GLOBAL_Y = 10;  // push ALL dots down onto the drawn ports (route nodes sit a touch high)
+const DOT_SX = 0.96;      // shrink the dots' east-west spread ~4% around map centre — the routes'
+                          // 10% expansion overshoots the drawn ports more the further east you go
+
 function renderPortHotspots() {
-  // Dots live INSIDE #map-viewport in board coordinates, so the same CSS transform that
-  // moves/zooms the map moves them too — locked to the board, no jump, no drift. A
-  // counter-scale keeps their on-screen size constant at any zoom.
+  // #port-dots sits ABOVE the map-click-overlay (so hover/clicks reach the dots) but mirrors
+  // the viewport transform, so it still rides the board — locked, no jump, no drift.
   const layer = document.getElementById('port-dots');
   if (!layer) return;
+  _syncPortDots();
   layer.innerHTML = '';
   const hcx = MAP_W / 2, hcy = MAP_H / 2;
   const inv = 1 / (currentZoomScale || 1);
   registeredPorts.forEach(p => {
     const _nu = PORT_DOT_NUDGE[p.name] || {x:0,y:0};
-    const rx = hcx + (p.x + _nu.x + ROUTE_X_OFFSET - hcx) * ROUTE_SCALE;
-    const ry = hcy + (p.y + _nu.y                  - hcy) * ROUTE_SCALE;
+    const rx = hcx + (p.x + _nu.x + ROUTE_X_OFFSET - hcx) * ROUTE_SCALE * DOT_SX;
+    const ry = hcy + (p.y + _nu.y + DOT_GLOBAL_Y   - hcy) * ROUTE_SCALE;
     const {sx, sy} = toScreen(rx, ry);          // board-space px — identical path to routes & ships
     const r = 22;                                // constant on-screen hit radius (after counter-scale)
     const div = document.createElement('div');
@@ -6085,6 +6108,7 @@ function zoomToNode(n, scale) {
   currentZoomTy    = Math.round(window.innerHeight/2 - sy*scale);
   currentZoomScale = scale;
   viewport.style.transform = `translate(${currentZoomTx}px,${currentZoomTy}px) scale(${currentZoomScale})`;
+  _syncPortDots();
   _zoomEndsAt = Date.now() + ZOOM_DURATION_MS;
   // NOTE: we used to snap transition:none and re-apply the transform here to force a
   // crisp re-rasterise. That made the compositor discard and repaint the whole zoomed
@@ -6108,6 +6132,7 @@ function zoomOut() {
   currentZoomTx = Math.round(window.innerWidth/2  - (bx0+bx1)/2 * scale);
   currentZoomTy = Math.round(window.innerHeight/2 - (by0+by1)/2 * scale);
   viewport.style.transform = `translate(${currentZoomTx}px,${currentZoomTy}px) scale(${scale})`;
+  _syncPortDots();
   _zoomEndsAt = Date.now() + ZOOM_DURATION_MS;
   requestAnimationFrame(renderPortHotspots);
 }
