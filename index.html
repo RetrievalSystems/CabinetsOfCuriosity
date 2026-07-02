@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-30c · coord-readout-on';
+const COC_BUILD = '2026-06-30e · ports-pinpointed-rio';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -5836,7 +5836,19 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
-const PORT_XY = {};  // exact drawn-port coords from the read-out; overrides _routeXY per port
+const PORT_XY = {   // exact drawn-port coords from the read-out; overrides _routeXY per port
+  'London':            { x:839,  y:271 },
+  'Amsterdam':         { x:854,  y:268 },
+  'Lisbon':            { x:787,  y:320 },
+  'Rio':               { x:507,  y:575 },
+  'Cape of Good Hope': { x:886,  y:613 },
+  'Bombay':            { x:1103, y:418 },
+  'Madras':            { x:1128, y:445 },
+  'Ceylon':            { x:1141, y:460 },
+  'Batavia':           { x:1238, y:505 },
+  'Canton':            { x:1263, y:395 },
+  'Nagasaki':          { x:1315, y:358 },
+};
 
 // Glue the dot layer to the board by mirroring the map's transform onto it.
 function _syncPortDots(){ const pd=document.getElementById('port-dots'), vp=document.getElementById('map-viewport'); if(pd&&vp) pd.style.transform = vp.style.transform; }
