@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-30b · unified-route-coords';
+const COC_BUILD = '2026-06-30c · coord-readout-on';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -5836,6 +5836,7 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
+const PORT_XY = {};  // exact drawn-port coords from the read-out; overrides _routeXY per port
 
 // Glue the dot layer to the board by mirroring the map's transform onto it.
 function _syncPortDots(){ const pd=document.getElementById('port-dots'), vp=document.getElementById('map-viewport'); if(pd&&vp) pd.style.transform = vp.style.transform; }
@@ -5851,7 +5852,8 @@ function renderPortHotspots() {
   const inv = 1 / (currentZoomScale || 1);
   registeredPorts.forEach(p => {
     const _nu = PORT_DOT_NUDGE[p.name] || {x:0,y:0};
-    const {rx, ry} = _routeXY(p.x + _nu.x, p.y + _nu.y);
+    const _ov = PORT_XY[p.name];
+    const {rx, ry} = _ov ? {rx:_ov.x, ry:_ov.y} : _routeXY(p.x + _nu.x, p.y + _nu.y);
     const {sx, sy} = toScreen(rx, ry);          // board-space px — identical path to routes & ships
     const r = 22;                                // constant on-screen hit radius (after counter-scale)
     const div = document.createElement('div');
@@ -11487,23 +11489,17 @@ window.addEventListener('load', () => {
   // ── Live coordinate display ────────────────────────────────────────────
   const _mapImg   = document.getElementById('map-img');
   const _coordDiv = document.getElementById('map-coords');
-  if (false && _mapImg && _coordDiv) {  // coordinate tracker disabled (dev tool)
-    const _gc = e => {
-      const r = _mapImg.getBoundingClientRect();
-      return { x: Math.round((e.clientX-r.left)/r.width*1456),
-               y: Math.round((e.clientY-r.top) /r.height*831) };
-    };
-    _mapImg.addEventListener('mousemove', e => {
-      const {x,y} = _gc(e);
-      _coordDiv.style.display = 'block';
-      _coordDiv.textContent   = `x:${x}  y:${y}`;
-    });
-    _mapImg.addEventListener('mouseleave', () => { _coordDiv.style.display='none'; });
-    _mapImg.addEventListener('click', e => {
-      const {x,y} = _gc(e); const s = `{x:${x}, y:${y}}`;
-      navigator.clipboard?.writeText(s);
-      _coordDiv.textContent = `✓ copied  ${s}`;
-      setTimeout(()=>{ _coordDiv.textContent=`x:${x}  y:${y}`; }, 1400);
+  if (_mapImg && _coordDiv) {   // coordinate read-out (dev): reports toScreen-input coords
+    let cd = document.getElementById('coord-readout');
+    if (!cd){ cd = document.createElement('div'); cd.id='coord-readout';
+      cd.style.cssText='position:fixed;top:8px;left:8px;z-index:99999;background:rgba(0,0,0,0.82);color:#ffd27f;font:14px monospace;padding:4px 8px;border-radius:4px;pointer-events:none;';
+      document.body.appendChild(cd); }
+    document.addEventListener('mousemove', e => {
+      const iW=_imgW||_mapImg.clientWidth, iH=_imgH||_mapImg.clientHeight;
+      const mA=MAP_W/MAP_H, bA=iW/iH; let rW,rH,oX,oY;
+      if(bA>mA){rH=iH;rW=iH*mA;oX=(iW-rW)/2;oY=0;} else {rW=iW;rH=iW/mA;oX=0;oY=(iH-rH)/2;}
+      const sx=(e.clientX-currentZoomTx)/currentZoomScale, sy=(e.clientY-currentZoomTy)/currentZoomScale;
+      cd.textContent = `x:${Math.round((sx-oX)*MAP_W/rW)}  y:${Math.round((sy-oY)*MAP_H/rH)}`;
     });
   }
 });
