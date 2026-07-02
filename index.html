@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-30e · ports-pinpointed-rio';
+const COC_BUILD = '2026-06-30f · bodleian-central-hover';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -7661,7 +7661,14 @@ function _hideBodPreview() {
   if (el) el.style.display = 'none';
 }
 function _wireBodHover(slot, cardImg) {
-  slot.onmouseenter = () => _showBodPreview(cardImg);
+  // Only pop the card forward near its centre; ease back out as the cursor moves toward the edges.
+  slot.onmousemove = (e) => {
+    const r = slot.getBoundingClientRect();
+    const dx = (e.clientX - (r.left + r.width /2)) / (r.width /2);   // 0 at centre, +/-1 at edge
+    const dy = (e.clientY - (r.top  + r.height/2)) / (r.height/2);
+    if (Math.hypot(dx, dy) < 0.5) _showBodPreview(cardImg);          // inner central zone
+    else _hideBodPreview();
+  };
   slot.onmouseleave = () => _hideBodPreview();
 }
 
