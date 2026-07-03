@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-30f · bodleian-central-hover';
+const COC_BUILD = '2026-06-30g · bodleian-smooth-zoom';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -7639,12 +7639,15 @@ function _bodPreviewEl() {
   if (!el) {
     el = document.createElement('div');
     el.id = 'bod-preview';
-    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:none;align-items:center;'
-      + 'justify-content:center;pointer-events:none;background:rgba(8,5,2,0.80);';
+    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:flex;opacity:0;align-items:center;'
+      + 'justify-content:center;pointer-events:none;background:rgba(8,5,2,0.80);'
+      + 'transition:opacity 0.2s ease;';
     const img = document.createElement('img');
     img.id = 'bod-preview-img';
     img.style.cssText = 'max-height:90vh;max-width:74vw;object-fit:contain;border-radius:8px;'
-      + 'box-shadow:0 14px 54px rgba(0,0,0,0.72);border:1px solid rgba(212,168,85,0.45);';
+      + 'box-shadow:0 14px 54px rgba(0,0,0,0.72);border:1px solid rgba(212,168,85,0.45);'
+      + 'transform:scale(0.82);opacity:0;'
+      + 'transition:transform 0.26s cubic-bezier(0.2,0.8,0.3,1.04),opacity 0.2s ease;';
     el.appendChild(img);
     document.body.appendChild(el);
   }
@@ -7653,12 +7656,22 @@ function _bodPreviewEl() {
 function _showBodPreview(src) {
   if (!src || /img-card-back/.test(src)) return;   // never enlarge a face-down card
   const el = _bodPreviewEl();
-  el.querySelector('#bod-preview-img').src = src;
-  el.style.display = 'flex';
+  const img = el.querySelector('#bod-preview-img');
+  if (el.dataset.src !== src) { img.src = src; el.dataset.src = src; }
+  if (el.dataset.shown === '1') return;             // already open -> don't restart the grow
+  void el.offsetWidth;                              // commit hidden state so the transition runs
+  el.style.opacity = '1';
+  img.style.transform = 'scale(1)';
+  img.style.opacity = '1';
+  el.dataset.shown = '1';
 }
 function _hideBodPreview() {
   const el = document.getElementById('bod-preview');
-  if (el) el.style.display = 'none';
+  if (!el || el.dataset.shown === '0') return;
+  const img = el.querySelector('#bod-preview-img');
+  el.style.opacity = '0';
+  if (img) { img.style.transform = 'scale(0.82)'; img.style.opacity = '0'; }
+  el.dataset.shown = '0';
 }
 function _wireBodHover(slot, cardImg) {
   // Only pop the card forward near its centre; ease back out as the cursor moves toward the edges.
