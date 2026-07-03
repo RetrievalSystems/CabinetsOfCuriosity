@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-06-30h · redeploy';
+const COC_BUILD = '2026-07-01a · legs-restructured';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -3250,6 +3250,14 @@ function _routeXY(x, y){
     rx: cx + (x + ROUTE_X_OFFSET - cx) * ROUTE_SCALE * DOT_SX,
     ry: cy + (y + DOT_GLOBAL_Y   - cy) * ROUTE_SCALE - DOT_YSHEAR * (x - cx)
   };
+}
+// Resolve a node to render coords: pinned ports use PORT_XY; abs nodes are already in map
+// space (spotter coords); legacy waypoints still go through _routeXY. Keeps every line & ship
+// glued to the exact port pins.
+function _nodeXY(n){
+  if (n.isPort && PORT_XY[n.name]) return { rx:PORT_XY[n.name].x, ry:PORT_XY[n.name].y };
+  if (n.abs) return { rx:n.x, ry:n.y };
+  return _routeXY(n.x, n.y);
 }
 
 // ════════════════════════════════════════════════
@@ -3375,22 +3383,16 @@ const ROUTES = {
     nextRoute: 'bei_return',           // auto-switches here at end
     circuit:   ['bei','bei_return'],   // shown together in preview
     nodes: [
-      {x:837,  y:290, name:'London',             isPort:true, portImg:'images/portlon.jpeg'},  // 0
-      {x:766,  y:323, name:'English Channel'},                                                     // 1
-                                                             // 2
-      {x:717,  y:441, name:'West African Coast'},                                                   // 3
-      {x:749,  y:539, name:'Southern Atlantic'},                                                    // 4
-      {x:867,  y:612, name:'Cape of Good Hope',  isPort:true, portImg:'images/portcape.jpeg'},    // 5
-      {x:938,  y:635, name:'Mozambique Channel'},                                                   // 6
-      {x:1020, y:612, name:'Arabian Sea'},                                                          // 7
-      {x:1057, y:518, name:'Indian Ocean'},                                                         // 8
-                                                              // 9
-      {x:1069, y:428, name:'Bombay',             isPort:true, portImg:'images/portbom.jpeg'},  // 10
-      {x:1082, y:471, name:'Strait Approaches'},                                                    // 11
-      {x:1122, y:489, name:'South China Sea'},                                                      // 12
-      {x:1194, y:474, name:''},                                                                     // 13
-      {x:1225, y:441, name:''},                                                                     // 14
-      {x:1221, y:402, name:'Canton',             isPort:true, portImg:'images/portcan.jpeg'}   // 15
+      {x:839, y:271, name:'London', isPort:true, portImg:'images/portlon.jpeg', abs:true},
+      {x:855, y:385, abs:true},
+      {x:870, y:499, abs:true},
+      {x:886, y:613, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg', abs:true},
+      {x:958, y:548, abs:true},
+      {x:1031, y:483, abs:true},
+      {x:1103, y:418, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg', abs:true},
+      {x:1156, y:410, abs:true},
+      {x:1210, y:403, abs:true},
+      {x:1263, y:395, name:'Canton', isPort:true, portImg:'images/portcan.jpeg', abs:true}
     ]
   },
 
@@ -3403,23 +3405,17 @@ const ROUTES = {
     nextRoute: 'voc_return',
     circuit:   ['voc','voc_return'],
     nodes: [
-      {x: 844, y:286, name:'Amsterdam',       isPort:true, portImg:'images/portams.jpeg'},  // 0
-      {x: 782, y:309, name:''},                                                              // 1
-      {x: 731, y:386, name:''},                                                              // 2
-                                                                    // 3
-      {x: 791, y:579, name:''},                                                              // 4
-      {x: 875, y:600, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'}, // 5
-      {x: 918, y:634, name:''},                                                              // 6
-                                                                    // 7
-      {x:1152, y:630, name:''},                                                              // 8
-      {x:1177, y:580, name:''},                                                              // 9
-      {x:1177, y:524, name:''},                                                              // 10
-      {x:1193, y:499, name:'Batavia',          isPort:true, portImg:'images/portbat.jpeg'}, // 11
-      {x:1235, y:490, name:''},                                                              // 12
-      {x:1253, y:466, name:''},                                                              // 13
-      {x:1235, y:420, name:''},                                                              // 14
-      {x:1263, y:396, name:''},                                                              // 15
-      {x:1264, y:367, name:'Nagasaki',         isPort:true, portImg:'images/portnag.jpeg'}, // 16
+      {x:854, y:268, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg', abs:true},
+      {x:862, y:354, abs:true},
+      {x:870, y:440, abs:true},
+      {x:878, y:527, abs:true},
+      {x:886, y:613, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg', abs:true},
+      {x:1003, y:577, abs:true},
+      {x:1121, y:541, abs:true},
+      {x:1238, y:505, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg', abs:true},
+      {x:1264, y:456, abs:true},
+      {x:1289, y:407, abs:true},
+      {x:1315, y:358, name:'Nagasaki', isPort:true, portImg:'images/portnag.jpeg', abs:true}
     ]
   },
 
@@ -3432,22 +3428,17 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['voc','voc_return'],
     nodes: [
-      {x:1264, y:367, name:'Nagasaki',         isPort:true, portImg:'images/portnag.jpeg'}, // 0
-      {x:1277, y:402, name:''},                                                              // 1
-      {x:1232, y:404, name:''},                                                              // 2
-      {x:1220, y:446, name:''},                                                              // 3
-      {x:1185, y:473, name:''},                                                              // 4
-      {x:1148, y:449, name:''},                                                              // 5
-      {x:1105, y:461, name:'Ceylon',           isPort:true, portImg:'images/portcey.jpeg'}, // 6
-      {x:1066, y:521, name:''},                                                              // 7
-      {x:1019, y:588, name:''},                                                              // 8
-      {x: 955, y:602, name:''},                                                              // 9
-      {x: 876, y:601, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'}, // 10
-      {x: 793, y:579, name:''},                                                              // 11
-      {x: 732, y:511, name:''},                                                              // 12
-      {x: 735, y:382, name:''},                                                              // 13
-      {x: 781, y:306, name:''},                                                              // 14
-      {x: 843, y:287, name:'Amsterdam',        isPort:true, portImg:'images/portams.jpeg'}, // 15
+      {x:1315, y:358, name:'Nagasaki', isPort:true, portImg:'images/portnag.jpeg', abs:true},
+      {x:1257, y:392, abs:true},
+      {x:1199, y:426, abs:true},
+      {x:1141, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg', abs:true},
+      {x:1056, y:511, abs:true},
+      {x:971, y:562, abs:true},
+      {x:886, y:613, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg', abs:true},
+      {x:878, y:527, abs:true},
+      {x:870, y:440, abs:true},
+      {x:862, y:354, abs:true},
+      {x:854, y:268, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg', abs:true}
     ]
   },
 
@@ -3473,20 +3464,16 @@ const ROUTES = {
     nextRoute: null,                   // circuit ends back in London
     circuit:   ['bei','bei_return'],
     nodes: [
-      {x:1213, y:399, name:'Canton',             isPort:true, portImg:'images/portcan.jpeg'},  // 0
-      {x:1213, y:449, name:''},                                                                     // 1
-      {x:1191, y:461, name:''},                                                                     // 2
-      {x:1153, y:456, name:''},                                                                     // 3
-      {x:1090, y:447, name:'Madras',             isPort:true, portImg:'images/portmad.jpeg'},  // 4
-      {x:1093, y:501, name:''},                                                                     // 5
-      {x:1060, y:552, name:''},                                                                     // 6
-      {x:1015, y:633, name:''},                                                                     // 7
-      {x:868,  y:615, name:'Cape of Good Hope',  isPort:true, portImg:'images/portcape.jpeg'},    // 8
-      {x:745,  y:540, name:''},                                                                     // 9
-      {x:712,  y:441, name:''},                                                                     // 10
-      {x:724,  y:381, name:''},                                                                     // 11
-      {x:760,  y:324, name:''},                                                                     // 12
-      {x:837,  y:290, name:'London',             isPort:true, portImg:'images/portlon.jpeg'},  // 13
+      {x:1263, y:395, name:'Canton', isPort:true, portImg:'images/portcan.jpeg', abs:true},
+      {x:1218, y:412, abs:true},
+      {x:1173, y:428, abs:true},
+      {x:1128, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg', abs:true},
+      {x:1047, y:501, abs:true},
+      {x:967, y:557, abs:true},
+      {x:886, y:613, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg', abs:true},
+      {x:870, y:499, abs:true},
+      {x:855, y:385, abs:true},
+      {x:839, y:271, name:'London', isPort:true, portImg:'images/portlon.jpeg', abs:true}
     ]
   },
 
@@ -3699,9 +3686,8 @@ const ROUTES = {
     nextRoute: null,   // player chooses at Lisbon: atlantic_cont or stay
     circuit:   ['atlantic'],
     nodes: [
-      {x:837, y:297, name:'London',  isPort:true, portImg:'images/portlon.jpeg'}, // 0
-      {x:792, y:300, name:''},                                                     // 1
-      {x:781, y:330, name:'Lisbon',  isPort:true, portImg:'images/portlis.jpg'}, // 2
+      {x:839, y:271, name:'London', isPort:true, portImg:'images/portlon.jpeg', abs:true},
+      {x:787, y:320, name:'Lisbon', isPort:true, portImg:'images/portlis.jpg', abs:true}
     ],
   },
 
@@ -3714,14 +3700,10 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['atlantic_cont'],
     nodes: [
-      {x:781, y:332, name:'Lisbon',  isPort:true, portImg:'images/portlis.jpg'}, // 0
-      {x:743, y:363, name:''},                                                     // 1
-      {x:718, y:430, name:''},                                                     // 2
-      {x:686, y:467, name:''},                                                     // 3
-      {x:651, y:498, name:''},                                                     // 4
-      {x:612, y:524, name:''},                                                     // 5
-      {x:576, y:540, name:''},                                                     // 6
-      {x:529, y:563, name:'Rio',     isPort:true, portImg:'images/portbat.jpeg'}, // 7
+      {x:787, y:320, name:'Lisbon', isPort:true, portImg:'images/portlis.jpg', abs:true},
+      {x:694, y:405, abs:true},
+      {x:600, y:490, abs:true},
+      {x:507, y:575, name:'Rio', isPort:true, portImg:'images/portbat.jpeg', abs:true}
     ],
   },
 
@@ -3734,14 +3716,10 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['atlantic_cont_return'],
     nodes: [
-      {x:529, y:563, name:'Rio',    isPort:true, portImg:'images/portbat.jpeg'}, // 0
-      {x:576, y:540, name:''},                                                   // 1
-      {x:612, y:524, name:''},                                                   // 2
-      {x:651, y:498, name:''},                                                   // 3
-      {x:686, y:467, name:''},                                                   // 4
-      {x:718, y:430, name:''},                                                   // 5
-      {x:743, y:363, name:''},                                                   // 6
-      {x:781, y:330, name:'Lisbon', isPort:true, portImg:'images/portlis.jpg'}, // 7
+      {x:507, y:575, name:'Rio', isPort:true, portImg:'images/portbat.jpeg', abs:true},
+      {x:600, y:490, abs:true},
+      {x:694, y:405, abs:true},
+      {x:787, y:320, name:'Lisbon', isPort:true, portImg:'images/portlis.jpg', abs:true}
     ],
   },
 
@@ -3754,9 +3732,8 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['atlantic_return'],
     nodes: [
-      {x:781, y:332, name:'Lisbon', isPort:true, portImg:'images/portlis.jpg'}, // 0
-      {x:792, y:300, name:''},                                                   // 1
-      {x:837, y:297, name:'London', isPort:true, portImg:'images/portlon.jpeg'}, // 2
+      {x:787, y:320, name:'Lisbon', isPort:true, portImg:'images/portlis.jpg', abs:true},
+      {x:839, y:271, name:'London', isPort:true, portImg:'images/portlon.jpeg', abs:true}
     ],
   },
 
@@ -5662,7 +5639,7 @@ function buildSVG() {
     const routeOpacity = (hasPassenger || inPreview) ? 1 : 0;
 
     const pts = r.nodes.map(n => {
-      const {rx, ry} = _routeXY(n.x, n.y);
+      const {rx, ry} = _nodeXY(n);
       return toScreen(rx, ry);
     });
     const _dpath = _smoothRoutePath(pts);
@@ -5690,7 +5667,7 @@ function buildSVG() {
     let dotIdx = 0;
     r.nodes.forEach(n => {
       if (n.isPort) return;
-      const {rx, ry} = _routeXY(n.x, n.y);
+      const {rx, ry} = _nodeXY(n);
       const {sx,sy} = toScreen(rx, ry);
       const dotKey = `dot_${r.id}_${dotIdx}`;
       let d = pool[dotKey];
@@ -5918,7 +5895,7 @@ function _renderPawnHit() {
   const p = cp(); if (!p) return;
   const node = playerNode(p); if (!node || node.x === undefined) return;
   const hcx = MAP_W / 2, hcy = MAP_H / 2;
-  const {rx, ry} = _routeXY(node.x, node.y);
+  const {rx, ry} = _nodeXY(node);
   const { sx, sy } = toScreen(rx, ry);
   const ox = (currentPIdx === 0 ? -4 : 4);
   // pawn is drawn centred at (sx+ox) with its top near sy-10 → visual centre ~ sy-4
@@ -6114,7 +6091,7 @@ function safeZoomDelay() {
 function zoomToNode(n, scale) {
   // Apply same coordinate adjustment as route lines & ships
   const cx = MAP_W / 2, cy = MAP_H / 2;
-  const {rx, ry} = _routeXY(n.x, n.y);
+  const {rx, ry} = _nodeXY(n);
   const {sx,sy} = toScreen(rx, ry);
   // Round to whole pixels — non-integer translate causes subpixel anti-aliasing blur
   currentZoomTx    = Math.round(window.innerWidth/2  - sx*scale);
@@ -6193,7 +6170,7 @@ function renderShips() {
 
     const node = route.nodes[s.nodeIndex];
     const cx = MAP_W / 2, cy = MAP_H / 2;
-    const {rx, ry} = _routeXY(node.x, node.y);
+    const {rx, ry} = _nodeXY(node);
     const {sx,sy} = toScreen(rx, ry);
     const off = SHIP_OFFSETS[idx % SHIP_OFFSETS.length];
     img.style.left = (sx + off.x) + 'px';
@@ -6221,7 +6198,7 @@ function renderPlayerPawns() {
     if (!node || node.x === undefined) return;
 
     const cx = MAP_W / 2, cy = MAP_H / 2;
-    const {rx, ry} = _routeXY(node.x, node.y);
+    const {rx, ry} = _nodeXY(node);
     const { sx, sy } = toScreen(rx, ry);
     const ox = i === 0 ? -4 : 4;
 
