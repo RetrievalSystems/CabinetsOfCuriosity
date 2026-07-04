@@ -3191,7 +3191,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <script>
 // ── Build stamp — open the browser console to confirm which version is actually live ──
-const COC_BUILD = '2026-07-01b · legs-at-sea';
+const COC_BUILD = '2026-07-01e · itemscore-exact-match';
 console.log('%c CABINETS OF CURIOSITY — build: ' + COC_BUILD + ' ',
   'background:#3a1e08;color:#f0d878;font-size:13px;padding:3px 8px;border-radius:3px;');
 
@@ -7689,6 +7689,8 @@ function openBodleianPort() {
   const area  = document.getElementById('bodleian-select-area');
   if (!area) return;
   const slots = area.querySelectorAll('.bodleian-card-slot');
+  _hideBodPreview();                          // no leftover zoom from a previous visit
+  const _bp = document.getElementById('bod-preview'); if (_bp) _bp.dataset.src = '';
 
   const _firstShow = !_bodleianShown;
   area.style.display = 'flex';
@@ -7708,7 +7710,7 @@ function openBodleianPort() {
     } else {
       // Face-down — first click reveals all three and spends the invitation once
       if (img) { img.style.transition = 'none'; img.style.opacity = '1'; img.src = 'images/img-card-back.jpg'; }
-      slot.onmouseenter = null; slot.onmouseleave = null;
+      slot.onmouseenter = null; slot.onmouseleave = null; slot.onmousemove = null;
       slot.onclick = () => {
         const v = _bodleianVisits[currentPIdx];
         if (!v || v.revealed) return;
@@ -11748,7 +11750,7 @@ const ITEM_SCORES = {
   'shellnautpeeled':      { w:6,  c:7,  s:5,  a:8,  total:26, label:'Nautilus — Peeled',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'europe'  },
   'shellnaut':            { w:6,  c:8,  s:5,  a:6,  total:25, label:'Raw Nautilus Shell',
-    itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'asia'   },
+    itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'oceania'   },
   'scrimshaw':            { w:4,  c:6,  s:7,  a:5,  total:22, label:'Whale Tooth Scrimshaw',
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'atsea'   },
   'ceylonjar':            { w:5,  c:5,  s:4,  a:4,  total:18, label:'Kandyan Painted Jar',
@@ -11756,7 +11758,7 @@ const ITEM_SCORES = {
   'ceylonwaterpot':       { w:7,  c:6,  s:4,  a:5,  total:22, label:'Engraved Brass Kettle',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
   'bataviabox':           { w:8,  c:7,  s:5,  a:6,  total:26, label:'Filigree Silver Casket',
-    itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
+    itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'oceania'    },
   'telescope':            { w:3,  c:3,  s:1,  a:3,  total:10, label:'Telescope',
     itemType:'instrument',shellFamily:null,    mineralType:null,   region:'europe'  },
   'cinnabar':             { w:7,  c:4,  s:3,  a:4,  total:18, label:'Cinnabar Box',
@@ -11898,7 +11900,7 @@ const BONUS_DEFS = [
     desc: 'Items from all 6 world regions',
     test(items) {
       const regions = new Set(items.map(i => i.sc.region).filter(Boolean));
-      const ALL_REGIONS = ['europe','asia','americas','africa','atsea','oceania'];
+      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))];
       // Allow match with at least 5 of 6 in case oceania items haven't been added yet
       // Actually strictly require all 6 per spec — designer can add oceania items
       return ALL_REGIONS.every(r => regions.has(r));
@@ -11998,10 +12000,14 @@ document.addEventListener('mouseout', e => {
 });
 function getItemScore(itemOrId) {
   const id = _normItemId(itemOrId);
-  for (const [key, sc] of Object.entries(ITEM_SCORES)) {
-    if (id === key || id.startsWith(key)) return sc;
+  if (ITEM_SCORES[id]) return ITEM_SCORES[id];           // exact id wins ('seafanpurple', 'shipinbottle'...)
+  let best = null, bestLen = -1;                          // else the LONGEST key that prefixes the id, so
+  for (const [key, sc] of Object.entries(ITEM_SCORES)) { // numbered variants ('mandrake1'->'mandrake') work
+    if (id.startsWith(key) && key.length > bestLen) {    // but 'seafanpurple' never collapses to 'seafan'
+      best = sc; bestLen = key.length;
+    }
   }
-  return null;
+  return best;
 }
 
 // ── Collect all unique scored items for a player ───────────────────────────
