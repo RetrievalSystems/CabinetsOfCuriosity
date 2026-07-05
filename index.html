@@ -11880,8 +11880,8 @@ const BONUS_DEFS = [
     test(items) {
       const shells = items.filter(i => i.sc.itemType === 'shell');
       const families = new Set(shells.map(i => i.sc.shellFamily).filter(Boolean));
-      // Need all 6 shell families: nautilus, cone, wentletrap, conch, murex, misc (Sea Shell)
-      const ALL_FAMILIES = ['nautilus','cone','wentletrap','conch','murex','misc'];
+      // Need all 6 shell families: nautilus, cone, wentletrap, conch, murex, violet (Violet Sea Snail)
+      const ALL_FAMILIES = ['nautilus','cone','wentletrap','conch','murex','violet'];
       return ALL_FAMILIES.every(f => families.has(f));
     },
   },
@@ -11944,7 +11944,7 @@ function itemScoreTotal(item) {
 }
 
 // ── Live bonus-set progress from the CURRENT player's placed cabinet items ──
-const _CONCH_SET  = ['nautilus','cone','wentletrap','conch','murex','misc'];
+const _CONCH_SET  = ['nautilus','cone','wentletrap','conch','murex','violet'];
 const _MIN_SET    = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore','agate'];
 const _REGION_SET = ['europe','asia','americas','africa','atsea','oceania'];
 const _CORAL_SET  = ['seafan','redcoral','braincoral'];
