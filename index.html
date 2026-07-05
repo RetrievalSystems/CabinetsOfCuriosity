@@ -8918,25 +8918,40 @@ const SEA_CARD_TEMPLATES = [
     log(`${p.name}: A ghost ship materialises from the fog!`);
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
-  // ── Pirates ×5 ──
-  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
-  // ── Atlantic Waterspout — kept: S, SW, SE, W ──
+  // ── Pirates ×25 ──
+  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  // ── Atlantic Waterspout — kept: S, SW, SE, W (doubled) ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
+  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
+  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
+  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
+  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
+  mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
   mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
-  // ── Atlantic Whirlpool — kept: N, NE, E, W ──
+  mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
+  // ── Atlantic Whirlpool — kept: N, NE, E, W (doubled) ──
+  mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
   mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
   mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
+  mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
+  mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
-  // ── Indian Ocean storm — cardinals only: S, W ──
+  mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
+  // ── Indian Ocean storm — cardinals only: S, W (doubled) ──
+  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
+  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
+  mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
   mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
+  mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
+  mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
   mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
 ];
 
@@ -9319,6 +9334,9 @@ function redeemInvite(hc, playerIdx) {
 // ════════════════════════════════════════════════
 const LAND_CARD_TEMPLATES = [
   // ── Reputation events ──
+  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
