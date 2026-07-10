@@ -5814,17 +5814,17 @@ const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
 const PORT_XY = {   // exact drawn-port coords from the read-out; overrides _routeXY per port
-  'London':            { x:839,  y:271 },
+  'London':            { x:834,  y:276 },
   'Amsterdam':         { x:854,  y:268 },
   'Lisbon':            { x:787,  y:320 },
   'Rio':               { x:507,  y:575 },
-  'Cape of Good Hope': { x:886,  y:613 },
+  'Cape of Good Hope': { x:881,  y:605 },
   'Bombay':            { x:1103, y:418 },
-  'Madras':            { x:1128, y:445 },
+  'Madras':            { x:1115, y:445 },
   'Ceylon':            { x:1141, y:460 },
   'Batavia':           { x:1238, y:505 },
   'Canton':            { x:1263, y:395 },
-  'Nagasaki':          { x:1315, y:358 },
+  'Nagasaki':          { x:1297, y:360 },
 };
 
 // Glue the dot layer to the board by mirroring the map's transform onto it.
@@ -5853,6 +5853,12 @@ function renderPortHotspots() {
       + `transform:translate(-50%,-50%) scale(${inv}); transform-origin:center center;`
       + 'border-radius:50%; cursor:pointer;';
     if (_isMainPort(p.name)) {
+      const ring = document.createElement('div');
+      ring.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        + 'width:23px;height:23px;border-radius:50%;pointer-events:none;'
+        + 'background:transparent;border:2.5px solid #5c3416;'
+        + 'box-shadow:0 1px 2px rgba(0,0,0,0.4);';
+      div.appendChild(ring);
       const dot = document.createElement('div');
       dot.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
         + 'width:15px;height:15px;border-radius:50%;pointer-events:none;'
