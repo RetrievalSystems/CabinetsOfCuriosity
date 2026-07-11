@@ -13940,12 +13940,17 @@ function chooseRival() { _enterCharSelect(2); }
     if (d.type === 'full_state') {
       if (window._stateRetryInterval) { clearInterval(window._stateRetryInterval); window._stateRetryInterval = null; }
       hideNetMsg();
+      _voyageReallyStarted = true;
       applyFullState(d.data);
     }
   };
 
   // ── turn lock — only the active player's browser can act ───────
+  // Never activates until the voyage has actually begun (both sides picked
+  // characters) — otherwise it'd sit on top of the intro/char-select screens
+  // and block clicks before there's even a game to lock.
   function updateTurnLock() {
+    if (!_voyageReallyStarted) return;
     let lock = document.getElementById('mp-turnlock');
     const myTurn = currentPIdx === myPlayerIdx;
     if (!lock) {
@@ -13971,6 +13976,7 @@ function chooseRival() { _enterCharSelect(2); }
 
   // ── poll for local changes on my turn, broadcast when something moved ──
   setInterval(() => {
+    if (!_voyageReallyStarted) return;   // nothing to sync until the voyage begins
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     if (applyingRemote) return;
     if (typeof currentPIdx === 'undefined' || currentPIdx !== myPlayerIdx) { updateTurnLock(); return; }
