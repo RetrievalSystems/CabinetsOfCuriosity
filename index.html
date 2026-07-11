@@ -13637,5 +13637,356 @@ function chooseRival() { _enterCharSelect(2); }
 
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════
+     MULTIPLAYER — host/guest sync over coc-relay (Render)
+     URL params: ?room=NAME&role=host   or   ?role=guest
+     Same pattern as Potions & Pitchforks: dumb relay server, one browser's
+     game engine is the "live" one, both sides mirror full state after
+     every turn. Only the player whose turn it is can act; the other
+     browser is locked with an overlay until state flips back to them.
+     ══════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  const qs   = new URLSearchParams(window.location.search);
+  const mpActive = qs.has('role');       // only behave as networked play if the URL says so
+  const room = qs.get('room') || 'default';
+  const role = qs.get('role') || 'host';
+  const isHost = role === 'host';
+  const myPlayerIdx = isHost ? 0 : 1;
+  window._mpActive = mpActive;
+  window._mpRoom = room;
+  window._mpRole = role;
+  window._myPlayerIdx = myPlayerIdx;
+
+  if (!mpActive) return;   // plain local/solo play — none of the networking code below runs
+
+  let ws = null;
+  let reconnecting = false;
+  let applyingRemote = false;   // guard so applying incoming state doesn't re-trigger a broadcast
+  let lastSnapshot = '';
+
+  // ── connection ──────────────────────────────────────────────────
+  function connect() {
+    if (reconnecting) return;
+    reconnecting = true;
+    try {
+      ws = new WebSocket('wss://coc-relay.onrender.com');
+
+      ws.onopen = () => {
+        reconnecting = false;
+        ws.send(JSON.stringify({ type:'join_room', room, role }));
+        updateBadge(true);
+
+        setTimeout(() => {
+          if (isHost) {
+            setTimeout(() => { window.syncFullState(); }, 200);
+          } else {
+            window.syncAction('request_state', {});
+            let retries = 0;
+            const iv = setInterval(() => {
+              if (retries < 5) { window.syncAction('request_state', {}); retries++; }
+              else clearInterval(iv);
+            }, 2000);
+            window._stateRetryInterval = iv;
+          }
+        }, 500);
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.sender !== role && window.onSync) window.onSync(d);
+        } catch (err) { console.error('mp parse error', err); }
+      };
+
+      ws.onerror = () => updateBadge(false);
+
+      ws.onclose = () => {
+        updateBadge(false);
+        reconnecting = false;
+        setTimeout(connect, 2000);
+      };
+    } catch (e) {
+      console.error('mp connect error', e);
+      reconnecting = false;
+    }
+  }
+
+  function updateBadge(ok) {
+    let b = document.getElementById('mp-badge');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'mp-badge';
+      b.style.cssText = 'position:fixed;bottom:10px;right:10px;padding:6px 12px;'
+        + 'border-radius:6px;font:bold 12px Georgia, serif;z-index:999999;color:white;'
+        + 'box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;';
+      document.body.appendChild(b);
+    }
+    b.style.background = isHost ? 'rgba(250,204,21,0.92)' : 'rgba(96,165,250,0.92)';
+    b.textContent = (ok ? '🟢 ' : '🔴 ') + (isHost ? 'HOST' : 'GUEST') + ' · room ' + room;
+  }
+
+  window.syncAction = function(type, data) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type, data, room, sender: role }));
+    }
+  };
+
+  // ── networked character select ──────────────────────────────────
+  // Skips the Solo/Rivals picker entirely (always 2-player over the network),
+  // and each browser only ever shows its OWN portrait-pick screen — host is
+  // always red (screen 1), guest is always green (screen 2). Once both sides
+  // have chosen, the host runs the real game-init and its state broadcasts
+  // out to the guest via the normal full-state sync below.
+  const netChosen = { mineDone: false, theirsDone: false };
+  let _originalBeginVoyage = null;
+  let _voyageReallyStarted = false;
+
+  function showNetMsg(text) {
+    let el = document.getElementById('mp-netmsg');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'mp-netmsg';
+      el.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);'
+        + 'background:rgba(20,20,25,0.94);color:#f0dfc0;padding:22px 34px;border-radius:10px;'
+        + 'font:bold 18px Georgia, serif;box-shadow:0 6px 22px rgba(0,0,0,0.55);'
+        + 'z-index:999999;text-align:center;max-width:80vw;';
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.style.display = 'block';
+  }
+  function hideNetMsg() {
+    const el = document.getElementById('mp-netmsg');
+    if (el) el.style.display = 'none';
+  }
+
+  function hideOpponentHand() {
+    const oppHeld = document.getElementById(isHost ? 'held-p2' : 'held-p1');
+    if (oppHeld) oppHeld.style.display = 'none';
+  }
+
+  function setupNetworkedCharSelect() {
+    const ms = document.getElementById('mode-select-overlay');
+    if (ms) ms.remove();
+    initPlayers(2);
+    hideOpponentHand();
+    const cs = document.getElementById('char-select-overlay');
+    if (cs) cs.style.opacity = '1';
+    const s1 = document.getElementById('char-screen-1');
+    const s2 = document.getElementById('char-screen-2');
+    if (isHost) {
+      if (s2) s2.style.display = 'none';
+      if (s1) { s1.classList.remove('hidden'); s1.style.display = ''; s1.style.opacity = '1'; }
+    } else {
+      if (s1) s1.style.display = 'none';
+      if (s2) { s2.classList.remove('hidden'); s2.style.display = ''; s2.style.opacity = '1'; }
+    }
+  }
+
+  function localConfirm() {
+    const myScreenIdx = isHost ? 0 : 1;
+    if (!chosenMerchant[myScreenIdx]) {
+      const warn = document.getElementById('char-warning');
+      if (warn) warn.textContent = '— Choose a merchant to continue —';
+      return;
+    }
+    const warn = document.getElementById('char-warning');
+    if (warn) warn.textContent = '';
+
+    const nameEl = document.getElementById(isHost ? 'char-name-p1' : 'char-name-p2');
+    const myName = (nameEl && nameEl.value.trim()) || (isHost ? 'Player 1' : 'Player 2');
+    const cm = chosenMerchant[myScreenIdx];
+
+    window.syncAction('char_select', { idx: myScreenIdx, src: cm.src, bx: cm.bx, by: cm.by, mIdx: cm.idx, name: myName });
+
+    const myScreenEl = document.getElementById(isHost ? 'char-screen-1' : 'char-screen-2');
+    if (myScreenEl) { myScreenEl.style.pointerEvents = 'none'; myScreenEl.style.opacity = '0.4'; }
+
+    netChosen.mineDone = true;
+    showNetMsg(netChosen.theirsDone ? 'Starting the voyage…' : 'Waiting for the other merchant to choose…');
+    tryFinishSelect();
+  }
+
+  function tryFinishSelect() {
+    if (!netChosen.mineDone || !netChosen.theirsDone) return;
+    if (isHost) {
+      hideNetMsg();
+      _voyageReallyStarted = true;
+      _originalBeginVoyage();   // real, state-mutating init — sync loop broadcasts it right after
+    } else {
+      const overlay = document.getElementById('char-select-overlay');
+      if (overlay) overlay.remove();
+      const mapCover = document.getElementById('map-cover');
+      if (mapCover) { mapCover.style.opacity = '0'; setTimeout(() => mapCover.remove(), 600); }
+      try { buildSVG(); requestAnimationFrame(renderPortHotspots); } catch (e) { console.error('guest map init', e); }
+      showNetMsg('Waiting for the host to start the voyage…');
+      // guest doesn't run beginVoyage's state-mutating init — the first incoming
+      // full_state message will populate everything and hideNetMsg() below.
+    }
+  }
+
+  // Override the two buttons so, pre-voyage, they run the networked flow
+  // instead of the original single-screen pass-and-play sequence.
+  window.confirmPlayer1 = localConfirm;
+  _originalBeginVoyage = window.beginVoyage;
+  window.beginVoyage = function() {
+    if (!_voyageReallyStarted) { localConfirm(); return; }
+    _originalBeginVoyage();
+  };
+
+  document.addEventListener('DOMContentLoaded', setupNetworkedCharSelect);
+  if (document.readyState !== 'loading') setupNetworkedCharSelect();
+
+  // ── gather full state ───────────────────────────────────────────
+  function getFullState() {
+    return {
+      currentPIdx, roundNumber, turnsThisRound,
+      players:     JSON.parse(JSON.stringify(players)),
+      ships:       JSON.parse(JSON.stringify(ships)),
+      nextShipId,
+      stormState:  JSON.parse(JSON.stringify(stormState)),
+      pirateState: JSON.parse(JSON.stringify(pirateState)),
+      cabAllSlots: JSON.parse(JSON.stringify(cabAllSlots)),
+      seaDeckIndex, landDeckIndex, oppDeckIndex,
+      nagasakiVaseStock, nagasakiImariStock,
+      bataviaShellIdx, seafanStock, seafanIdx,
+      treeAgateHalves: { ...treeAgateHalves },
+      seashellStock, violetSnailStock, polyhedraStock,
+      ITEM_POOLS:  JSON.parse(JSON.stringify(ITEM_POOLS)),
+      boughtThisTurn: Array.from(boughtThisTurn),
+      catDrawn,
+      _bodleianPeeked: JSON.parse(JSON.stringify(_bodleianPeeked)),
+      _bodleianVisits: JSON.parse(JSON.stringify(_bodleianVisits)),
+      _bodleianShown,
+    };
+  }
+
+  // ── apply incoming state ────────────────────────────────────────
+  function applyFullState(s) {
+    applyingRemote = true;
+    try {
+      currentPIdx = s.currentPIdx; roundNumber = s.roundNumber; turnsThisRound = s.turnsThisRound;
+
+      players.length = 0; s.players.forEach(p => players.push(p));
+      ships.length = 0; s.ships.forEach(sh => ships.push(sh));
+      nextShipId = s.nextShipId;
+
+      Object.keys(stormState).forEach(k => Object.assign(stormState[k], s.stormState[k]));
+      s.pirateState.forEach((ps, i) => { if (pirateState[i]) Object.assign(pirateState[i], ps); });
+      Object.keys(s.cabAllSlots).forEach(k => { cabAllSlots[k] = s.cabAllSlots[k]; });
+
+      seaDeckIndex = s.seaDeckIndex; landDeckIndex = s.landDeckIndex; oppDeckIndex = s.oppDeckIndex;
+      nagasakiVaseStock = s.nagasakiVaseStock; nagasakiImariStock = s.nagasakiImariStock;
+      bataviaShellIdx = s.bataviaShellIdx; seafanStock = s.seafanStock; seafanIdx = s.seafanIdx;
+      Object.assign(treeAgateHalves, s.treeAgateHalves);
+      seashellStock = s.seashellStock; violetSnailStock = s.violetSnailStock; polyhedraStock = s.polyhedraStock;
+
+      Object.keys(ITEM_POOLS).forEach(k => delete ITEM_POOLS[k]);
+      Object.assign(ITEM_POOLS, s.ITEM_POOLS);
+
+      boughtThisTurn = new Set(s.boughtThisTurn);
+      catDrawn = s.catDrawn;
+
+      _bodleianPeeked.length = 0; s._bodleianPeeked.forEach(x => _bodleianPeeked.push(x));
+      Object.keys(_bodleianVisits).forEach(k => delete _bodleianVisits[k]);
+      Object.assign(_bodleianVisits, s._bodleianVisits);
+      _bodleianShown = s._bodleianShown;
+
+      refreshWholeUI();
+    } catch (e) {
+      console.error('applyFullState failed', e);
+    }
+    applyingRemote = false;
+  }
+
+  function refreshWholeUI() {
+    try { renderShips(); } catch (e) {}
+    try { renderPlayerPawns(); } catch (e) {}
+    try { renderStormTokens(); } catch (e) {}
+    try { renderPortHotspots(); } catch (e) {}
+    try { refreshAllHP(); } catch (e) {}
+    try { players.forEach((_, i) => { renderHeldCards(i); renderRetainedCards(i); }); } catch (e) {}
+    try {
+      const ov = document.getElementById('cab-overlay');
+      if (ov && ov.classList.contains('open')) {
+        CAB_SLOT_DEFS.forEach(def => cabRenderCell(def));
+        cabRefreshInventory(cabActivePIdx);
+        cabRefreshStorage();
+      }
+    } catch (e) {}
+    updateTurnLock();
+  }
+
+  window.syncFullState = function() {
+    window.syncAction('full_state', getFullState());
+  };
+
+  window.onSync = function(d) {
+    if (d.type === 'char_select') {
+      const idx = d.data.idx;
+      chosenMerchant[idx] = { src: d.data.src, bx: d.data.bx, by: d.data.by, idx: d.data.mIdx };
+      const nameInput = document.getElementById(idx === 0 ? 'char-name-p1' : 'char-name-p2');
+      if (nameInput) nameInput.value = d.data.name;
+      netChosen.theirsDone = true;
+      if (netChosen.mineDone) showNetMsg('Starting the voyage…');
+      tryFinishSelect();
+      return;
+    }
+    if (d.type === 'request_state') {
+      if (isHost) window.syncFullState();
+      return;
+    }
+    if (d.type === 'full_state') {
+      if (window._stateRetryInterval) { clearInterval(window._stateRetryInterval); window._stateRetryInterval = null; }
+      hideNetMsg();
+      applyFullState(d.data);
+    }
+  };
+
+  // ── turn lock — only the active player's browser can act ───────
+  function updateTurnLock() {
+    let lock = document.getElementById('mp-turnlock');
+    const myTurn = currentPIdx === myPlayerIdx;
+    if (!lock) {
+      lock = document.createElement('div');
+      lock.id = 'mp-turnlock';
+      lock.style.cssText = 'position:fixed;inset:0;z-index:999998;display:none;'
+        + 'background:rgba(10,10,15,0.28);';
+      const msg = document.createElement('div');
+      msg.id = 'mp-turnlock-msg';
+      msg.style.cssText = 'position:absolute;top:16px;left:50%;transform:translateX(-50%);'
+        + 'background:rgba(20,20,25,0.92);color:#f0dfc0;padding:10px 20px;border-radius:8px;'
+        + 'font:bold 15px Georgia, serif;box-shadow:0 4px 14px rgba(0,0,0,0.5);white-space:nowrap;';
+      lock.appendChild(msg);
+      document.body.appendChild(lock);
+    }
+    lock.style.display = myTurn ? 'none' : 'block';
+    const msg = document.getElementById('mp-turnlock-msg');
+    if (msg && !myTurn) {
+      const oppName = (players[currentPIdx] && players[currentPIdx].name) || 'your opponent';
+      msg.textContent = '⏳ Waiting for ' + oppName + '\u2019s move…';
+    }
+  }
+
+  // ── poll for local changes on my turn, broadcast when something moved ──
+  setInterval(() => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (applyingRemote) return;
+    if (typeof currentPIdx === 'undefined' || currentPIdx !== myPlayerIdx) { updateTurnLock(); return; }
+    let snap;
+    try { snap = JSON.stringify(getFullState()); } catch (e) { return; }
+    if (snap !== lastSnapshot) {
+      lastSnapshot = snap;
+      window.syncAction('full_state', JSON.parse(snap));
+    }
+    updateTurnLock();
+  }, 700);
+
+  function start() { updateTurnLock(); connect(); }
+  if (document.readyState !== 'loading') start();
+  else document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
 </body>
 </html>
