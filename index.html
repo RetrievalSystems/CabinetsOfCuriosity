@@ -13934,7 +13934,7 @@ function chooseRival() { _enterCharSelect(2); }
       return;
     }
     if (d.type === 'request_state') {
-      if (isHost) window.syncFullState();
+      if (isHost && _voyageReallyStarted) window.syncFullState();
       return;
     }
     if (d.type === 'full_state') {
