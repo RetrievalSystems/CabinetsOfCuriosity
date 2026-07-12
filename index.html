@@ -13942,6 +13942,7 @@ function chooseRival() { _enterCharSelect(2); }
       hideNetMsg();
       _voyageReallyStarted = true;
       applyFullState(d.data);
+      try { lastSnapshot = JSON.stringify(getFullState()); } catch (e) {}
     }
   };
 
@@ -13974,12 +13975,15 @@ function chooseRival() { _enterCharSelect(2); }
     }
   }
 
-  // ── poll for local changes on my turn, broadcast when something moved ──
+  // ── poll for local changes, broadcast whenever something moved ──
+  // (the turn-lock overlay already prevents the inactive side from mutating
+  // anything, so it's safe to always check — this also ensures the moment
+  // a turn passes actually gets sent, instead of being missed right at the
+  // boundary where "my turn" flips to "their turn".)
   setInterval(() => {
     if (!_voyageReallyStarted) return;   // nothing to sync until the voyage begins
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    if (applyingRemote) return;
-    if (typeof currentPIdx === 'undefined' || currentPIdx !== myPlayerIdx) { updateTurnLock(); return; }
+    if (applyingRemote) { updateTurnLock(); return; }
     let snap;
     try { snap = JSON.stringify(getFullState()); } catch (e) { return; }
     if (snap !== lastSnapshot) {
