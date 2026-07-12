@@ -13991,7 +13991,7 @@ function chooseRival() { _enterCharSelect(2); }
       window.syncAction('full_state', JSON.parse(snap));
     }
     updateTurnLock();
-  }, 700);
+  }, 250);
 
   function start() { updateTurnLock(); connect(); }
   if (document.readyState !== 'loading') start();
