@@ -6260,13 +6260,10 @@ function updateHUD() {
     updateRepMarker(i);
     updateInventory(i);
 
-    // Astrolabe only matters at sea — slide it off-screen on land, but never hide it
-    // mid pirate-battle even if the player happens to be docked at that moment.
+    // Astrolabe only matters at sea — slide it off-screen on land. (Pirate battles can
+    // only happen at sea in the first place, so there's no dock-mid-battle case to guard.)
     const astBay = document.getElementById(`ast-bay-p${i}`);
-    if (astBay) {
-      const inBattle = !!(pirateState[i] && pirateState[i].inBattle);
-      astBay.classList.toggle('ast-hidden', !playerAtSea(p) && !inBattle);
-    }
+    if (astBay) astBay.classList.toggle('ast-hidden', !playerAtSea(p));
   });
 
   const p   = cp();
