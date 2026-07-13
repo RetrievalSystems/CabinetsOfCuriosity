@@ -449,6 +449,26 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   z-index: 50 !important;
 }
 
+/* Singular-item cards going dead: three distinct moments, three distinct feels. */
+.card-rise-fade {
+  transition: transform 0.9s ease, opacity 0.9s ease !important;
+  transform: translateY(-90px) rotate(-6deg) !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.card-whip-down {
+  transition: transform 0.5s cubic-bezier(.5,-0.2,.9,.4), opacity 0.5s ease !important;
+  transform: translateY(220px) rotate(12deg) !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.card-fade-cold {
+  transition: opacity 0.9s ease, filter 0.9s ease !important;
+  opacity: 0 !important;
+  filter: grayscale(1) !important;
+  pointer-events: none;
+}
+
 .held-card img {
   width: 100%;
   height: 100%;
@@ -7139,6 +7159,11 @@ function buyPortItem(item) {
   // Block re-purchase this turn for ALL items (critical for pool items with placeholder images)
   boughtThisTurn.add(item.img);
 
+  // Genuinely one-of-a-kind items: sweep both hands for a now-dead card on this item.
+  if (item.hardLimit && item.reqCard) {
+    _sweepDeadSingularCards(c => c.img === item.reqCard, item.label);
+  }
+
   updateInventory(currentPIdx);
   updateHUD();
   populateBuyItems(currentPortName);
@@ -7280,6 +7305,7 @@ function buyDragonVase() {
   renderHeldCards(currentPIdx);
   updateHUD();
   log(`${p.name} acquires the Imperial Dragon Vase for 5 ingots!`);
+  _sweepDeadSingularCards(c => c.img && c.img.includes('op-dragonvaseworkshop'), 'Dragon Vase');
 }
 
 // ── Nagasaki wares: two porcelains, one of each per player per turn, 6 of each ──
@@ -7572,6 +7598,7 @@ function buyTourmaline() {
   document.getElementById('ratnapura-tourmaline-area').style.display = 'none';
   updateInventory(currentPIdx); renderHeldCards(currentPIdx); updateHUD();
   log(`${p.name} acquires a Rainbow Tourmaline cluster — 10 ingots.`);
+  _sweepDeadSingularCards(c => c.img && c.img.includes('op-tourmaline'), 'Rainbow Tourmaline');
 }
 
 function buyMoonstone() {
@@ -8163,6 +8190,7 @@ function buyRedCoral() {
   document.getElementById('goto-buy-area').style.display='none';
   updateInventory(currentPIdx); updateHUD();
   log(`${p.name} acquires the Precious Coral — an unbroken red branch — 12 ingots. The card is spent.`);
+  _sweepDeadSingularCards(c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), 'Precious Coral');
 }
 function returnNagasakiSkiff() {
   const p = cp();
@@ -9193,6 +9221,7 @@ function renderHeldCards(playerIdx) {
   cards.forEach((hc, i) => {
     const el = document.createElement('div');
     el.className = 'held-card';
+    el.dataset.cardId = hc.id;
     const offset = i * spread;
     const rot    = count > 1 ? (i - (count-1)/2) * 3 : 0;
     el.style.left      = offset + 'px';
@@ -9263,14 +9292,14 @@ function closeHeldDetail() {
 // ════════════════════════════════════════════════
 const OPPORTUNITY_CARDS = [
   // ── Amethyst geode ×2 — Minas Gerais, 8 ingots ──
-  ...Array(3).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
   // ── Dragon vase workshop ×3 — Hangzhou, 5 ingots ──
   ...Array(2).fill({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots' }),
   // ── Nuremberg model maker ×2 — Nuremberg, 5 ingots ──
   // Central Sierras apatite miner ×3 — one op card per crystal available
   ...Array(3).fill({ img:'images/op-apetite-miner.jpeg', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' }),
   // Nuremberg model maker ×3 — one per model, player gets random version on purchase
-  ...Array(4).fill({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
   // ── Lapidary ×3 — Amsterdam, variable pricing ──
   ...Array(3).fill({ img:'images/op-lapidary.jpeg',          label:'Lapidary — Nautilus Work', location:'Amsterdam',       price:1,  currency:'ingots', note:'Peeled 1 ingot / Bisected 3 ingots' }),
   // ── Silversmith ×2 — Delft, 4 ingots ──
@@ -9278,14 +9307,14 @@ const OPPORTUNITY_CARDS = [
   // ── Tourmaline ×1 — Ratnapura, 10 ingots ──
   ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
   // ── Batavia sea shells ×4 — Batavia, 3 coins each ──
-  ...Array(5).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
+  ...Array(4).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
-  ...Array(4).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
+  ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
   ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
-  ...Array(3).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
+  ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
   // ── Cambay mother-of-pearl casket ×1 — UNIQUE: the guild master's final, secret work ──
   ...Array(2).fill({ img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. Only one exists.' }),
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
@@ -9294,23 +9323,23 @@ const OPPORTUNITY_CARDS = [
   ...Array(4).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
   // ── Apatite ×3 — Central Sierras (single entry — duplicated above, remove) ──
   // ── Imperial Topaz ×1 — Minas Gerais, 12 ingots ──
-  ...Array(3).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
   ...Array(3).fill({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' }),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
-  { img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + telescope required' },
+  ...Array(2).fill({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + telescope required' }),
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
-  ...Array(4).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
   // ── Iron Ore ×3 — Baramahal, 3 coins ──
-  ...Array(4).fill({ img:'images/op-ironore.jpeg', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
+  ...Array(3).fill({ img:'images/op-ironore.jpeg', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
   // ── Netti Carver ×3 — Poonamallee, 6 ingots ──
   ...Array(3).fill({ img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' }),
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
   ...Array(4).fill({ img:'images/op-mandrake.jpeg', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' }),
   // ── Brain Coral x1 — False Bay, 3 ingots (a once-in-a-lifetime find) ──
-  { img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots' },
+  ...Array(2).fill({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots' }),
 ].map((c, i) => ({ ...c, _id: i }));
 
 let oppDeck      = [];
@@ -9320,6 +9349,54 @@ function buildOppDeck() {
   initItemPools(); // shuffle item version pools at game start
   oppDeck = shuffle([...OPPORTUNITY_CARDS]);
   oppDeckIndex = 0;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SINGULAR ITEMS — the truly one-of-a-kind treks (Vase, Casket, Coral,
+//  Tourmaline). Only these get the "your lead just went cold" treatment;
+//  everything else has exactly as many cards as items, so there's nothing
+//  to check. Each entry: a way to match the card, a way to read remaining
+//  stock, and a label for the log lines.
+// ══════════════════════════════════════════════════════════════════
+const SINGULAR_ITEMS = [
+  { match: c => c.img && c.img.includes('op-dragonvaseworkshop'), stock: () => dragonVaseStock, label: 'Dragon Vase' },
+  { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket' },
+  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Precious Coral' },
+  { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline' },
+  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
+  { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral' },
+];
+function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
+
+// Animate a specific held card out (by id), then actually remove it from the
+// player's hand once the animation's finished. animClass is one of the three
+// CSS classes above.
+function _animateDiscardHeldCard(playerIdx, cardId, animClass, logMsg) {
+  const hand = document.getElementById(`held-p${playerIdx + 1}`);
+  const el = hand && hand.querySelector(`[data-card-id="${cardId}"]`);
+  const duration = animClass === 'card-whip-down' ? 520 : 950;
+  if (el) el.classList.add(animClass);
+  if (logMsg) log(logMsg);
+  setTimeout(() => {
+    const p = players[playerIdx];
+    const idx = (p.heldCards || []).findIndex(hc => hc.id === cardId);
+    if (idx >= 0) p.heldCards.splice(idx, 1);
+    renderHeldCards(playerIdx);
+  }, el ? duration : 0);
+}
+
+// Call this right after ANY singular item is actually sold, to sweep both
+// players' hands for a now-dead card and discard it with a "rises and fades"
+// animation — the lead's gone cold, whoever's holding it hears about it.
+function _sweepDeadSingularCards(matchFn, itemLabel) {
+  players.forEach((p, pIdx) => {
+    (p.heldCards || []).forEach(hc => {
+      if (matchFn(hc)) {
+        _animateDiscardHeldCard(pIdx, hc.id, 'card-rise-fade',
+          `${p.name}'s lead on the ${itemLabel} has gone cold — another merchant got there first.`);
+      }
+    });
+  });
 }
 
 function drawOpportunityCard(playerIdx) {
@@ -9350,10 +9427,19 @@ function drawOpportunityCard(playerIdx) {
   const card = oppDeck.splice(drawIdx, 1)[0];
   oppDeckIndex = oppDeck.length ? (drawIdx % oppDeck.length) : 0;
 
-  // Add to player's held hand (face down)
+  // Singular items (Vase, Casket, Coral, Tourmaline) get checked at the moment of drawing —
+  // a careful player could plausibly know this already from watching the rival's cabinet,
+  // so there's no point pretending otherwise.
+  const singularInfo  = _singularInfoFor(card);
+  const alreadyHeld    = singularInfo && (players[playerIdx].heldCards||[]).some(hc => singularInfo.match(hc));
+  const alreadyGone    = singularInfo && singularInfo.stock() <= 0;
+
+  // Add to player's held hand (face down) — even the doomed draws below get shown
+  // briefly before they animate away, so the player actually sees what happened.
   players[playerIdx].heldCards = players[playerIdx].heldCards || [];
+  const newCardId = 'opp_' + card._id + '_' + Date.now();
   players[playerIdx].heldCards.push({
-    id:           'opp_' + card._id + '_' + Date.now(),
+    id:           newCardId,
     img:          card.img,
     faceUp:       false,
     type:         'opportunity',
@@ -9366,6 +9452,30 @@ function drawOpportunityCard(playerIdx) {
     redeemed:     false,
   });
   renderHeldCards(playerIdx);
+
+  if (alreadyGone) {
+    _animateDiscardHeldCard(playerIdx, newCardId, 'card-fade-cold',
+      `${players[playerIdx].name}: word was already stale — the ${singularInfo.label} is long gone.`);
+    return;
+  }
+  if (alreadyHeld) {
+    // Duplicate lead on a still-live singular item — set it aside for someone else to
+    // hear later, rather than let one player quietly sit on both copies of the rumour.
+    log(`${players[playerIdx].name} already knows this lead on the ${singularInfo.label} — sets it aside for someone else to hear.`);
+    setTimeout(() => {
+      const hand = document.getElementById(`held-p${playerIdx + 1}`);
+      const el = hand && hand.querySelector(`[data-card-id="${newCardId}"]`);
+      if (el) el.classList.add('card-whip-down');
+      setTimeout(() => {
+        const p = players[playerIdx];
+        const idx = (p.heldCards||[]).findIndex(hc => hc.id === newCardId);
+        if (idx >= 0) p.heldCards.splice(idx, 1);
+        oppDeck.push(card); // back to the very bottom of the deck
+        renderHeldCards(playerIdx);
+      }, 520);
+    }, 350);
+    return;
+  }
 
   const priceStr = card.price > 0
     ? `${card.price} silver ${card.currency}`
@@ -9818,6 +9928,8 @@ const ITEM_POOLS_ALL = {
   poonamallee_netti: ['images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png'],
   // Cambay casket — genuinely one of a kind, whoever's card gets there first wins it
   cambay_casket: ['images/inlaidbox.png'],
+  // White Cloud Mountain jade puzzle ball — same deal, only one carving exists
+  whitecloud_jadeball: ['images/jadeball.png'],
 };
 
 let ITEM_POOLS = {};   // runtime, depleted as items are sold
@@ -9844,7 +9956,7 @@ const PORT_ITEMS = {
   ],
   'False Bay': [
     { img:'images/braincoral.png', label:'Brain Coral', price:3, currency:'ingots',
-      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', note:'A once-in-a-lifetime find' },
+      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', hardLimit:true, note:'A once-in-a-lifetime find' },
   ],
   'Rio': [
     { img:'images/riocup.png', label:'Coconut Cup', price:2, currency:'ingots', pool:'rio_cup', repeatable:true, note:'5 available — one purchase per turn' },
@@ -9923,7 +10035,8 @@ const PORT_ITEMS = {
   ],
   'White Cloud Mountain': [
     { img:'images/jadeball.png', label:'Jade Puzzle Ball — 8-Layer Serpentine', price:8, currency:'ingots',
-      reqCard:'images/puzzleball.jpeg', reqItem:'images/telescope.png', consumes:'images/telescope.png' },
+      reqCard:'images/puzzleball.jpeg', reqItem:'images/telescope.png', consumes:'images/telescope.png',
+      pool:'whitecloud_jadeball', hardLimit:true, note:'Only one carving ever leaves the workshop' },
   ],
   // ── Nautilus journey ports ──
   'Ancol Cove': [
