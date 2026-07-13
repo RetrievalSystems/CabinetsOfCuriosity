@@ -3244,7 +3244,8 @@ function toggleRouteDebug() {
 // ════════════════════════════════════════════════
 const MAP_W = 1440;
 const MAP_H = 900;
-let NUM_PLAYERS = 2; // set to 1 by chooseSolo(), 2 by chooseRival() before beginVoyage()
+let NUM_PLAYERS = 2; // set to 1 by chooseSolo(), 2 by chooseRival()/chooseCollab() before beginVoyage()
+let gameMode = 'rivals'; // 'solo' | 'rivals' | 'collab' — collab shares one cabinet between two players
 // Route overlay fine-tuning — tweak these if routes drift vs map image:
 const ROUTE_X_OFFSET = -2;   // +east / -west (map units, ≈ screen px at 1440px wide)
 const ROUTE_SCALE    = 1.10; // expand route 10% from map centre to match geographic spread
@@ -7106,6 +7107,14 @@ function buyPortItem(item) {
   }
   p.items = p.items || [];
 
+  // Genuinely one-of-a-kind items (hardLimit) must actually stop selling once their pool
+  // is empty — the ordinary pool fallback below just reuses the default image instead of
+  // blocking, which is fine for repeatable goods but wrong for a "only one exists" item.
+  if (item.hardLimit && item.pool && (!ITEM_POOLS[item.pool] || !ITEM_POOLS[item.pool].length)) {
+    setStatus('Already sold — another merchant got here first.');
+    return;
+  }
+
   // ── Op-card mechanic: get pool version or direct item; consume one op card ──
   const actualImg = item.pool && ITEM_POOLS[item.pool]?.length
     ? ITEM_POOLS[item.pool].pop()   // random version (pool is pre-shuffled)
@@ -7256,10 +7265,12 @@ function buyDragonVase() {
   // Must hold the dragon vase op card (one card = one vase)
   const oi = (p.heldCards || []).findIndex(hc => hc.img && hc.img.includes('op-dragonvase'));
   if (oi < 0) { setStatus('You need the Dragon Vase op card to purchase here.'); return; }
+  if (dragonVaseStock <= 0) { setStatus('The vase is already sold — someone beat you to it.'); return; }
   // One per turn (prevents double-buying in the same port session)
   if (boughtThisTurn.has('dragonvase')) { setStatus('One vase per visit — return another time.'); return; }
   if ((p.ingots || 0) < 5) { log(`${p.name}: Need 5 ingots for the vase!`); return; }
   p.ingots -= 5;
+  dragonVaseStock--;
   p.heldCards.splice(oi, 1); // consume the op card
   p.items = p.items || [];
   p.items.push({ id: 'dragonvase_' + Date.now(), img: 'images/dragonvase.png', label: 'Imperial Dragon Vase', type: 'goods', price: 5 });
@@ -7273,6 +7284,9 @@ function buyDragonVase() {
 
 // ── Nagasaki wares: two porcelains, one of each per player per turn, 6 of each ──
 let nagasakiVaseStock  = 6;
+let dragonVaseStock    = 1;  // 2 op-cards chase this — only one vase to be had
+let redcoralStock      = 1;  // 2 op-cards chase this — only one branch to be had
+let tourmalineStock    = 1;  // 2 op-cards chase this — only one cluster to be had
 let nagasakiImariStock = 6;
 function openNagasakiWares() {
   const area = document.getElementById('nagasaki-wares-area');
@@ -7548,7 +7562,9 @@ function buyTourmaline() {
   const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('tourmaline'));
   if (oi < 0) { setStatus('You need a Rainbow Tourmaline op card to purchase here.'); return; }
   if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full.`); return; }
+  if (tourmalineStock <= 0) { setStatus('The cluster is already claimed — another merchant got there first.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the tourmaline!`); return; }
+  tourmalineStock--;
   p.heldCards.splice(oi, 1);  // consume op card
   p.items = p.items || [];
   p.items.push({ id:'tourmaline_'+Date.now(), img:'images/tourmaline.png',
@@ -8137,7 +8153,9 @@ function buyRedCoral() {
   const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && (hc.img.includes('coral_copy') || hc.dest === 'Goto Islands' || hc.location === 'Goto Islands'));
   if (cardIdx < 0) { setStatus('You need the Goto coral op card.'); return; }
   if ((p.items||[]).some(gi => gi.img==='images/redcoral.png')) { setStatus('You already have the coral.'); return; }
+  if (redcoralStock <= 0) { setStatus('The branch is already gone — another merchant got there first.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the coral.`); return; }
+  redcoralStock--;
   p.heldCards.splice(cardIdx, 1);
   p.items = p.items || [];
   p.items.push({ id:'redcoral_'+Date.now(), img:'images/redcoral.png', label:'Precious Coral', type:'goods', price:12 });
@@ -8976,8 +8994,8 @@ const SEA_CARD_TEMPLATES = [
     log(`${p.name}: A ghost ship materialises from the fog!`);
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
-  // ── Pirates ×25 ──
-  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  // ── Pirates ×30 ──
+  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W (doubled) ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
@@ -9245,38 +9263,38 @@ function closeHeldDetail() {
 // ════════════════════════════════════════════════
 const OPPORTUNITY_CARDS = [
   // ── Amethyst geode ×2 — Minas Gerais, 8 ingots ──
-  ...Array(2).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
   // ── Dragon vase workshop ×3 — Hangzhou, 5 ingots ──
   ...Array(2).fill({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots' }),
   // ── Nuremberg model maker ×2 — Nuremberg, 5 ingots ──
   // Central Sierras apatite miner ×3 — one op card per crystal available
   ...Array(3).fill({ img:'images/op-apetite-miner.jpeg', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' }),
   // Nuremberg model maker ×3 — one per model, player gets random version on purchase
-  ...Array(3).fill({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
+  ...Array(4).fill({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
   // ── Lapidary ×3 — Amsterdam, variable pricing ──
   ...Array(3).fill({ img:'images/op-lapidary.jpeg',          label:'Lapidary — Nautilus Work', location:'Amsterdam',       price:1,  currency:'ingots', note:'Peeled 1 ingot / Bisected 3 ingots' }),
   // ── Silversmith ×2 — Delft, 4 ingots ──
   ...Array(4).fill({ img:'images/op-silvermith.jpeg',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' }),
   // ── Tourmaline ×1 — Ratnapura, 10 ingots ──
-  ...Array(1).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
   // ── Batavia sea shells ×4 — Batavia, 3 coins each ──
-  ...Array(4).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
+  ...Array(5).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
-  ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
+  ...Array(4).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
-  { img:'images/coral_copy.jpeg', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' },
+  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
-  ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
+  ...Array(3).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
   // ── Cambay mother-of-pearl casket ×1 — UNIQUE: the guild master's final, secret work ──
-  { img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. Only one exists.' },
+  ...Array(2).fill({ img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. Only one exists.' }),
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
   ...Array(3).fill({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
   // ── Violet sea shells ×5 — Praia do Guincho, 5 coins ──
   ...Array(4).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
   // ── Apatite ×3 — Central Sierras (single entry — duplicated above, remove) ──
   // ── Imperial Topaz ×1 — Minas Gerais, 12 ingots ──
-  ...Array(2).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
+  ...Array(3).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
   ...Array(3).fill({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' }),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
@@ -9284,9 +9302,9 @@ const OPPORTUNITY_CARDS = [
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
-  ...Array(3).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
+  ...Array(4).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
   // ── Iron Ore ×3 — Baramahal, 3 coins ──
-  ...Array(3).fill({ img:'images/op-ironore.jpeg', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
+  ...Array(4).fill({ img:'images/op-ironore.jpeg', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
   // ── Netti Carver ×3 — Poonamallee, 6 ingots ──
   ...Array(3).fill({ img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' }),
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
@@ -9798,6 +9816,8 @@ const ITEM_POOLS_ALL = {
   baramahal_ironore: Array(3).fill('images/ironore.png'),
   // Poonamallee pith carvings — 3 different items, shuffled
   poonamallee_netti: ['images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png'],
+  // Cambay casket — genuinely one of a kind, whoever's card gets there first wins it
+  cambay_casket: ['images/inlaidbox.png'],
 };
 
 let ITEM_POOLS = {};   // runtime, depleted as items are sold
@@ -9853,7 +9873,8 @@ const PORT_ITEMS = {
   ],
   'Cambay': [
     { img:'images/inlaidbox.png', label:'Mother-of-Pearl Casket', price:25, currency:'ingots',
-      reqCard:'images/op-motherofpearlcasket.jpeg' },
+      reqCard:'images/op-motherofpearlcasket.jpeg', pool:'cambay_casket', hardLimit:true,
+      note:'The last of its kind — only one exists' },
   ],
   'Ouro Preto': [
     { img:'images/imperialtopaz1.png', label:'Imperial Topaz Cluster', price:12, currency:'ingots',
@@ -11733,6 +11754,20 @@ let cabSelectedItem = null; // { ci, source:'inv'|'cab', cellId, side }
 let cabSX = 1, cabSY = 1, cabBuilt = false, cabInLondon = false;
 
 function cabInitPlayer(pIdx) {
+  // Collaborative mode — both players build into the exact same cabinet, storage,
+  // and placed-map, regardless of which one's cabinet gets opened/initialised first.
+  if (typeof gameMode !== 'undefined' && gameMode === 'collab') {
+    if (!cabAllSlots[0]) {
+      cabAllSlots[0] = {};
+      CAB_SLOT_DEFS.forEach(d => cabAllSlots[0][d.id] = {mode:'empty', item:null, left:null, right:null, units: d.type==='flexbay' ? [null,null,null,null] : null});
+    }
+    if (!cabAllState[0]) cabAllState[0] = { storage: [] };
+    else cabAllState[0].storage = cabAllState[0].storage || [];
+    cabAllSlots[1]  = cabAllSlots[0];
+    cabAllState[1]  = cabAllState[0];
+    cabAllPlaced[1] = cabAllPlaced[0];
+    return;
+  }
   if (!cabAllSlots[pIdx]) {
     cabAllSlots[pIdx] = {};
     CAB_SLOT_DEFS.forEach(d => cabAllSlots[pIdx][d.id] = {mode:'empty', item:null, left:null, right:null, units: d.type==='flexbay' ? [null,null,null,null] : null});
@@ -12090,7 +12125,6 @@ function getItemScore(itemOrId) {
 
 // ── Collect all unique scored items for a player ───────────────────────────
 function _collectScoredItems(playerIdx) {
-  const p = players[playerIdx];
   const seen = new Set();
   const result = [];
 
@@ -12105,10 +12139,8 @@ function _collectScoredItems(playerIdx) {
     result.push({ item, sc });
   }
 
-  // Primary source: p.items
-  (p.items || []).forEach(addItem);
-
-  // Secondary: slot state (catches items placed but not yet in p.items)
+  // Only items actually placed in the cabinet count toward the final score —
+  // anything still sitting in inventory/pocket was never "collected" for display.
   const slotState = cabAllSlots[playerIdx];
   if (slotState) {
     Object.values(slotState).forEach(slot => {
@@ -12470,7 +12502,7 @@ function promptCabinetFull(instigatorIdx) {
 function beginAppraisal(instigatorIdx) {
   _appraisalActive = true;
   _appraisalScores = {};
-  _appraisalQueue  = (NUM_PLAYERS >= 2) ? [instigatorIdx, 1 - instigatorIdx] : [instigatorIdx];
+  _appraisalQueue  = (NUM_PLAYERS >= 2 && gameMode !== 'collab') ? [instigatorIdx, 1 - instigatorIdx] : [instigatorIdx];
   _appraiseNext();
 }
 
@@ -12490,7 +12522,11 @@ function _switchCabinetTo(pIdx) {
   const ov = document.getElementById('cab-overlay');
   if (ov && !ov.classList.contains('open')) ov.classList.add('open');
   const nameEl = document.getElementById('cab-player-name');
-  if (nameEl) nameEl.textContent = players[pIdx].name + "'s Cabinet";
+  if (nameEl) {
+    nameEl.textContent = (gameMode === 'collab' && players[1])
+      ? players[0].name + ' & ' + players[1].name + "'s Shared Cabinet"
+      : players[pIdx].name + "'s Cabinet";
+  }
   try { cabCalcScale(); CAB_SLOT_DEFS.forEach(def => cabRenderCell(def)); cabRefreshInventory(pIdx); cabRefreshStorage(); } catch (e) { console.error('switchCabinet', e); }
 }
 
@@ -12502,7 +12538,9 @@ function _appraisePlayer(playerIdx, onComplete) {
   document.body.appendChild(layer);
   const title = document.createElement('div');
   title.className = 'cab-score-title';
-  title.textContent = "Appraising " + players[playerIdx].name + "'s Cabinet";
+  title.textContent = (gameMode === 'collab' && players[1])
+    ? "Appraising " + players[0].name + " & " + players[1].name + "'s Shared Cabinet"
+    : "Appraising " + players[playerIdx].name + "'s Cabinet";
   layer.appendChild(title);
   requestAnimationFrame(() => { title.style.opacity = '1'; });
   setTimeout(() => {
@@ -12563,7 +12601,7 @@ function _dockFinalPlaque(pIdx) {
       `box-shadow:0 4px 18px rgba(0,0,0,0.6);transition:transform 0.18s;margin-bottom:16px;">` +
         `<div style="font-family:'Cinzel',serif;font-size:0.5rem;letter-spacing:.24em;color:#2a1404;">FINAL PRESTIGE</div>` +
         `<div style="font-family:'Cinzel Decorative',serif;font-size:2.5rem;line-height:1.05;color:#1a0c04;margin:3px 0;">${grand}</div>` +
-        `<div style="font-family:'Cinzel',serif;font-size:0.5rem;letter-spacing:.14em;color:#3a1e08;">${players[pIdx].name.toUpperCase()}</div>` +
+        `<div style="font-family:'Cinzel',serif;font-size:0.5rem;letter-spacing:.14em;color:#3a1e08;">${(gameMode === 'collab' && players[1]) ? (players[0].name + ' & ' + players[1].name).toUpperCase() : players[pIdx].name.toUpperCase()}</div>` +
         `<div style="font-family:'Cinzel',serif;font-size:0.4rem;letter-spacing:.1em;color:#6a4416;margin-top:10px;">click to enlarge</div>` +
     `</div>` +
     `<button id="cab-newgame-btn" style="` +
@@ -12694,7 +12732,9 @@ function openCabinet() {
   overlay.classList.toggle('cab-sketch',    !cabInLondon && PLAN_VIEW === 'sketch');
   overlay.classList.toggle('cab-blueprint', !cabInLondon && PLAN_VIEW === 'blueprint');
 
-  document.getElementById('cab-player-name').textContent = p.name + "'s Cabinet";
+  document.getElementById('cab-player-name').textContent = (gameMode === 'collab' && players[1])
+    ? players[0].name + ' & ' + players[1].name + "'s Shared Cabinet"
+    : p.name + "'s Cabinet";
   const badge = document.getElementById('cab-london-badge');
   badge.textContent = cabInLondon ? '🏛 In London — place items' : '🔒 Not in London — planning only';
   badge.classList.toggle('active', cabInLondon);
@@ -13539,8 +13579,9 @@ function _enterCharSelect(nPlayers) {
             setTimeout(() => ms.remove(), 550); }
   if (cs) { setTimeout(() => cs.style.opacity = '1', 100); }
 }
-function chooseSolo()  { _enterCharSelect(1); }
-function chooseRival() { _enterCharSelect(2); }
+function chooseSolo()   { gameMode = 'solo';   _enterCharSelect(1); }
+function chooseRival()  { gameMode = 'rivals'; _enterCharSelect(2); }
+function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 </script>
 
 <!-- Route node debugger toggle -->
@@ -13613,6 +13654,11 @@ function chooseRival() { _enterCharSelect(2); }
       <div class="mode-card-icon">⚔</div>
       <div class="mode-card-title">Rival Merchants</div>
       <div class="mode-card-desc">Two traders<br>racing the<br>same seas.<br>Only one legend.</div>
+    </div>
+    <div class="mode-card" onclick="chooseCollab()">
+      <div class="mode-card-icon">🤝</div>
+      <div class="mode-card-title">Collaborative</div>
+      <div class="mode-card-desc">Two traders,<br>one cabinet.<br>Pool your finds.<br>One legend, shared.</div>
     </div>
   </div>
 </div>
