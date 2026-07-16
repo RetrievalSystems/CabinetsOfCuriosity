@@ -2779,25 +2779,33 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <span class="ship-boarding-label">Sampan<br>← Canton</span>
         </div>
 
-        <!-- Haarlem schuit — shown at Amsterdam if player holds conchologist or mineralogist card -->
+        <!-- Haarlem schuit — shown at Amsterdam if player holds conchologist card -->
         <div id="haarlem-schuit-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="boardHaarlemSchuit()" title="Schuit to Haarlem · Leiden · Delft" style="background:#000;" data-route-id="haarlem_schuit">
+          <div class="buy-item-frame" onclick="boardHaarlem()" title="Schuit to Haarlem" style="background:#000;" data-route-id="haarlem">
             <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Haarlem</span>
         </div>
 
-        <!-- Haarlem → Leiden continue (only if mineralogist or lapidary card held) -->
-        <div id="haarlem-continue-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="continueSchuitFromHaarlem()" title="Continue to Leiden & Delft" style="background:#000;" data-route-id="haarlem_schuit">
+        <!-- Leiden schuit — shown at Amsterdam if player holds mineralogist card -->
+        <div id="leiden-schuit-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
+          <div class="buy-item-frame" onclick="boardLeiden()" title="Schuit to Leiden" style="background:#000;" data-route-id="leiden">
             <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Leiden</span>
         </div>
 
-        <!-- Leiden → Delft continue (only if lapidary card held) -->
+        <!-- Haarlem → Delft continue (only if lapidary/silversmith card also held) -->
+        <div id="haarlem-continue-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
+          <div class="buy-item-frame" onclick="continueHaarlemToDelft()" title="Continue to Delft" style="background:#000;" data-route-id="haarlem_delft">
+            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+          </div>
+          <span class="ship-boarding-label">Schuit<br>→ Delft</span>
+        </div>
+
+        <!-- Leiden → Delft continue (only if lapidary/silversmith card also held) -->
         <div id="leiden-continue-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="continueSchuitFromLeiden()" title="Continue to Delft" style="background:#000;" data-route-id="haarlem_schuit">
+          <div class="buy-item-frame" onclick="continueLeidenToDelft()" title="Continue to Delft" style="background:#000;" data-route-id="leiden_delft">
             <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Delft</span>
@@ -2805,7 +2813,15 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
         <!-- Haarlem return schuit -->
         <div id="haarlem-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="returnHaarlemSchuit()" title="Return to Amsterdam" style="background:#000;" data-route-id="haarlem_schuit_return">
+          <div class="buy-item-frame" onclick="returnFromHaarlem()" title="Return to Amsterdam" style="background:#000;" data-route-id="haarlem_return">
+            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+          </div>
+          <span class="ship-boarding-label">Schuit<br>← Amsterdam</span>
+        </div>
+
+        <!-- Leiden return schuit -->
+        <div id="leiden-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
+          <div class="buy-item-frame" onclick="returnFromLeiden()" title="Return to Amsterdam" style="background:#000;" data-route-id="leiden_return">
             <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Schuit<br>← Amsterdam</span>
@@ -3344,8 +3360,14 @@ const ROUTE_FREE_PASS_PORTS = {
   rhine:                 ['Amsterdam','Nuremberg'],
   rhine_return:         ['Amsterdam','Nuremberg'],
   foshan_return:        ['Canton','Foshan'],
-  haarlem_schuit:        ['Amsterdam','Haarlem','Leiden','Delft'],
-  haarlem_schuit_return: ['Delft','Leiden','Haarlem','Amsterdam'],
+  haarlem:               ['Amsterdam','Haarlem'],
+  haarlem_return:        ['Haarlem','Amsterdam'],
+  leiden:                ['Amsterdam','Leiden'],
+  leiden_return:         ['Leiden','Amsterdam'],
+  haarlem_delft:         ['Haarlem','Delft'],
+  haarlem_delft_return:  ['Delft','Haarlem'],
+  leiden_delft:          ['Leiden','Delft'],
+  leiden_delft_return:   ['Delft','Leiden'],
   meetiyagoda_return:   ['Ceylon','Meetiyagoda'],
   ratnapura:            ['Ceylon','Ratnapura'],
   ratnapura_return:     ['Ratnapura','Ceylon'],
@@ -3580,9 +3602,7 @@ const ROUTES = {
     lineColor:'rgba(120,160,210,0.55)', circuit:['delft'],
     nodes:[
       {x:844,y:286, name:'Amsterdam',   isPort:true,  portImg:'images/portams.jpeg'},        // 0
-      {x:841,y:291, name:'Canal',       isPort:false},                                        // 1 — transit
-      {x:837,y:296, name:'Canal',       isPort:false},                                        // 2 — transit
-      {x:833,y:300, name:'Delft',       isPort:true,  portImg:'images/silversmithstudio.jpg'},   // 3
+      {x:833,y:300, name:'Delft',       isPort:true,  portImg:'images/silversmithstudio.jpg'},   // 1
     ],
   },
   delft_return: {
@@ -3590,9 +3610,7 @@ const ROUTES = {
     lineColor:'rgba(120,160,210,0.55)', circuit:['delft_return'],
     nodes:[
       {x:833,y:300, name:'Delft',       isPort:true,  portImg:'images/silversmithstudio.jpg'},   // 0
-      {x:837,y:296, name:'Canal',       isPort:false},                                        // 1 — transit
-      {x:841,y:291, name:'Canal',       isPort:false},                                        // 2 — transit
-      {x:844,y:286, name:'Amsterdam',   isPort:true,  portImg:'images/portams.jpeg'},         // 3
+      {x:844,y:286, name:'Amsterdam',   isPort:true,  portImg:'images/portams.jpeg'},         // 1
     ],
   },
   // ── Inland return routes — same as outbound but reversed nodes ──
@@ -3637,28 +3655,68 @@ const ROUTES = {
     ],
   },
   // ── Haarlem Schuit: Amsterdam → Haarlem → Leiden → Delft ──
-  haarlem_schuit: {
-    id: 'haarlem_schuit', shipImg: 'images/foshanship.png',
-    shipName: 'Schuit to Haarlem · Leiden · Delft',
-    lineColor: 'rgba(160,200,160,0.45)', nextRoute: null,
-    circuit: ['haarlem_schuit'],
+  haarlem: {
+    id: 'haarlem', shipImg: 'images/foshanship.png', shipName: 'Schuit to Haarlem',
+    lineColor: 'rgba(160,200,160,0.45)', nextRoute: null, circuit: ['haarlem'],
     nodes: [
       {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'},
       {x:840, y:290, name:'Haarlem',   isPort:true, portImg:'images/haarlem.jpg'},
-      {x:836, y:295, name:'Leiden',    isPort:true, portImg:'images/leiden.jpg'},
-      {x:833, y:300, name:'Delft',     isPort:true, portImg:'images/silversmithstudio.jpg'},
     ],
   },
-  haarlem_schuit_return: {
-    id: 'haarlem_schuit_return', shipImg: 'images/foshanship.png',
-    shipName: 'Schuit back to Amsterdam',
-    lineColor: 'rgba(160,200,160,0.25)', nextRoute: null,
-    circuit: ['haarlem_schuit_return'],
+  haarlem_return: {
+    id: 'haarlem_return', shipImg: 'images/foshanship.png', shipName: 'Schuit back to Amsterdam',
+    lineColor: 'rgba(160,200,160,0.25)', nextRoute: null, circuit: ['haarlem_return'],
     nodes: [
-      {x:833, y:300, name:'Delft',     isPort:true, portImg:'images/silversmithstudio.jpg'},
-      {x:836, y:295, name:'Leiden',    isPort:true, portImg:'images/leiden.jpg'},
       {x:840, y:290, name:'Haarlem',   isPort:true, portImg:'images/haarlem.jpg'},
       {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'},
+    ],
+  },
+  leiden: {
+    id: 'leiden', shipImg: 'images/foshanship.png', shipName: 'Schuit to Leiden',
+    lineColor: 'rgba(160,200,160,0.45)', nextRoute: null, circuit: ['leiden'],
+    nodes: [
+      {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'},
+      {x:836, y:295, name:'Leiden',    isPort:true, portImg:'images/leiden.jpg'},
+    ],
+  },
+  leiden_return: {
+    id: 'leiden_return', shipImg: 'images/foshanship.png', shipName: 'Schuit back to Amsterdam',
+    lineColor: 'rgba(160,200,160,0.25)', nextRoute: null, circuit: ['leiden_return'],
+    nodes: [
+      {x:836, y:295, name:'Leiden',    isPort:true, portImg:'images/leiden.jpg'},
+      {x:844, y:286, name:'Amsterdam', isPort:true, portImg:'images/portams.jpeg'},
+    ],
+  },
+  haarlem_delft: {
+    id: 'haarlem_delft', shipImg: 'images/foshanship.png', shipName: 'Schuit onward to Delft',
+    lineColor: 'rgba(160,200,160,0.45)', nextRoute: null, circuit: ['haarlem_delft'],
+    nodes: [
+      {x:840, y:290, name:'Haarlem', isPort:true, portImg:'images/haarlem.jpg'},
+      {x:833, y:300, name:'Delft',   isPort:true, portImg:'images/silversmithstudio.jpg'},
+    ],
+  },
+  haarlem_delft_return: {
+    id: 'haarlem_delft_return', shipImg: 'images/foshanship.png', shipName: 'Schuit back to Haarlem',
+    lineColor: 'rgba(160,200,160,0.25)', nextRoute: null, circuit: ['haarlem_delft_return'],
+    nodes: [
+      {x:833, y:300, name:'Delft',   isPort:true, portImg:'images/silversmithstudio.jpg'},
+      {x:840, y:290, name:'Haarlem', isPort:true, portImg:'images/haarlem.jpg'},
+    ],
+  },
+  leiden_delft: {
+    id: 'leiden_delft', shipImg: 'images/foshanship.png', shipName: 'Schuit onward to Delft',
+    lineColor: 'rgba(160,200,160,0.45)', nextRoute: null, circuit: ['leiden_delft'],
+    nodes: [
+      {x:836, y:295, name:'Leiden', isPort:true, portImg:'images/leiden.jpg'},
+      {x:833, y:300, name:'Delft',  isPort:true, portImg:'images/silversmithstudio.jpg'},
+    ],
+  },
+  leiden_delft_return: {
+    id: 'leiden_delft_return', shipImg: 'images/foshanship.png', shipName: 'Schuit back to Leiden',
+    lineColor: 'rgba(160,200,160,0.25)', nextRoute: null, circuit: ['leiden_delft_return'],
+    nodes: [
+      {x:833, y:300, name:'Delft',  isPort:true, portImg:'images/silversmithstudio.jpg'},
+      {x:836, y:295, name:'Leiden', isPort:true, portImg:'images/leiden.jpg'},
     ],
   },
 
@@ -5845,15 +5903,15 @@ const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
 const PORT_XY = {   // exact drawn-port coords from the read-out; overrides _routeXY per port
   'London':            { x:834,  y:276 },
-  'Amsterdam':         { x:854,  y:268 },
+  'Amsterdam':         { x:849,  y:273 },
   'Lisbon':            { x:787,  y:320 },
-  'Rio':               { x:507,  y:575 },
+  'Rio':               { x:513,  y:570 },
   'Cape of Good Hope': { x:881,  y:605 },
-  'Bombay':            { x:1103, y:418 },
+  'Bombay':            { x:1093, y:419 },
   'Madras':            { x:1115, y:445 },
-  'Ceylon':            { x:1141, y:460 },
-  'Batavia':           { x:1238, y:505 },
-  'Canton':            { x:1263, y:395 },
+  'Ceylon':            { x:1128, y:460 },
+  'Batavia':           { x:1222, y:502 },
+  'Canton':            { x:1246, y:396 },
   'Nagasaki':          { x:1297, y:360 },
 };
 
@@ -5914,7 +5972,7 @@ function renderPortHotspots() {
 //    Big ocean ships are NOT in this set, so they can't reverse mid-voyage. ──
 const INLAND_ROUTES = new Set([
   'foshan','foshan_return','meetiyagoda','meetiyagoda_return','ratnapura','ratnapura_return',
-  'haarlem_schuit','haarlem_schuit_return','bataviacove','bataviacove_return',
+  'haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return','bataviacove','bataviacove_return',
   'abrolhos','abrolhos_return','goto','goto_return','dahel','dahel_return','cambay','cambay_return','violettrip','violettrip_return','rhine','rhine_return',
   'ancol','ancol_return','lapidary','lapidary_return','delft','delft_return',
   'whitecloudmtn','whitecloudmtn_return','sierras','sierras_return',
@@ -6364,7 +6422,7 @@ function previewRoute() {
 let currentPortName = '';   // tracked so buyPortItem() can refresh the panel
 
 function openPort(portName, portImg) {
-  // ── Geographic disambiguation: haarlem_schuit Leiden node sits within Delft's hotspot radius ──
+  // ── Geographic disambiguation: Haarlem/Leiden nodes sit close to Delft's hotspot radius ──
   // When the Delft hotspot fires but the player is actually at a Leiden node, correct the port name.
   try {
     const pShip = cp()?.shipId != null ? getShip(cp().shipId) : null;
@@ -6579,28 +6637,31 @@ function openPort(portName, portImg) {
     if (hasVaseCard) document.getElementById('foshan-vase-area').style.display = 'flex';
     document.getElementById('foshan-return-area').style.display = 'flex';
   }
-  // ── Haarlem schuit — board at Amsterdam only if the player qualifies for some stop ──
+  // ── Haarlem/Leiden schuit — board at Amsterdam if the player qualifies for any stop on this network ──
   if (playerIsHere && portName === 'Amsterdam') {
-    if (schuitStops(p).any) document.getElementById('haarlem-schuit-area').style.display = 'flex';
+    const q = schuitStops(p);
+    if (q.any) {
+      document.getElementById('haarlem-schuit-area').style.display = 'flex';
+      document.getElementById('leiden-schuit-area').style.display = 'flex';
+    }
   }
-  // ── Haarlem — sell shells only with conchologist card + shells; continue only toward a stop that qualifies ──
+  // ── Haarlem — sell shells only with conchologist card + shells; continue on to Delft if that qualifies too ──
   if (playerIsHere && portName === 'Haarlem') {
     const q = schuitStops(p);
     if (q.haarlem) _openConchSell();
-    if (q.leiden || q.delft) document.getElementById('haarlem-continue-area').style.display = 'flex';
+    if (q.delft) document.getElementById('haarlem-continue-area').style.display = 'flex';
     document.getElementById('haarlem-return-area').style.display = 'flex';
   }
-  // ── Leiden — sell minerals only with mineralogist card + minerals; continue only if Delft qualifies ──
+  // ── Leiden — sell minerals only with mineralogist card + minerals; continue on to Delft if that qualifies too ──
   if (playerIsHere && portName === 'Leiden') {
     const q = schuitStops(p);
     if (q.leiden) _openMineralSell();
     if (q.delft) document.getElementById('leiden-continue-area').style.display = 'flex';
-    document.getElementById('haarlem-return-area').style.display = 'flex';
+    document.getElementById('leiden-return-area').style.display = 'flex';
   }
-  // ── Delft (via schuit) — return schuit available alongside existing content ──
-  if (playerIsHere && portName === 'Delft' && ships.some(sh => sh.routeId === 'haarlem_schuit')) {
-    document.getElementById('haarlem-return-area').style.display = 'flex';
-  }
+  // Delft's own return option (direct route home) already covers arrivals via
+  // any path — Haarlem, Leiden, or straight from Amsterdam — see the general
+  // 'Delft' block above (delft-return-area), so no separate handling needed here.
   if (playerIsHere && portName === 'Ceylon') {
     const hasMoonCard = (p.heldCards || []).some(hc => hc.img && hc.img.includes('moonstone'));
     if (hasMoonCard) {
@@ -6807,8 +6868,8 @@ function closePort() {
   // Sync astrolabe player name labels
   syncAstrolabeNames();
   ['foshan-sampan-area','foshan-vase-area','foshan-return-area',
-   'haarlem-schuit-area','haarlem-continue-area','leiden-continue-area',
-   'haarlem-conch-area','leiden-mineral-area','haarlem-return-area',
+   'haarlem-schuit-area','leiden-schuit-area','haarlem-continue-area','leiden-continue-area',
+   'haarlem-conch-area','leiden-mineral-area','haarlem-return-area','leiden-return-area',
    'meetiyagoda-dhow-area','meetiyagoda-moonstone-area','meetiyagoda-return-area',
    'ratnapura-sampan-area','ratnapura-tourmaline-area','ratnapura-return-area',
    'london-cart-area','bodleian-return-area','bodleian-select-area',
@@ -7387,49 +7448,72 @@ function returnFoshanSampan() {
 // ════════════════════════════════════════════════
 //  MEETIYAGODA JOURNEY — Ceylon → moonstone mines
 // ════════════════════════════════════════════════
-function boardHaarlemSchuit() {
+function boardHaarlem() {
   const p = cp();
-  let s = ships.find(sh => sh.routeId === 'haarlem_schuit' && sh.nodeIndex === 0);
-  if (!s) { s = {id:nextShipId++, routeId:'haarlem_schuit', nodeIndex:0, unmanned:false}; ships.push(s); }
+  let s = ships.find(sh => sh.routeId === 'haarlem' && sh.nodeIndex === 0);
+  if (!s) { s = {id:nextShipId++, routeId:'haarlem', nodeIndex:0, unmanned:false}; ships.push(s); }
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   syncShipPirateStates(currentPIdx); closePort(); renderShips(); buildSVG();
   requestAnimationFrame(renderPortHotspots); updateHUD();
   log(`${p.name} boards the schuit — Haarlem next stop.`);
 }
 
-function continueSchuitFromHaarlem() {
+function returnFromHaarlem() {
   const p = cp();
-  // Re-board the schuit from Haarlem onward to Leiden
-  let s = ships.find(sh => sh.routeId === 'haarlem_schuit');
-  if (!s) { s = {id:nextShipId++, routeId:'haarlem_schuit', nodeIndex:1, unmanned:false}; ships.push(s); }
-  else s.nodeIndex = Math.max(s.nodeIndex, 1);
+  let s = ships.find(sh => sh.routeId === 'haarlem_return' && sh.nodeIndex === 0);
+  if (!s) { s = {id:nextShipId++, routeId:'haarlem_return', nodeIndex:0, unmanned:false}; ships.push(s); }
+  const old = ships.find(sh => sh.routeId === 'haarlem');
+  if (old) ships.splice(ships.indexOf(old), 1);
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   syncShipPirateStates(currentPIdx); closePort(); renderShips(); buildSVG();
   requestAnimationFrame(renderPortHotspots); updateHUD();
-  log(`${p.name} boards the schuit onward to Leiden.`);
+  log(`${p.name} takes the schuit back to Amsterdam.`);
 }
 
-function continueSchuitFromLeiden() {
+function boardLeiden() {
   const p = cp();
-  let s = ships.find(sh => sh.routeId === 'haarlem_schuit');
-  if (!s) { s = {id:nextShipId++, routeId:'haarlem_schuit', nodeIndex:2, unmanned:false}; ships.push(s); }
-  else s.nodeIndex = Math.max(s.nodeIndex, 2);
+  let s = ships.find(sh => sh.routeId === 'leiden' && sh.nodeIndex === 0);
+  if (!s) { s = {id:nextShipId++, routeId:'leiden', nodeIndex:0, unmanned:false}; ships.push(s); }
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  syncShipPirateStates(currentPIdx); closePort(); renderShips(); buildSVG();
+  requestAnimationFrame(renderPortHotspots); updateHUD();
+  log(`${p.name} boards the schuit — Leiden next stop.`);
+}
+
+function returnFromLeiden() {
+  const p = cp();
+  let s = ships.find(sh => sh.routeId === 'leiden_return' && sh.nodeIndex === 0);
+  if (!s) { s = {id:nextShipId++, routeId:'leiden_return', nodeIndex:0, unmanned:false}; ships.push(s); }
+  const old = ships.find(sh => sh.routeId === 'leiden');
+  if (old) ships.splice(ships.indexOf(old), 1);
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  syncShipPirateStates(currentPIdx); closePort(); renderShips(); buildSVG();
+  requestAnimationFrame(renderPortHotspots); updateHUD();
+  log(`${p.name} takes the schuit back to Amsterdam.`);
+}
+
+function continueHaarlemToDelft() {
+  const p = cp();
+  let s = ships.find(sh => sh.routeId === 'haarlem_delft' && sh.nodeIndex === 0);
+  if (!s) { s = {id:nextShipId++, routeId:'haarlem_delft', nodeIndex:0, unmanned:false}; ships.push(s); }
+  const old = ships.find(sh => sh.routeId === 'haarlem');
+  if (old) ships.splice(ships.indexOf(old), 1);
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   syncShipPirateStates(currentPIdx); closePort(); renderShips(); buildSVG();
   requestAnimationFrame(renderPortHotspots); updateHUD();
   log(`${p.name} boards the schuit onward to Delft.`);
 }
 
-function returnHaarlemSchuit() {
+function continueLeidenToDelft() {
   const p = cp();
-  let s = ships.find(sh => sh.routeId === 'haarlem_schuit_return' && sh.nodeIndex === 0);
-  if (!s) { s = {id:nextShipId++, routeId:'haarlem_schuit_return', nodeIndex:0, unmanned:false}; ships.push(s); }
-  const old = ships.find(sh => sh.routeId === 'haarlem_schuit');
+  let s = ships.find(sh => sh.routeId === 'leiden_delft' && sh.nodeIndex === 0);
+  if (!s) { s = {id:nextShipId++, routeId:'leiden_delft', nodeIndex:0, unmanned:false}; ships.push(s); }
+  const old = ships.find(sh => sh.routeId === 'leiden');
   if (old) ships.splice(ships.indexOf(old), 1);
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   syncShipPirateStates(currentPIdx); closePort(); renderShips(); buildSVG();
   requestAnimationFrame(renderPortHotspots); updateHUD();
-  log(`${p.name} takes the schuit back toward Amsterdam.`);
+  log(`${p.name} boards the schuit onward to Delft.`);
 }
 
 // Shell IDs from Shell Cove
@@ -9739,7 +9823,7 @@ function drawCard(type) {
   // No card draws while travelling an inland route (only allowed at arrival port)
   if (p.shipId !== null) {
     const travelShip = getShip(p.shipId);
-    const inlandRoutes = ['foshan','foshan_return','haarlem_schuit','haarlem_schuit_return',
+    const inlandRoutes = ['foshan','foshan_return','haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return',
       'meetiyagoda','meetiyagoda_return','ratnapura','ratnapura_return',
       'bataviacove','bataviacove_return','abrolhos','abrolhos_return','goto','goto_return',
       'dahel','dahel_return',
@@ -10067,7 +10151,7 @@ const PORT_ITEMS = {
 //  at round-end for unmanned ships
 // ════════════════════════════════════════════════
 function advanceShip(s) {
-  if (!s || ['foshan','haarlem_schuit','haarlem_schuit_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','dahel_return','cambay','cambay_return','violettrip','rhine','rhine_return','foshan_return','haarlem_schuit_return','meetiyagoda_return','ratnapura_return','bataviacove_return','abrolhos_return','goto_return','violettrip_return','ancol','ancol_return','lapidary','lapidary_return','delft','delft_return','whitecloudmtn','whitecloudmtn_return'].includes(s.routeId)) return;
+  if (!s || ['foshan','haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','dahel_return','cambay','cambay_return','violettrip','rhine','rhine_return','foshan_return','meetiyagoda_return','ratnapura_return','bataviacove_return','abrolhos_return','goto_return','violettrip_return','ancol','ancol_return','lapidary','lapidary_return','delft','delft_return','whitecloudmtn','whitecloudmtn_return'].includes(s.routeId)) return;
   const r     = ROUTES[s.routeId];
   if (!r) return;
   const nodes = r.nodes;
@@ -10524,7 +10608,7 @@ function endTurn() {
     const _inlandRouteIds = [
       'foshan','foshan_return','meetiyagoda','meetiyagoda_return',
       'ratnapura','ratnapura_return',
-      'haarlem_schuit','haarlem_schuit_return',
+      'haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return',
       'bataviacove','bataviacove_return','abrolhos','abrolhos_return','goto','goto_return',
       'dahel','dahel_return',
       'cambay','cambay_return',
@@ -10543,7 +10627,7 @@ function endTurn() {
   // ── Advance every inland ship whose rider is NOW the current player ──
   // Runs at the START of that player's turn (after the switch above)
   const ALL_INLAND = [
-    'foshan','haarlem_schuit','haarlem_schuit_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','cambay','violettrip',
+    'foshan','haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','cambay','violettrip',
     'rhine','rhine_return',
     'foshan_return','meetiyagoda_return','ratnapura_return','bataviacove_return','abrolhos_return','goto_return','dahel_return','cambay_return','violettrip_return',
     'ancol','ancol_return','lapidary','lapidary_return','delft','delft_return',
@@ -10575,7 +10659,7 @@ function endTurn() {
     if (arrived && s.returning) setStatus(`${_inP.name} is back at ${dest.name}.`);
 
     // ── Haarlem schuit: directly open intermediate ports (bypasses hotspot overlap issues) ──
-    if (!arrived && !s.returning && (routeId === 'haarlem_schuit' || routeId === 'haarlem_schuit_return') && dest.isPort) {
+    if (!arrived && !s.returning && (routeId === 'haarlem' || routeId === 'haarlem_return' || routeId === 'leiden' || routeId === 'leiden_return' || routeId === 'haarlem_delft' || routeId === 'haarlem_delft_return' || routeId === 'leiden_delft' || routeId === 'leiden_delft_return') && dest.isPort) {
       const _q = schuitStops(_inP);
       const shouldOpen =
         (dest.name === 'Haarlem' && _q.haarlem) ||
@@ -10646,7 +10730,7 @@ function endTurn() {
   const incomingP = cp();
   if (incomingP.shipId !== null) {
     const incomingShip = getShip(incomingP.shipId);
-    if (incomingShip && !['foshan','haarlem_schuit','haarlem_schuit_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','cambay','violettrip','rhine'].includes(incomingShip.routeId) && !incomingShip._advancedThisRound) {
+    if (incomingShip && !['foshan','haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','cambay','violettrip','rhine'].includes(incomingShip.routeId) && !incomingShip._advancedThisRound) {
       incomingShip._advancedThisRound = true;
       advanceShip(incomingShip);
     }
