@@ -7777,15 +7777,33 @@ function _bodPreviewEl() {
   }
   return el;
 }
-function _showBodPreview(src) {
+function _showBodPreview(src, slotEl) {
   if (!src || /img-card-back/.test(src)) return;   // never enlarge a face-down card
   const el = _bodPreviewEl();
   const img = el.querySelector('#bod-preview-img');
   if (el.dataset.src !== src) { img.src = src; el.dataset.src = src; }
   if (el.dataset.shown === '1') return;             // already open -> don't restart the grow
-  void el.offsetWidth;                              // commit hidden state so the transition runs
+
+  // Grow outward from the hovered card's actual screen position, rather than
+  // jumping straight to a centred zoom — compute how far that slot sits from
+  // the viewport centre and start the transform offset there.
+  let originTransform = 'scale(0.82)';
+  if (slotEl) {
+    const r = slotEl.getBoundingClientRect();
+    const dx = (r.left + r.width  / 2) - window.innerWidth  / 2;
+    const dy = (r.top  + r.height / 2) - window.innerHeight / 2;
+    const initScale = Math.max(0.14, Math.min(0.4, r.width / (window.innerWidth * 0.74)));
+    originTransform = `translate(${dx}px, ${dy}px) scale(${initScale})`;
+  }
+
+  void el.offsetWidth;
   el.style.opacity = '1';
-  img.style.transform = 'scale(1)';
+  img.style.transition = 'none';
+  img.style.transform = originTransform;
+  img.style.opacity = '0';
+  void img.offsetWidth;                             // commit the origin state before animating
+  img.style.transition = 'transform 0.26s cubic-bezier(0.2,0.8,0.3,1.04), opacity 0.2s ease';
+  img.style.transform = 'translate(0,0) scale(1)';
   img.style.opacity = '1';
   el.dataset.shown = '1';
 }
@@ -7803,7 +7821,7 @@ function _wireBodHover(slot, cardImg) {
     const r = slot.getBoundingClientRect();
     const dx = (e.clientX - (r.left + r.width /2)) / (r.width /2);   // 0 at centre, +/-1 at edge
     const dy = (e.clientY - (r.top  + r.height/2)) / (r.height/2);
-    if (Math.hypot(dx, dy) < 0.5) _showBodPreview(cardImg);          // inner central zone
+    if (Math.hypot(dx, dy) < 0.5) _showBodPreview(cardImg, slot);        // inner central zone
     else _hideBodPreview();
   };
   slot.onmouseleave = () => _hideBodPreview();
@@ -7849,11 +7867,23 @@ function openBodleianPort() {
     slot.style.pointerEvents = '';
     const img = slot.querySelector('.bod-card-face');
     if (visit.revealed) {
-      // Cards already turned this visit — show them face-up; a click selects
-      if (img) { img.style.transition = 'none'; img.style.opacity = '1';
-                 img.src = visit.cards[i] ? visit.cards[i].img : 'images/img-card-back.jpg'; }
-      slot.onclick = () => selectBodleianCard(i);
-      _wireBodHover(slot, visit.cards[i] ? visit.cards[i].img : null);
+      // Cards already turned this visit — show them face-up; a click selects.
+      // A null entry means that card already expired (dead/duplicate) on an earlier
+      // reveal this visit — leave that slot empty, nothing to click.
+      const card = visit.cards[i];
+      if (img) {
+        img.classList.remove('card-fade-cold', 'card-whip-down');
+        img.style.transition = 'none';
+        if (card) { img.style.opacity = '1'; img.src = card.img; }
+        else      { img.style.opacity = '0'; img.src = 'images/img-card-back.jpg'; }
+      }
+      if (card) {
+        slot.onclick = () => selectBodleianCard(i);
+        _wireBodHover(slot, card.img);
+      } else {
+        slot.onclick = null;
+        slot.onmouseenter = null; slot.onmouseleave = null; slot.onmousemove = null;
+      }
     } else {
       // Face-down — first click reveals all three and spends the invitation once
       if (img) { img.style.transition = 'none'; img.style.opacity = '1'; img.src = 'images/img-card-back.jpg'; }
@@ -7887,11 +7917,13 @@ function openBodleianPort() {
 }
 
 function _revealBodleianCards(slots) {
+  const visit = _bodleianVisits[currentPIdx];
   // Flip all three face-up simultaneously, then enable selection clicks
   _bodleianPeeked.forEach((card, i) => {
     const slot = slots[i];
     const img  = slot?.querySelector('.bod-card-face');
     if (!img) return;
+    img.classList.remove('card-fade-cold', 'card-whip-down');
     img.style.transition = 'opacity 0.3s';
     img.style.opacity = '0';
     setTimeout(() => {
@@ -7903,8 +7935,42 @@ function _revealBodleianCards(slots) {
       slot.style.pointerEvents = '';
       slot.onclick = () => selectBodleianCard(i);
       _wireBodHover(slot, card.img);
+      // Singular item already claimed, or a duplicate of one this player already holds —
+      // let the player see what it was for a beat, then it plays its normal exit and
+      // actually leaves the selection, same as it would anywhere else in the game.
+      const info = _singularInfoFor(card);
+      if (info) {
+        const dead = info.stock() <= 0;
+        const dup  = !dead && (players[currentPIdx].heldCards || []).some(hc => info.match(hc));
+        if (dead || dup) {
+          setTimeout(() => _expireBodleianSlot(i, slot, card, dead), 900);
+        }
+      }
     }, 650);
   });
+}
+
+// A peeked Bodleian card that's already dead (or a duplicate lead the player already
+// holds) plays its normal exit animation and is permanently removed from the deck —
+// the same lead never surfaces here again, leaving 2, 1, or 0 real choices.
+function _expireBodleianSlot(i, slot, card, dead) {
+  const visit = _bodleianVisits[currentPIdx];
+  if (!visit || visit.cards[i] !== card) return;   // already handled / stale
+  const img = slot?.querySelector('.bod-card-face');
+  const info = _singularInfoFor(card);
+  const label = info ? info.label : card.label;
+  if (img) img.classList.add(dead ? 'card-fade-cold' : 'card-whip-down');
+  slot.onclick = null;
+  slot.onmouseenter = null; slot.onmouseleave = null; slot.onmousemove = null;
+  _hideBodPreview();
+  log(dead
+    ? `Word was already stale — the ${label} is long gone.`
+    : `${players[currentPIdx].name} already knows this lead on the ${label} — it fades from the shelf.`);
+
+  const di = oppDeck.indexOf(card);
+  if (di >= 0) { oppDeck.splice(di, 1); if (di < oppDeckIndex) oppDeckIndex--; }
+  oppDeckIndex = oppDeck.length ? (oppDeckIndex % oppDeck.length) : 0;
+  visit.cards[i] = null;
 }
 
 function selectBodleianCard(idx) {
@@ -7918,8 +7984,9 @@ function selectBodleianCard(idx) {
 
   const p = cp();
   p.heldCards = p.heldCards || [];
+  const newCardId = 'opp_bod_' + Date.now();
   p.heldCards.push({
-    id: 'opp_bod_' + Date.now(),
+    id: newCardId,
     img: chosen.img, faceUp: false, type: 'opportunity',
     alwaysFaceUp: false, dest: chosen.location, label: chosen.label,
     price: chosen.price, currency: chosen.currency,
@@ -7940,6 +8007,30 @@ function selectBodleianCard(idx) {
 
   const area = document.getElementById('bodleian-select-area');
   if (area) area.style.display = 'none';
+
+  // Singular item already claimed elsewhere, or a duplicate lead this player already
+  // holds — same "gone cold" / "sets it aside" treatment as a normal opportunity draw.
+  const singularInfo = _singularInfoFor(chosen);
+  const alreadyGone   = singularInfo && singularInfo.stock() <= 0;
+  const alreadyHeld   = !alreadyGone && singularInfo &&
+    p.heldCards.slice(0, -1).some(hc => singularInfo.match(hc));
+  if (alreadyGone) {
+    _animateDiscardHeldCard(currentPIdx, newCardId, 'card-fade-cold',
+      `${p.name}: word was already stale — the ${singularInfo.label} is long gone.`);
+  } else if (alreadyHeld) {
+    log(`${p.name} already knows this lead on the ${singularInfo.label} — sets it aside for someone else to hear.`);
+    setTimeout(() => {
+      const hand = document.getElementById(`held-p${currentPIdx + 1}`);
+      const el = hand && hand.querySelector(`[data-card-id="${newCardId}"]`);
+      if (el) el.classList.add('card-whip-down');
+      setTimeout(() => {
+        const idx2 = (p.heldCards||[]).findIndex(hc => hc.id === newCardId);
+        if (idx2 >= 0) p.heldCards.splice(idx2, 1);
+        oppDeck.push(chosen); // back to the very bottom of the deck
+        renderHeldCards(currentPIdx);
+      }, 520);
+    }, 350);
+  }
 
   // If player holds another invite, offer another round immediately
   const nextInv = (p.heldCards||[]).findIndex(hc => hc.isBodleianInvite);
