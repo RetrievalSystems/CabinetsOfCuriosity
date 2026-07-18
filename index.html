@@ -11677,9 +11677,35 @@ function _aiGoal(me) {
 //   • a port that is the hub of a held op card, or where its item is sold
 //   • a port with a free ware it can afford and has room to carry
 function _aiCanAfford(p, w) {
+  // Opportunity cards often carry a placeholder price (e.g. the Jade Puzzle Ball's
+  // card says price:0, note:"8 ingots + telescope required" — the REAL price and any
+  // required held item live on the matching PORT_ITEMS entry, looked up by reqCard).
+  // Checking the card's own price alone told the AI a 0-ingot, no-telescope-needed
+  // purchase was always "affordable" — it would trek out, fail to buy, trek back,
+  // forever. Look up the real entry and check that instead, when one exists.
+  if (w && w.type === 'opportunity') {
+    const real = _aiRealPortItemFor(w);
+    if (real) return _aiCanAffordReal(p, real);
+  }
+  return _aiCanAffordReal(p, w);
+}
+function _aiCanAffordReal(p, w) {
   const price = w.price || 0;
+  if (w.reqItem) {
+    const isPath = w.reqItem.startsWith('images/');
+    const has = isPath
+      ? (p.items||[]).some(gi => gi.img === w.reqItem)
+      : (p.items||[]).some(gi => (gi.id||'').toLowerCase().startsWith(w.reqItem.toLowerCase()));
+    if (!has) return false;
+  }
   if ((w.currency || 'ingots') === 'coins') return (p.silver||0) + (p.ingots||0)*10 >= price;
   return (p.ingots||0) + Math.floor((p.silver||0)/10) >= price;
+}
+function _aiRealPortItemFor(card) {
+  const loc = card.dest || card.location;
+  const list = loc && PORT_ITEMS[loc];
+  if (!list) return null;
+  return list.find(w => w && w.reqCard === card.img) || null;
 }
 function _aiShouldStop(me, portName) {
   const p = players[me];
