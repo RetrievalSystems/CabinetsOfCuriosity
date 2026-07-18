@@ -11637,12 +11637,28 @@ function _aiGoal(me) {
   const here = playerNode(p)?.name;
   // Head for the hub of the MOST VALUABLE op card we can actually AFFORD. Chasing an
   // item we've no money for is exactly what jammed the AI in an endless loop.
+  //
+  // Stability matters here every bit as much as it did for _aiCycleGoal: recomputing
+  // "best affordable card" fresh every turn means a newly-drawn pricier card can yank
+  // the goal sideways mid-journey, so the AI never actually arrives anywhere — it just
+  // keeps re-aiming. Once committed to a hub, stick with it until reached, UNLESS
+  // nothing still held actually justifies going there (redeemed, discarded, or no
+  // longer affordable), in which case drop the commitment and pick fresh below.
   const cards = (p.heldCards || [])
     .filter(c => c && c.type === 'opportunity' && !c.redeemed && !c.isBodleianInvite && _aiCanAfford(p, c))
     .sort((a, b) => (b.price || 0) - (a.price || 0));
+
+  if (p._aiChasingHub && p._aiChasingHub !== here) {
+    const stillValid = cards.some(c => _aiCardHub(c) === p._aiChasingHub);
+    if (stillValid) return p._aiChasingHub;
+    p._aiChasingHub = null;   // that reason's gone — fall through and pick a fresh target
+  } else if (p._aiChasingHub === here) {
+    p._aiChasingHub = null;   // arrived — clear so we pick the next goal fresh below
+  }
+
   for (const c of cards) {
     const hub = _aiCardHub(c);
-    if (hub && linerPorts.has(hub) && hub !== here) return hub;   // sail toward the prize
+    if (hub && linerPorts.has(hub) && hub !== here) { p._aiChasingHub = hub; return hub; }   // sail toward the prize
   }
   // Nothing affordable to chase: if we're holding goods, go bank them at London — the
   // cabinet reward refuels our ingots, so next loop we CAN afford what we're sitting on.
