@@ -2782,7 +2782,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Haarlem schuit — shown at Amsterdam if player holds conchologist card -->
         <div id="haarlem-schuit-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardHaarlem()" title="Schuit to Haarlem" style="background:#000;" data-route-id="haarlem">
-            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+            <img src="images/op-conchologist.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Haarlem</span>
         </div>
@@ -2790,7 +2790,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Leiden schuit — shown at Amsterdam if player holds mineralogist card -->
         <div id="leiden-schuit-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardLeiden()" title="Schuit to Leiden" style="background:#000;" data-route-id="leiden">
-            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+            <img src="images/op-minerologist.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Leiden</span>
         </div>
@@ -2798,7 +2798,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Haarlem → Delft continue (only if lapidary/silversmith card also held) -->
         <div id="haarlem-continue-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="continueHaarlemToDelft()" title="Continue to Delft" style="background:#000;" data-route-id="haarlem_delft">
-            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+            <img src="images/op-silvermith.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Delft</span>
         </div>
@@ -2806,7 +2806,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Leiden → Delft continue (only if lapidary/silversmith card also held) -->
         <div id="leiden-continue-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="continueLeidenToDelft()" title="Continue to Delft" style="background:#000;" data-route-id="leiden_delft">
-            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+            <img src="images/op-silvermith.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Schuit<br>→ Delft</span>
         </div>
@@ -2814,7 +2814,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Haarlem return schuit -->
         <div id="haarlem-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnFromHaarlem()" title="Return to Amsterdam" style="background:#000;" data-route-id="haarlem_return">
-            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+            <img src="images/op-conchologist.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Schuit<br>← Amsterdam</span>
         </div>
@@ -2822,7 +2822,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Leiden return schuit -->
         <div id="leiden-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnFromLeiden()" title="Return to Amsterdam" style="background:#000;" data-route-id="leiden_return">
-            <img src="images/foshanship.png" style="width:100%;height:100%;object-fit:contain;">
+            <img src="images/op-minerologist.jpeg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Schuit<br>← Amsterdam</span>
         </div>
@@ -2960,7 +2960,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <div class="buy-item-frame" onclick="boardLisbonRowboat()" title="Rowboat to the sand dunes" style="background:#000;" data-route-id="violettrip">
             <img src="images/rowboat.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
-          <span class="ship-boarding-label">Rowboat<br>→ Sand Dunes</span>
+          <span class="ship-boarding-label">Rowboat<br>→ Praia do Guincho</span>
         </div>
 
         <!-- Caramujeira rowboat — shown at Lisbon when holding the mandrake op card -->
@@ -3104,7 +3104,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <span class="ship-boarding-label">Rowboat<br>← Madras</span>
         </div>
 
-        <!-- Violet snail return rowboat — shown at Sand Dunes port -->
+        <!-- Violet snail return rowboat — shown at Praia do Guincho port -->
         <div id="violetcove-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnLisbonRowboat()" title="Return to Lisbon" style="background:#000;" data-route-id="violettrip">
             <img src="images/rowboat.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
@@ -3379,7 +3379,7 @@ const ROUTE_FREE_PASS_PORTS = {
   dahel_return:         ['Dahel Gorge','Bombay'],
   cambay:               ['Bombay','Cambay'],
   cambay_return:        ['Cambay','Bombay'],
-  violettrip_return:    ['Lisbon','Sand Dunes'],
+  violettrip_return:    ['Lisbon','Praia do Guincho'],
   sierras:              ['Lisbon','Central Sierras'], sierras_return: ['Central Sierras','Lisbon'],
   minasgerais:          ['Rio','Minas Gerais'], minasgerais_return: ['Minas Gerais','Rio'],
   ouroupreto:           ['Rio','Ouro Preto'], ouroupreto_return: ['Ouro Preto','Rio'],
@@ -3650,7 +3650,7 @@ const ROUTES = {
     id:'violettrip_return', shipImg:'images/rowboat.png', shipName:'Rowboat back to Lisbon',
     lineColor:'rgba(160,140,220,0.35)', circuit:['violettrip_return'],
     nodes:[
-      {x:776, y:319, name:'Sand Dunes', isPort:true, portImg:'images/sanddunes.jpeg'}, // 0
+      {x:776, y:319, name:'Praia do Guincho', isPort:true, portImg:'images/sanddunes.jpeg'}, // 0
       {x:781, y:330, name:'Lisbon',        isPort:true, portImg:'images/portlis.jpg'},  // 1
     ],
   },
@@ -3932,7 +3932,7 @@ const ROUTES = {
     circuit:   ['violettrip'],
     nodes: [
       {x:781, y:330, name:'Lisbon',       isPort:true, portImg:'images/portlis.jpg'},
-      {x:788, y:323, name:'Sand Dunes',   isPort:true, portImg:'images/portlis.jpg'}, // 7px NE along coast
+      {x:788, y:323, name:'Praia do Guincho',   isPort:true, portImg:'images/sanddunes.jpeg'}, // 7px NE along coast
     ],
   },
 
@@ -6389,7 +6389,7 @@ const PORT_IMAGES = {
   'Goto Islands':     'images/gotodestination.jpg',
   'Dahel Gorge':      'images/treeagatedest.jpg',
   'Cambay':           'images/cambay.png',
-  'Sand Dunes':       'images/sanddunes.jpeg',
+  'Praia do Guincho':       'images/sanddunes.jpeg',
   'Rio':              'images/portbat.jpeg',
   'Lisbon':           'images/portlis.jpg',
   'Kongu Nadu':       'images/kongudest.jpeg',
@@ -6798,13 +6798,13 @@ function openPort(portName, portImg) {
   }
   // ── Lisbon rowboat — shown at Lisbon with violet snail opp card ──
   if (playerIsHere && portName === 'Lisbon') {
-    const hasVioletCard = (p.heldCards||[]).some(hc => hc.img && (hc.img.includes('violet') || hc.dest === 'Sand Dunes'));
+    const hasVioletCard = (p.heldCards||[]).some(hc => hc.img && (hc.img.includes('violet') || hc.dest === 'Praia do Guincho'));
     if (hasVioletCard) document.getElementById('lisbon-rowboat-area').style.display = 'flex';
     const hasMandrakeCard = (p.heldCards||[]).some(hc => hc.img && (hc.img.includes('op-mandrake') || hc.dest === 'Caramujeira'));
     if (hasMandrakeCard) document.getElementById('caramujeira-boat-area').style.display = 'flex';
   }
   // ── Open Atlantic — violet snail purchase on left, return rowboat on right ──
-  if (playerIsHere && portName === 'Sand Dunes') {
+  if (playerIsHere && portName === 'Praia do Guincho') {
     document.getElementById('violetcove-return-area').style.display = 'flex';
   }
   // ── Caramujeira — return rowboat to Lisbon ──
@@ -6978,7 +6978,7 @@ const MAJOR_PORTS = new Set([
   'London','Amsterdam','Lisbon','Rio','Cape of Good Hope',
   'Bombay','Madras','Ceylon','Canton','Nagasaki','Batavia',
   'Foshan','Haarlem','Leiden','Delft','Ratnapura','Meetiyagoda',
-  'Sand Dunes','Abrolhos Reef','Shell Cove','Goto Islands',
+  'Praia do Guincho','Abrolhos Reef','Shell Cove','Goto Islands',
 ]);
 
 // Cards/items that unlock extra side-destinations, keyed by BASE routeId (no _return)
@@ -7137,7 +7137,11 @@ function buyPortItem(item) {
   }
 
   // ── Required inventory item (e.g. apatite for Anatomical Torso, telescope for Puzzle Ball) ──
-  if (item.reqItem) {
+  // Skip this whole block if _consumeItem is already set — that means the player already
+  // picked a specimen (via _showApatiteSelection) and this is the resumed call completing
+  // the purchase. Re-running the check here found the same specimens still un-consumed
+  // and just reopened the same picker again instead of proceeding.
+  if (item.reqItem && !item._consumeItem) {
     const isPath = item.reqItem.startsWith('images/');
     if (isPath) {
       // Image-path reqItem (e.g. telescope): verify existence only; consumption via item.consumes
@@ -8600,7 +8604,7 @@ function boardLisbonRowboat() {
   p.shipId=s.id;p.disembarked=false;p.landLocation=null;
   syncShipPirateStates(currentPIdx);
   closePort();renderShips();buildSVG();requestAnimationFrame(renderPortHotspots);updateHUD();
-  log(`${p.name} rows along the coast — next stop: Sand Dunes!`);
+  log(`${p.name} rows along the coast — next stop: Praia do Guincho!`);
   setStatus('In the rowboat — end your turn to reach open water.');
 }
 function openVioletCove() {
@@ -10219,7 +10223,7 @@ const PORT_ITEMS = {
       reqCard:'images/op-nautilusdiver.jpeg', repeatable:true,
       note:'One per card held — one purchase per turn' },
   ],
-  'Sand Dunes': [
+  'Praia do Guincho': [
     { img:'images/snail.png', label:'Violet Sea Snail', price:2, currency:'coins',
       reqCard:'images/op-violetseasnail.jpeg', repeatable:true, pool:'violet_shells',
       note:'5 available in total — one per card held per turn' },
@@ -11411,10 +11415,19 @@ function _aiShouldBank(me) {
 }
 function _aiWantsTrekHere(me, here) {
   const p = players[me];
-  if ((p.items || []).length >= 6) return false;
-  if (_aiShouldBank(me)) return false;   // carrying a haul — bank it before starting another trek
+  if ((p.items || []).length >= 6) {
+    console.log('[AI-DIAG] _aiWantsTrekHere(' + here + ') = false — inventory full (' + (p.items||[]).length + '/6)');
+    return false;
+  }
+  if (_aiShouldBank(me)) {
+    console.log('[AI-DIAG] _aiWantsTrekHere(' + here + ') = false — should bank at London first');
+    return false;
+  }
   const cards = (p.heldCards || []).filter(c => c && c.type === 'opportunity' && !c.redeemed && !c.isBodleianInvite);
-  return cards.some(c => (_aiCardHub(c) === here || (c.dest || c.location) === here) && _aiCanAfford(p, c));
+  const result = cards.some(c => (_aiCardHub(c) === here || (c.dest || c.location) === here) && _aiCanAfford(p, c));
+  console.log('[AI-DIAG] _aiWantsTrekHere(' + here + ') = ' + result + ' — held cards: ' +
+    JSON.stringify(cards.map(c => ({ label: c.label, hub: _aiCardHub(c), afford: _aiCanAfford(p, c) }))));
+  return result;
 }
 function _aiBoardFromPort(me, here) {
   // Inland journey frames carry data-route-id and live inside a "*-area" panel.
@@ -11433,7 +11446,10 @@ function _aiBoardFromPort(me, here) {
   const mep = players[me];
   const chasingAffordable = (mep.heldCards || []).some(c =>
     c && c.type === 'opportunity' && !c.redeemed && !c.isBodleianInvite && _aiCanAfford(mep, c));
-  if (outbound.length && (atHub ? _aiWantsTrekHere(me, here) : chasingAffordable)) {
+  const wantsTrek = atHub ? _aiWantsTrekHere(me, here) : chasingAffordable;
+  console.log('[AI-DIAG] _aiBoardFromPort(' + here + ') — atHub=' + atHub + ', outboundFrames=' + outbound.length +
+    ', wantsTrek=' + wantsTrek + ', chasingAffordable=' + chasingAffordable + ', items=' + (mep.items||[]).length + '/6');
+  if (outbound.length && wantsTrek) {
     try { outbound[0].click(); return true; } catch (e) {}
   }
   // Otherwise, if we're at an inland dead-end, head back toward the hub.
@@ -11478,7 +11494,7 @@ function _aiBuildHubMap() {
     });
   }
   // Aliases: a few op cards name a place that differs from the route's node name.
-  if (_aiHubMap['Sand Dunes'])    _aiHubMap['Praia do Guincho'] = _aiHubMap['Sand Dunes'];
+  // (Praia do Guincho is now the one canonical name throughout — no alias needed.)
   if (_aiHubMap['Abrolhos Reef']) _aiHubMap['Abrolhos']         = _aiHubMap['Abrolhos Reef'];
   if (_aiHubMap['Ancol Cove'])    _aiHubMap['Ancol']            = _aiHubMap['Ancol Cove'];
   // Baramahal is a 2nd-leg chained trek (Madras → Kongu Nadu → Baramahal) whose route
@@ -11566,12 +11582,17 @@ function _aiCanShelfSize(me, size) {
 // already afford (about to go collect them); if we can't afford any treasure yet, fill
 // freely — the swap upgrades fillers to treasures later.
 function _aiShouldGrind(me) {
-  if (_isCabinetFull(me)) return false;
+  if (_isCabinetFull(me)) { console.log('[AI-DIAG] _aiShouldGrind = false — cabinet full'); return false; }
   const p = players[me];
-  const affordableTreasure = (p.heldCards||[]).some(c =>
+  const treasureCards = (p.heldCards||[]).filter(c =>
     c && c.type==='opportunity' && !c.redeemed && !c.isBodleianInvite && _aiCardHub(c) && _aiCanAfford(p, c));
+  const affordableTreasure = treasureCards.length > 0;
   const reserve = affordableTreasure ? Math.min(_aiTreasureCardsHeld(me), 3) : 0;
-  return _aiEmptySlots(me) > reserve;
+  const empty = _aiEmptySlots(me);
+  const result = empty > reserve;
+  console.log('[AI-DIAG] _aiShouldGrind = ' + result + ' — emptySlots=' + empty + ', reserve=' + reserve +
+    ', affordableTreasureCards=' + JSON.stringify(treasureCards.map(c => c.label)));
+  return result;
 }
 function _aiItemScoreVal(item) {
   if (!item) return 0;
@@ -12020,8 +12041,8 @@ const CAB_META = {
   'tree-agate-slice-b': { size:'medium', name:'Tree Agate — East Half', origin:'Dahel Gorge · India', desc:'The mirrored half — the same winter oak reflected, cleaved from one volcanic nodule.' },
   nagasakivase3:{ size:'small',  name:'Arita Gourd Vase',          origin:'Nagasaki · Japan',  desc:'Double-gourd vase — blue & white above, carved celadon below.' },
   nagasakivasei2:{size:'tall',   name:'Imari Covered Vase',         origin:'Nagasaki · Japan',  desc:'Tall Imari vase and cover, gilt brocade panels with a seated-figure finial.' },
-  snail:       { size:'small',  name:'Violet Sea Snail',          origin:'Sand Dunes · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
-  'op-violetseasnail':{ size:'small', name:'Violet Sea Snail',        origin:'Sand Dunes · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
+  snail:       { size:'small',  name:'Violet Sea Snail',          origin:'Praia do Guincho · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
+  'op-violetseasnail':{ size:'small', name:'Violet Sea Snail',        origin:'Praia do Guincho · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
   // Nautilus journey items
   'shell-nautiloushalf':{ size:'large',  name:'Nautilus — Bisected',   origin:'Amsterdam · Lapidary',   desc:'Nautilus pompilius cross-section — golden Fibonacci chambers revealed.' },
   shellnautpeeled:    { size:'large',  name:'Nautilus — Peeled',       origin:'Amsterdam · Lapidary',   desc:'Outer whorl removed, iridescent nacre exposed — like frozen moonlight.' },
