@@ -2843,6 +2843,22 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <span class="ship-boarding-label">Dhow<br>← Ceylon</span>
         </div>
 
+        <!-- Cornwall cart — shown at London if player holds the cobalt miner card -->
+        <div id="cornwall-cart-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
+          <div class="buy-item-frame" onclick="boardCornwallCart()" title="Horse & Cart to Cornwall" style="background:#000;" data-route-id="cornwall">
+            <img src="images/op-cobaltminer.jpg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+          </div>
+          <span class="ship-boarding-label">Cart<br>→ Cornwall</span>
+        </div>
+
+        <!-- Cornwall return cart — shown at Cornwall -->
+        <div id="cornwall-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
+          <div class="buy-item-frame" onclick="returnCornwallCart()" title="Return to London by cart" style="background:#000;" data-route-id="cornwall_return">
+            <img src="images/op-cobaltminer.jpg" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+          </div>
+          <span class="ship-boarding-label">Cart<br>← London</span>
+        </div>
+
         <!-- Ratnapura sampan — shown at Ceylon with tourmaline card -->
         <div id="ratnapura-sampan-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardRatnapuraSampan()" title="Sampan upriver to Ratnapura" style="background:#000;" data-route-id="ratnapura">
@@ -3062,30 +3078,6 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
             <img src="images/mule.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Mule<br>← Madras</span>
-        </div>
-
-        <!-- Kongu Nadu → Baramahal continue (only if iron ore card held) -->
-        <div id="kongu-continue-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="boardBaramahalMule()" title="Continue to Baramahal" style="background:#1a1208;" data-route-id="baramahal">
-            <img src="images/mule.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
-          </div>
-          <span class="ship-boarding-label">Mule<br>→ Baramahal</span>
-        </div>
-
-        <!-- Baramahal mule — shown at Kongu Nadu when player holds the iron ore op card -->
-        <div id="baramahal-mule-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="boardBaramahalMule()" title="Mule journey to Baramahal" style="background:#1a1208;" data-route-id="baramahal">
-            <img src="images/mule.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
-          </div>
-          <span class="ship-boarding-label">Mule<br>→ Baramahal</span>
-        </div>
-
-        <!-- Baramahal return mule — shown at Baramahal -->
-        <div id="baramahal-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
-          <div class="buy-item-frame" onclick="returnBaramahalMule()" title="Return to Kongu Nadu" style="background:#1a1208;" data-route-id="baramahal_return">
-            <img src="images/mule.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
-          </div>
-          <span class="ship-boarding-label">Mule<br>← Kongu Nadu</span>
         </div>
 
         <!-- Poonamallee rowboat — shown at Madras when player holds the netti carver op card -->
@@ -3342,8 +3334,6 @@ const ROUTE_COSTS = {
   lapidary:             0,  lapidary_return:      0,
   delft:                0,  delft_return:         0,
   kongumadras:          0,  kongumadras_return:   0,
-  baramahal:            0,  baramahal_return:     0,
-  baramahal_direct:     0,  baramahal_direct_return: 0,
   poonamallee:          0,  poonamallee_return:   0,
   caramujeira:          0,  caramujeira_return:   0,
   falsebay:             0,  falsebay_return:      0,
@@ -3368,6 +3358,8 @@ const ROUTE_FREE_PASS_PORTS = {
   haarlem_delft_return:  ['Delft','Haarlem'],
   leiden_delft:          ['Leiden','Delft'],
   leiden_delft_return:   ['Delft','Leiden'],
+  cornwall:              ['London','Cornwall'],
+  cornwall_return:       ['Cornwall','London'],
   meetiyagoda_return:   ['Ceylon','Meetiyagoda'],
   ratnapura:            ['Ceylon','Ratnapura'],
   ratnapura_return:     ['Ratnapura','Ceylon'],
@@ -3389,7 +3381,6 @@ const ROUTE_FREE_PASS_PORTS = {
   lapidary:             ['Amsterdam','Lapidary Outskirts'], lapidary_return: ['Amsterdam','Lapidary Outskirts'],
   delft:                ['Amsterdam','Delft'],     delft_return:         ['Amsterdam','Delft'],
   kongumadras:          ['Madras','Kongu Nadu'],   kongumadras_return:   ['Kongu Nadu','Madras'],
-  baramahal:            ['Kongu Nadu','Baramahal'], baramahal_return:     ['Baramahal','Kongu Nadu'],
   poonamallee:          ['Madras','Poonamallee'],   poonamallee_return:   ['Poonamallee','Madras'],
   caramujeira:          ['Lisbon','Caramujeira'],   caramujeira_return:   ['Caramujeira','Lisbon'],
   falsebay:             ['Cape of Good Hope','False Bay'], falsebay_return: ['False Bay','Cape of Good Hope'],
@@ -4104,56 +4095,6 @@ const ROUTES = {
     ],
   },
 
-  // ── Baramahal: Kongu Nadu → Baramahal (iron ore, one step further SW) ──
-  baramahal: {
-    id:        'baramahal',
-    shipImg:   'images/mule.png',
-    shipName:  'Mule journey to Baramahal',
-    lineColor: 'rgba(140,100,60,0.45)',
-    smallToken: true,
-    nextRoute: null,
-    circuit:   ['baramahal'],
-    nodes: [
-      {x:1081, y:451, name:'Kongu Nadu',  isPort:true,  portImg:'images/kongudest.jpeg'},      // 0
-      {x:1077, y:452, name:'Baramahal',   isPort:true,  portImg:'images/baramahaldest.jpeg'},  // 1
-    ],
-  },
-  baramahal_return: {
-    id:        'baramahal_return',
-    shipImg:   'images/mule.png',
-    shipName:  'Mule journey back to Kongu Nadu',
-    lineColor: 'rgba(140,100,60,0.25)',
-    smallToken: true,
-    nextRoute: null,
-    circuit:   ['baramahal_return'],
-    nodes: [
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 0
-      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'},      // 1
-    ],
-  },
-
-  // ── Baramahal DIRECT: Madras → Baramahal, passing Kongu Nadu without stopping (iron-only) ──
-  baramahal_direct: {
-    id:'baramahal_direct', shipImg:'images/mule.png', shipName:'Mule journey to Baramahal',
-    lineColor:'rgba(140,100,60,0.45)', smallToken:true, nextRoute:null, circuit:['baramahal_direct'],
-    nodes: [
-      {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'},      // 0
-      {x:1086, y:449, name:'',           isPort:false },                                     // 1
-      {x:1081, y:451, name:'Kongu Nadu', isPort:false },                                     // 2 — pass through, no stop
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 3
-    ],
-  },
-  baramahal_direct_return: {
-    id:'baramahal_direct_return', shipImg:'images/mule.png', shipName:'Mule journey back to Madras',
-    lineColor:'rgba(140,100,60,0.25)', smallToken:true, nextRoute:null, circuit:['baramahal_direct_return'],
-    nodes: [
-      {x:1077, y:452, name:'Baramahal',  isPort:true,  portImg:'images/baramahaldest.jpeg'}, // 0
-      {x:1081, y:451, name:'Kongu Nadu', isPort:false },                                     // 1 — pass through
-      {x:1086, y:449, name:'',           isPort:false },                                     // 2
-      {x:1090, y:447, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'},      // 3
-    ],
-  },
-
   // ── Poonamallee: Madras → Poonamallee (pith carver, rowboat NW up the Palar) ──
   poonamallee: {
     id:        'poonamallee',
@@ -4235,6 +4176,32 @@ const ROUTES = {
     nodes: [
       {x:824, y:278, name:'Bodleian Library', isPort:true, portImg:'images/bodleiandestination.jpg'}, // 0
       {x:837, y:290, name:'London',           isPort:true, portImg:'images/portlon.jpeg'},          // 1
+    ]
+  },
+
+  // ── Cornwall: London → Cornwall (raw cobalt, west and slightly south) ──
+  cornwall: {
+    id:        'cornwall',
+    shipImg:   'images/horseandcart.png',
+    shipName:  'Horse & Cart to Cornwall',
+    lineColor: 'rgba(160,120,60,0.5)',
+    tokenSize: '15px',
+    nextRoute: null, circuit: ['cornwall'],
+    nodes: [
+      {x:837, y:290, name:'London',    isPort:true, portImg:'images/portlon.jpeg'},          // 0
+      {x:804, y:284, name:'Cornwall',  isPort:true, portImg:'images/op-cobaltminer.jpg'}, // 1
+    ]
+  },
+  cornwall_return: {
+    id:        'cornwall_return',
+    shipImg:   'images/horseandcart.png',
+    shipName:  'Horse & Cart (Return)',
+    lineColor: 'rgba(160,120,60,0.3)',
+    tokenSize: '15px',
+    nextRoute: null, circuit: ['cornwall_return'],
+    nodes: [
+      {x:804, y:284, name:'Cornwall',  isPort:true, portImg:'images/op-cobaltminer.jpg'}, // 0
+      {x:837, y:290, name:'London',    isPort:true, portImg:'images/portlon.jpeg'},          // 1
     ]
   },
 };
@@ -5862,7 +5829,6 @@ const OVERVIEW_ROUTES = [
   'minas_cont','minas_cont_return',
   'sierras','sierras_return',
   'kongumadras','kongumadras_return',
-  'baramahal','baramahal_return','baramahal_direct','baramahal_direct_return',
   'poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
 ];
 
@@ -5978,8 +5944,8 @@ const INLAND_ROUTES = new Set([
   'whitecloudmtn','whitecloudmtn_return','sierras','sierras_return',
   'minasgerais','minasgerais_return','ouroupreto','ouroupreto_return',
   'minas_cont','minas_cont_return','kongumadras','kongumadras_return',
-  'baramahal','baramahal_return','baramahal_direct','baramahal_direct_return','poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
-  'london_bodleian','london_bodleian_return',
+  'poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
+  'london_bodleian','london_bodleian_return','cornwall','cornwall_return',
 ]);
 function isInlandRoute(id){ return INLAND_ROUTES.has(id); }
 
@@ -6393,7 +6359,6 @@ const PORT_IMAGES = {
   'Rio':              'images/portbat.jpeg',
   'Lisbon':           'images/portlis.jpg',
   'Kongu Nadu':       'images/kongudest.jpeg',
-  'Baramahal':        'images/baramahaldest.jpeg',
   'Poonamallee':      'images/poonamalleedest.jpeg',
   'Caramujeira':      'images/caramujeiradestination.jpeg',
   'False Bay':        'images/falsecapedestination.jpeg',
@@ -6738,6 +6703,15 @@ function openPort(portName, portImg) {
     // panel dispensed without consuming the card (cardless over-buy) — removed.
     document.getElementById('nuremberg-return-area').style.display = 'flex';
   }
+  // ── London — Cornwall cart, shown if player holds the cobalt miner op card ──
+  if (playerIsHere && portName === 'London') {
+    const hasCobaltCard = (p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-cobaltminer'));
+    if (hasCobaltCard) document.getElementById('cornwall-cart-area').style.display = 'flex';
+  }
+  // ── Cornwall — return cart ──
+  if (playerIsHere && portName === 'Cornwall') {
+    document.getElementById('cornwall-return-area').style.display = 'flex';
+  }
   // ── Rio proa — shown at Rio with sea fan opp card ──
   if (playerIsHere && portName === 'Rio') {
     const hasSfCard = (p.heldCards||[]).some(hc => hc.img && (hc.img.includes('seafan') || hc.dest === 'Abrolhos'));
@@ -6820,15 +6794,14 @@ function openPort(portName, portImg) {
   if (playerIsHere && portName === 'False Bay') {
     document.getElementById('falsebay-return-area').style.display = 'flex';
   }
-  // ── Madras — show kongu mule if ruby OR iron ore card; poonamallee if netti card ──
+  // ── Madras — show kongu mule if ruby card; poonamallee if netti card ──
   if (playerIsHere && portName === 'Madras') {
     const hasRubyCard  = (p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-rubyminer'));
     const hasNettiCard = (p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-netticarver'));
-    const hasIronCard  = (p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-ironore'));
-    if (hasRubyCard || hasIronCard) {
+    if (hasRubyCard) {
       document.getElementById('kongu-mule-area').style.display = 'flex';
       const _kl = document.getElementById('kongu-mule-label');
-      if (_kl) _kl.innerHTML = (hasIronCard && !hasRubyCard) ? 'Mule<br>→ Baramahal' : 'Mule<br>→ Kongu Nadu';
+      if (_kl) _kl.innerHTML = 'Mule<br>→ Kongu Nadu';
     }
     if (hasNettiCard) document.getElementById('poonamallee-boat-area').style.display = 'flex';
   }
@@ -6843,15 +6816,9 @@ function openPort(portName, portImg) {
   if (playerIsHere && portName === 'Poonamallee') {
     document.getElementById('poonamallee-return-area').style.display = 'flex';
   }
-  // ── Kongu Nadu — return mule always; continue to Baramahal only if iron ore card ──
+  // ── Kongu Nadu — return mule ──
   if (playerIsHere && portName === 'Kongu Nadu') {
     document.getElementById('kongu-return-area').style.display = 'flex';
-    const hasIronCard = (p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-ironore'));
-    if (hasIronCard) document.getElementById('kongu-continue-area').style.display = 'flex';
-  }
-  // ── Baramahal — return mule ──
-  if (playerIsHere && portName === 'Baramahal') {
-    document.getElementById('baramahal-return-area').style.display = 'flex';
   }
   document.getElementById('port-overlay').classList.add('open');
   // Show purchasable items for this port (telescope/quadrant at London, cinnabar/jar at Canton)
@@ -6871,6 +6838,7 @@ function closePort() {
    'haarlem-schuit-area','leiden-schuit-area','haarlem-continue-area','leiden-continue-area',
    'haarlem-conch-area','leiden-mineral-area','haarlem-return-area','leiden-return-area',
    'meetiyagoda-dhow-area','meetiyagoda-moonstone-area','meetiyagoda-return-area',
+   'cornwall-cart-area','cornwall-return-area',
    'ratnapura-sampan-area','ratnapura-tourmaline-area','ratnapura-return-area',
    'london-cart-area','bodleian-return-area','bodleian-select-area',
    'batavia-proa-area','shellcove-buy-area','shellcove-return-area',
@@ -6888,8 +6856,7 @@ function closePort() {
    'ancol-proa-area','ancol-return-area',
    'lapidary-barge-area','lapidary-return-area',
    'delft-canal-area','delft-return-area',
-   'kongu-mule-area','kongu-return-area','kongu-continue-area',
-   'baramahal-mule-area','baramahal-return-area',
+   'kongu-mule-area','kongu-return-area',
    'poonamallee-boat-area','poonamallee-return-area',
    'caramujeira-boat-area','caramujeira-return-area',
    'falsebay-boat-area','falsebay-return-area'].forEach(id => {
@@ -7358,9 +7325,13 @@ function buyDragonVase() {
   if (dragonVaseStock <= 0) { setStatus('The vase is already sold — someone beat you to it.'); return; }
   // One per turn (prevents double-buying in the same port session)
   if (boughtThisTurn.has('dragonvase')) { setStatus('One vase per visit — return another time.'); return; }
+  // Requires a raw cobalt sample — the kiln master wants a rare pigment for the glaze
+  const cobaltIdx = (p.items || []).findIndex(gi => (gi.id||'').toLowerCase().startsWith('cobalt'));
+  if (cobaltIdx < 0) { setStatus('The kiln master wants a rare pigment sample first — bring him a raw cobalt specimen.'); return; }
   if ((p.ingots || 0) < 5) { log(`${p.name}: Need 5 ingots for the vase!`); return; }
   p.ingots -= 5;
   dragonVaseStock--;
+  const cobaltUsed = p.items.splice(cobaltIdx, 1)[0];
   p.heldCards.splice(oi, 1); // consume the op card
   p.items = p.items || [];
   p.items.push({ id: 'dragonvase_' + Date.now(), img: 'images/dragonvase.png', label: 'Imperial Dragon Vase', type: 'goods', price: 5 });
@@ -7369,7 +7340,7 @@ function buyDragonVase() {
   updateInventory(currentPIdx);
   renderHeldCards(currentPIdx);
   updateHUD();
-  log(`${p.name} acquires the Imperial Dragon Vase for 5 ingots!`);
+  log(`${p.name} offers the cobalt sample to the kiln master and acquires the Imperial Dragon Vase for 5 ingots!`);
   _sweepDeadSingularCards(c => c.img && c.img.includes('op-dragonvaseworkshop'), 'Dragon Vase');
 }
 
@@ -7523,7 +7494,7 @@ function continueLeidenToDelft() {
 // Shell IDs from Shell Cove
 const SHELL_ITEM_PREFIXES = ['shellglory','wenteltrap','scorpionconch','venuscomb','shellmurex','shellscorpion','shell-nautilus','op-nautilusdiver','nautilusdiver'];
 // Mineral/gem item prefixes
-const MINERAL_ITEM_PREFIXES = ['amethyst','imperialtopaz','apatite','op-moonstone','moonstone','tourmaline','rainbowtourmaline','jadeball','ruby','ironore'];
+const MINERAL_ITEM_PREFIXES = ['amethyst','imperialtopaz','apatite','op-moonstone','moonstone','tourmaline','rainbowtourmaline','jadeball','ruby','cobalt'];
 
 function _isShell(item)   { const id=(item.id||'').toLowerCase(); return SHELL_ITEM_PREFIXES.some(p=>id.startsWith(p)); }
 function _isMineral(item) { const id=(item.id||'').toLowerCase(); const img=(item.img||'').replace(/^.*\//,'').toLowerCase(); return MINERAL_ITEM_PREFIXES.some(p=>id.startsWith(p)||img.startsWith(p)); }
@@ -7638,6 +7609,38 @@ function boardMeetiyagodaDhow() {
   renderShips(); buildSVG(); requestAnimationFrame(renderPortHotspots); updateHUD();
   log(`${p.name} boards the river dhow — next turn: Meetiyagoda gem mines!`);
   setStatus('Aboard the dhow — end your turn to sail inland.');
+}
+
+function boardCornwallCart() {
+  const p = cp();
+  if (!(p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-cobaltminer'))) return;
+  let s = ships.find(sh => sh.routeId === 'cornwall' && sh.nodeIndex === 0);
+  if (!s) {
+    s = { id: nextShipId++, routeId: 'cornwall', nodeIndex: 0, unmanned: false };
+    ships.push(s);
+  }
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  syncShipPirateStates(currentPIdx);
+  closePort();
+  renderShips(); buildSVG(); requestAnimationFrame(renderPortHotspots); updateHUD();
+  log(`${p.name} takes the cart west — next turn: the Cornish tin works!`);
+  setStatus('Aboard the cart — end your turn to reach Cornwall.');
+}
+
+function returnCornwallCart() {
+  const p = cp();
+  const old = ships.find(sh => sh.routeId === 'cornwall');
+  if (old) {
+    ships = ships.filter(sh => sh.id !== old.id);
+    const el = document.getElementById(`ship-img-${old.id}`);
+    if (el) { el.style.transition='opacity 0.5s'; el.style.opacity='0'; setTimeout(()=>el.remove(),550); }
+  }
+  let rs = ships.find(sh => sh.routeId === 'cornwall_return' && sh.nodeIndex === 0);
+  if (!rs) { rs = {id:nextShipId++, routeId:'cornwall_return', nodeIndex:0, unmanned:false}; ships.push(rs); }
+  p.shipId = rs.id; p.disembarked = false; p.landLocation = null;
+  syncShipPirateStates(currentPIdx);
+  closePort(); renderShips(); buildSVG(); requestAnimationFrame(renderPortHotspots); updateHUD();
+  log(`${p.name} takes the cart back east — London next turn!`);
 }
 
 function boardRatnapuraSampan() {
@@ -8702,16 +8705,10 @@ function boardKonguMule() {
   const p = cp();
   if (!p.cardDrawn) { triggerPeekBounce(); return; }
   const has = frag => (p.heldCards||[]).some(hc => hc.img && hc.img.includes(frag));
-  if (!(has('op-rubyminer') || has('op-ironore'))) return;
-  // Iron-ore-only merchants have no reason to stop at the ruby town — run the mule straight
-  // through Kongu Nadu to Baramahal. Ruby holders board the stopping route as before.
-  const direct  = has('op-ironore') && !has('op-rubyminer');
-  const routeId = direct ? 'baramahal_direct' : 'kongumadras';
-  const s = { id:nextShipId++, routeId, nodeIndex:0, unmanned:false };
+  if (!has('op-rubyminer')) return;
+  const s = { id:nextShipId++, routeId:'kongumadras', nodeIndex:0, unmanned:false };
   ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  log(direct
-    ? `${p.name} sets off south-west from Madras, bound straight for Baramahal.`
-    : `${p.name} sets off south-west from Madras — the ruby gatherer's directions in hand.`);
+  log(`${p.name} sets off south-west from Madras — the ruby gatherer's directions in hand.`);
   closePort(); renderShips();
 }
 
@@ -8721,29 +8718,6 @@ function returnKonguMule() {
   const s = { id:nextShipId++, routeId:'kongumadras_return', nodeIndex:0, unmanned:false };
   ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   log(`${p.name} begins the mule journey back to Madras.`);
-  closePort(); renderShips();
-}
-
-function boardBaramahalMule() {
-  const p = cp();
-  if (!p.cardDrawn) { triggerPeekBounce(); return; }
-  if (!(p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-ironore'))) return;
-  const s = { id:nextShipId++, routeId:'baramahal', nodeIndex:0, unmanned:false };
-  ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  log(`${p.name} follows the track deeper into the hills — Baramahal and its iron nodules ahead.`);
-  closePort(); renderShips();
-}
-
-function returnBaramahalMule() {
-  const p = cp();
-  if (!p.cardDrawn) { triggerPeekBounce(); return; }
-  const has = frag => (p.heldCards||[]).some(hc => hc.img && hc.img.includes(frag));
-  // Match the outbound trip: iron-only merchants run straight back to Madras (no ruby stop).
-  const direct  = has('op-ironore') && !has('op-rubyminer');
-  const routeId = direct ? 'baramahal_direct_return' : 'baramahal_return';
-  const s = { id:nextShipId++, routeId, nodeIndex:0, unmanned:false };
-  ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  log(direct ? `${p.name} takes the long road straight back to Madras.` : `${p.name} makes their way back to Kongu Nadu.`);
   closePort(); renderShips();
 }
 
@@ -9473,7 +9447,7 @@ const OPPORTUNITY_CARDS = [
   // ── Amethyst geode ×2 — Minas Gerais, 8 ingots ──
   ...Array(2).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
   // ── Dragon vase workshop ×3 — Hangzhou, 5 ingots ──
-  ...Array(2).fill({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots', note:'The kiln master also wants a rare cobalt pigment sample' }),
   // ── Nuremberg model maker ×2 — Nuremberg, 5 ingots ──
   // Central Sierras apatite miner ×3 — one op card per crystal available
   ...Array(3).fill({ img:'images/op-apetite-miner.jpeg', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' }),
@@ -9511,8 +9485,8 @@ const OPPORTUNITY_CARDS = [
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
   ...Array(3).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
-  // ── Iron Ore ×3 — Baramahal, 3 coins ──
-  ...Array(3).fill({ img:'images/op-ironore.jpeg', label:'Iron-Ore Nodule', location:'Baramahal', price:8, currency:'coins' }),
+  // ── Raw Cobalt Sample ×3 — Cornwall, 1 ingot ──
+  ...Array(3).fill({ img:'images/op-cobaltminer.jpg', label:'Raw Cobalt Sample', location:'Cornwall', price:1, currency:'ingots' }),
   // ── Netti Carver ×3 — Poonamallee, 6 ingots ──
   ...Array(3).fill({ img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' }),
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
@@ -9928,8 +9902,7 @@ function drawCard(type) {
       'whitecloudmtn','whitecloudmtn_return','sierras','sierras_return',
       'minasgerais','minasgerais_return','ouroupreto','ouroupreto_return',
       'kongumadras','kongumadras_return',
-      'baramahal','baramahal_return','baramahal_direct','baramahal_direct_return',
-      'poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return'];
+          'poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return'];
     if (inlandRoutes.includes(travelShip?.routeId)) {
       setStatus(`${p.name}: No card draws while travelling inland — arrive at your destination first.`);
       return;
@@ -10101,8 +10074,8 @@ const ITEM_POOLS_ALL = {
   ouro_preto_topaz: ['images/imperialtopaz1.png','images/imperialtopaz2.png'],
   // Kongu Nadu rubies — 3 specimens
   kongu_rubies: Array(3).fill('images/ruby1.png'),
-  // Baramahal iron ore — 3 specimens
-  baramahal_ironore: Array(3).fill('images/ironore.png'),
+  // Cornwall raw cobalt — 3 specimens
+  cornwall_cobalt: ['images/cobalt1.png','images/cobalt2.png','images/cobalt3.png'],
   // Poonamallee pith carvings — 3 different items, shuffled
   poonamallee_netti: ['images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png'],
   // Cambay casket — genuinely one of a kind, whoever's card gets there first wins it
@@ -10191,9 +10164,9 @@ const PORT_ITEMS = {
       reqCard:'images/op-rubyminer.jpeg', pool:'kongu_rubies',
       note:'3 specimens — one per card held' },
   ],
-  'Baramahal': [
-    { img:'images/ironore.png', label:'Iron-Ore Nodule', price:8, currency:'coins',
-      reqCard:'images/op-ironore.jpeg', pool:'baramahal_ironore' },
+  'Cornwall': [
+    { img:'images/cobalt1.png', label:'Raw Cobalt Sample', price:1, currency:'ingots',
+      reqCard:'images/op-cobaltminer.jpg', pool:'cornwall_cobalt', repeatable:true },
   ],
   'Poonamallee': [
     { img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', price:6, currency:'ingots',
@@ -10711,8 +10684,8 @@ function endTurn() {
       'ancol','ancol_return','lapidary','lapidary_return','delft','delft_return',
       'whitecloudmtn','whitecloudmtn_return','sierras','sierras_return',
       'minasgerais','minasgerais_return','ouroupreto','ouroupreto_return',
-      'minas_cont','minas_cont_return','london_bodleian','london_bodleian_return',
-      'kongumadras','kongumadras_return','baramahal','baramahal_return','baramahal_direct','baramahal_direct_return','poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
+      'minas_cont','minas_cont_return','london_bodleian','london_bodleian_return','cornwall','cornwall_return',
+      'kongumadras','kongumadras_return','poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
     ];
     if (_inlandRouteIds.includes(_cpInlandShip.routeId)) {
       cp().cardDrawn = true;  // pre-mark: no card draw on inland journeys
@@ -10730,7 +10703,7 @@ function endTurn() {
     'sierras','sierras_return',
     'minasgerais','minasgerais_return',
     'ouroupreto','ouroupreto_return','minas_cont','minas_cont_return',
-    'kongumadras','kongumadras_return','baramahal','baramahal_return','baramahal_direct','baramahal_direct_return','poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
+    'kongumadras','kongumadras_return','poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
   ];
   const _inP = cp(); // incoming player
   ALL_INLAND.forEach(routeId => {
@@ -11500,7 +11473,7 @@ function _aiBuildHubMap() {
   // Baramahal is a 2nd-leg chained trek (Madras → Kongu Nadu → Baramahal) whose route
   // touches no liner port. Anchor it to where the chain begins so the AI can sail there;
   // both mule legs already unlock on the iron-ore card, so it chains through on its own.
-  if (_aiHubMap['Kongu Nadu']) _aiHubMap['Baramahal'] = _aiHubMap['Kongu Nadu'];
+  // (Baramahal retired along with Iron Ore — no chained hub alias needed here anymore.)
   return _aiHubMap;
 }
 
@@ -12291,8 +12264,8 @@ const ITEM_SCORES = {
     itemType:'mineral',   shellFamily:null,    mineralType:'tourmaline',region:'asia'},
   'ruby':                 { w:9,  c:8,  s:8,  a:7,  total:32, label:'Raw Ruby Crystal',
     itemType:'mineral',   shellFamily:null,    mineralType:'ruby',   region:'asia'    },
-  'ironore':              { w:3,  c:4,  s:2,  a:3,  total:12, label:'Iron-Ore Nodule',
-    itemType:'mineral',   shellFamily:null, mineralType:'ironore', region:'asia' },
+  'cobalt':               { w:6,  c:5,  s:7,  a:8,  total:26, label:'Raw Cobalt Sample',
+    itemType:'mineral',   shellFamily:null, mineralType:'cobalt', region:'europe' },
   'nettiflamelily':       { w:10, c:8,  s:10, a:7,  total:35, label:'Pith Flame Lily',
     itemType:'botanical', shellFamily:null, mineralType:null,      region:'asia' },
   'nettilotus':           { w:10, c:8,  s:9,  a:7,  total:34, label:'Pith Lotus',
@@ -12347,7 +12320,7 @@ const BONUS_DEFS = [
     test(items) {
       const minerals = items.filter(i => i.sc.itemType === 'mineral');
       const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
-      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore','agate'];
+      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','cobalt','agate'];
       return ALL_MINERALS.every(m => types.has(m));
     },
   },
@@ -12391,7 +12364,7 @@ function itemScoreTotal(item) {
 
 // ── Live bonus-set progress from the CURRENT player's placed cabinet items ──
 const _CONCH_SET  = ['nautilus','cone','wentletrap','conch','murex','violet'];
-const _MIN_SET    = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','ironore','agate'];
+const _MIN_SET    = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','cobalt','agate'];
 const _REGION_SET = ['europe','asia','americas','africa','atsea','oceania'];
 const _CORAL_SET  = ['seafan','redcoral','braincoral'];
 function _cabinetPlacedScored(playerIdx) {
