@@ -3577,14 +3577,14 @@ const ROUTES = {
     lineColor:'rgba(200,180,100,0.55)', circuit:['lapidary'],
     nodes:[
       {x:849, y:273, name:'Amsterdam',          isPort:true, portImg:'images/portams.jpeg'},           // 0
-      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/shell-nautiloushalf.png'}, // 1
+      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/lapidarydest.jpg'}, // 1
     ],
   },
   lapidary_return: {
     id:'lapidary_return', shipImg:'images/keelboat.png', shipName:'Canal back to Amsterdam',
     lineColor:'rgba(200,180,100,0.55)', circuit:['lapidary_return'],
     nodes:[
-      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/shell-nautiloushalf.png'}, // 0
+      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/lapidarydest.jpg'}, // 0
       {x:849, y:273, name:'Amsterdam',          isPort:true, portImg:'images/portams.jpeg'},             // 1
     ],
   },
@@ -6348,7 +6348,7 @@ const PORT_IMAGES = {
   'Ratnapura':        'images/ratnapura.jpg',
   'White Cloud Mountain':'images/cloud_mountain.jpeg',
   'Ancol Cove':       'images/batavianuatilusdest.jpeg',
-  'Lapidary Outskirts':'images/shell-nautiloushalf.png',
+  'Lapidary Outskirts':'images/lapidarydest.jpg',
   'Delft':            'images/silversmithstudio.jpg',
   'Shell Cove':       'images/shellcovedestination.jpeg',
   'Nuremberg':        'images/nuremberg.jpeg',
@@ -10203,7 +10203,7 @@ const PORT_ITEMS = {
       note:'5 available in total — one per card held per turn' },
   ],
   'Lapidary Outskirts': [
-    { img:'images/shell-nautiloushalf.png', label:'Nautilus — Bisected', price:3, currency:'ingots',
+    { img:'images/lapidarydest.jpg', label:'Nautilus — Bisected', price:3, currency:'ingots',
       consumes:'images/shellnaut.png', note:'Cross-section reveals golden Fibonacci chambers' },
     { img:'images/shellnautpeeled.png', label:'Nautilus — Peeled', price:1, currency:'ingots',
       consumes:'images/shellnaut.png', note:'Outer whorl removed to show iridescent nacre' },
@@ -13791,7 +13791,7 @@ function cabClearHighlights() {
     // …then every port/destination background, so a port is never blank on arrival.
     var _portRe = /portImg:\s*'(images\/[^']+)'/g, _pm;
     while ((_pm = _portRe.exec(html)) !== null) { if (prioOrder.indexOf(_pm[1]) < 0) prioOrder.push(_pm[1]); }
-    var deferLast = ['images/seafanred.png','images/seafanpurple.png','images/seafan.png','images/amethyst1.png','images/amethyst2.png','images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png','images/inlaidbox.png','images/brassjalibox.png','images/lisbonjar.png','images/ceylonjar.png','images/dragonvase.png','images/silverewer.png','images/cinnabar.png','images/ruby1.png','images/jadeball.png','images/brasshookah.png','images/wenteltrap.png','images/polyhedra1.png','images/shellnautmount.png','images/shell-nautiloushalf.png','images/imperialtopaz1.png','images/imperialtopaz2.png','images/riocup.png','images/anatomicalmodeltorso.png','images/mandrake.png','images/tree-agate-slice-a.png','images/tree-agate-slice-b.png'];
+    var deferLast = ['images/seafanred.png','images/seafanpurple.png','images/seafan.png','images/amethyst1.png','images/amethyst2.png','images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png','images/inlaidbox.png','images/brassjalibox.png','images/lisbonjar.png','images/ceylonjar.png','images/dragonvase.png','images/silverewer.png','images/cinnabar.png','images/ruby1.png','images/jadeball.png','images/brasshookah.png','images/wenteltrap.png','images/polyhedra1.png','images/shellnautmount.png','images/lapidarydest.jpg','images/imperialtopaz1.png','images/imperialtopaz2.png','images/riocup.png','images/anatomicalmodeltorso.png','images/mandrake.png','images/tree-agate-slice-a.png','images/tree-agate-slice-b.png'];
     var pri = [], rest = [], defer = [];
     list.forEach(function(u) {
       if (prioOrder.indexOf(u) >= 0) pri.push(u);
