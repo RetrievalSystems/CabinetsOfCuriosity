@@ -5784,7 +5784,19 @@ function buildSVG() {
     });
   }
 }
-window.addEventListener('resize', () => { cacheImgSize(); buildSVG(); renderShips(); renderStormTokens(); requestAnimationFrame(renderPortHotspots); });
+window.addEventListener('resize', () => {
+  cacheImgSize();
+  // currentZoomTx/Ty/Scale were only ever recalculated by an explicit zoom action (arriving
+  // somewhere, a turn changing) — never by the window simply changing size. Everything drawn
+  // on top of the map (port dots, the pawn's click-zone) reads those same three numbers, so a
+  // resize with no zoom event in between left them stale: the map image itself re-laid-out
+  // correctly, but the dots and pawn still used the OLD window's scale/pan, making them look
+  // like they'd "drifted" — worse the further from the zoom's anchor point. Re-fitting here
+  // keeps everything glued together at any window size, not just the one it happened to be
+  // originally sized for.
+  zoomOut();
+  buildSVG(); renderShips(); renderStormTokens(); requestAnimationFrame(renderPortHotspots);
+});
 
 // ════════════════════════════════════════════════
 //  MAP CLICK OVERLAY — not used; see renderPortHotspots
