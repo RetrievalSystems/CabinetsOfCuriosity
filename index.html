@@ -2297,6 +2297,98 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   pointer-events: none;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   TUTORIAL MODE — narration box, spotlight highlight, controls
+   ══════════════════════════════════════════════════════════════════ */
+#tut-dim {
+  position: fixed; inset: 0; z-index: 899997;
+  background: rgba(8,5,2,0.55);
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+#tut-spot {
+  position: fixed; z-index: 899998;
+  border-radius: 10px;
+  box-shadow: 0 0 0 4000px rgba(8,5,2,0.55), 0 0 0 3px rgba(232,190,110,0.95), 0 0 28px rgba(232,190,110,0.55);
+  pointer-events: none;
+  transition: left 0.5s cubic-bezier(.4,0,.2,1), top 0.5s cubic-bezier(.4,0,.2,1),
+              width 0.5s cubic-bezier(.4,0,.2,1), height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
+}
+#tut-box {
+  position: fixed; z-index: 899999;
+  max-width: 420px;
+  background: linear-gradient(160deg,#2a1a08,#160c04);
+  border: 1px solid #c8923a;
+  border-radius: 10px;
+  padding: 18px 20px;
+  color: #f0dfc0;
+  font-family: 'EB Garamond', Georgia, serif;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+  transition: left 0.5s cubic-bezier(.4,0,.2,1), top 0.5s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
+}
+#tut-box .tut-title {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  color: #e8c878;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+#tut-box .tut-text {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+#tut-box .tut-controls {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+#tut-box .tut-progress {
+  font-size: 0.8rem;
+  color: rgba(240,223,192,0.55);
+  letter-spacing: 0.05em;
+}
+#tut-box button {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: 7px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #6b4416;
+}
+#tut-box .tut-next {
+  background: linear-gradient(135deg,#c8923a,#8a5f22);
+  color: #1a0e04;
+  font-weight: 700;
+}
+#tut-box .tut-skip {
+  background: transparent;
+  color: rgba(240,223,192,0.6);
+  border-color: rgba(200,150,80,0.3);
+}
+/* Callout labels pointing at parts of an enlarged card during the anatomy step */
+.tut-callout {
+  position: fixed; z-index: 900000;
+  background: rgba(20,12,4,0.94);
+  border: 1px solid #c8923a;
+  border-radius: 6px;
+  padding: 5px 11px;
+  color: #f0dfc0;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.tut-callout::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  background: inherit;
+  border-right: 1px solid #c8923a; border-bottom: 1px solid #c8923a;
+}
 
 </style>
 </head>
@@ -14013,6 +14105,11 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       <div class="mode-card-title">Collaborative</div>
       <div class="mode-card-desc">Two traders,<br>one cabinet.<br>Pool your finds.<br>One legend, shared.</div>
     </div>
+    <div class="mode-card" onclick="startTutorial()">
+      <div class="mode-card-icon">📖</div>
+      <div class="mode-card-title">How to Play</div>
+      <div class="mode-card-desc">Watch a real<br>turn unfold,<br>narrated<br>step by step.</div>
+    </div>
   </div>
 </div>
 
@@ -14465,6 +14562,274 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   if (document.readyState !== 'loading') start();
   else document.addEventListener('DOMContentLoaded', start);
 })();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TUTORIAL MODE — a real, live game auto-played step by step, with
+     narration and a spotlight highlight on whatever's being explained.
+     ══════════════════════════════════════════════════════════════════ -->
+<script>
+let _tutSteps = [];
+let _tutIdx = 0;
+let _tutActive = false;
+
+function startTutorial() {
+  _tutActive = true;
+  const ms = document.getElementById('mode-select-overlay');
+  if (ms) ms.remove();
+  gameMode = 'solo';
+  initPlayers(1);
+  chosenMerchant[0] = { src: MERCHANT_IMGS['red'], bx:'0%', by:'0%', idx:0 };
+  const nameInput = document.getElementById('char-name-p1');
+  if (nameInput) nameInput.value = 'Merchant';
+  // beginVoyage() reads #char-name-p1's value itself and removes the char-select
+  // overlay (and the map-cover) internally — don't do either of those here first,
+  // or beginVoyage's own DOM read throws on a now-missing element.
+  try { beginVoyage(); } catch (e) { console.error('tutorial beginVoyage failed', e); }
+  setTimeout(() => { _tutSteps = _tutBuildSteps(); _tutIdx = 0; _tutShowStep(); }, 1000);
+}
+
+function _tutEnsureDOM() {
+  if (document.getElementById('tut-dim')) return;
+  const dim = document.createElement('div'); dim.id = 'tut-dim'; document.body.appendChild(dim);
+  const spot = document.createElement('div'); spot.id = 'tut-spot'; spot.style.opacity = '0'; document.body.appendChild(spot);
+  const box = document.createElement('div'); box.id = 'tut-box';
+  box.innerHTML = `
+    <div class="tut-title" id="tut-title"></div>
+    <div class="tut-text" id="tut-text"></div>
+    <div class="tut-controls">
+      <span class="tut-progress" id="tut-progress"></span>
+      <div style="display:flex; gap:8px;">
+        <button class="tut-skip" onclick="_tutSkip()">End tutorial</button>
+        <button class="tut-next" id="tut-next-btn" onclick="_tutNext()">Next →</button>
+      </div>
+    </div>`;
+  document.body.appendChild(box);
+}
+
+function _tutClearCallouts() {
+  document.querySelectorAll('.tut-callout').forEach(el => el.remove());
+  const enlarged = document.getElementById('tut-card-enlarged');
+  if (enlarged) enlarged.remove();
+}
+
+async function _tutShowStep() {
+  if (!_tutActive) return;
+  _tutClearCallouts();
+  if (_tutIdx >= _tutSteps.length) { _tutFinish(); return; }
+  const step = _tutSteps[_tutIdx];
+  try { if (step.action) await step.action(); } catch (e) { console.error('tutorial step action failed', e); }
+  requestAnimationFrame(() => requestAnimationFrame(() => _tutRender(step)));
+}
+
+function _tutRender(step) {
+  _tutEnsureDOM();
+  const dim  = document.getElementById('tut-dim');
+  const spot = document.getElementById('tut-spot');
+  const box  = document.getElementById('tut-box');
+  dim.style.opacity = '1';
+
+  document.getElementById('tut-title').textContent = step.title;
+  document.getElementById('tut-text').innerHTML = step.text;
+  document.getElementById('tut-progress').textContent = `${_tutIdx + 1} / ${_tutSteps.length}`;
+  const nextBtn = document.getElementById('tut-next-btn');
+  nextBtn.textContent = (_tutIdx === _tutSteps.length - 1) ? 'Finish ✓' : 'Next →';
+
+  const target = step.target ? step.target() : null;
+  if (target) {
+    const r = target.getBoundingClientRect();
+    const pad = 10;
+    spot.style.left = (r.left - pad) + 'px';
+    spot.style.top  = (r.top  - pad) + 'px';
+    spot.style.width  = (r.width  + pad * 2) + 'px';
+    spot.style.height = (r.height + pad * 2) + 'px';
+    spot.style.opacity = '1';
+  } else {
+    spot.style.opacity = '0';
+  }
+
+  // Narration box sits bottom-centre, well clear of the map and panels — steady,
+  // predictable position so the eye always knows where to look for the explanation,
+  // while the spotlight ring is what moves to point at the thing being discussed.
+  box.style.left = '50%';
+  box.style.bottom = '26px';
+  box.style.top = 'auto';
+  box.style.transform = 'translateX(-50%)';
+
+  if (step.callouts) step.callouts();
+}
+
+function _tutAddCallout(x, y, text, dir) {
+  const el = document.createElement('div');
+  el.className = 'tut-callout';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+  document.body.appendChild(el);
+}
+
+function _tutNext() {
+  _tutIdx++;
+  _tutShowStep();
+}
+
+function _tutSkip() {
+  _tutActive = false;
+  document.getElementById('tut-dim')?.remove();
+  document.getElementById('tut-spot')?.remove();
+  document.getElementById('tut-box')?.remove();
+  _tutClearCallouts();
+  location.reload();
+}
+
+function _tutFinish() {
+  const box = document.getElementById('tut-box');
+  document.getElementById('tut-spot')?.remove();
+  if (box) {
+    box.innerHTML = `
+      <div class="tut-title">You're ready</div>
+      <div class="tut-text">That's the whole loop — draw, travel, buy, place, repeat, until the cabinet's full and the collector calls for his appraisal. Everything you just watched was a real game, so feel free to keep playing this one, or start fresh.</div>
+      <div class="tut-controls">
+        <span class="tut-progress"></span>
+        <div style="display:flex; gap:8px;">
+          <button class="tut-skip" onclick="location.reload()">Start fresh</button>
+          <button class="tut-next" onclick="_tutDismiss()">Keep playing this game</button>
+        </div>
+      </div>`;
+  }
+}
+function _tutDismiss() {
+  _tutActive = false;
+  document.getElementById('tut-dim')?.remove();
+  document.getElementById('tut-box')?.remove();
+  _tutClearCallouts();
+}
+
+// Build an enlarged, non-interactive preview of a card for the anatomy walkthrough,
+// with floating labels pointing at each part — location, price, and (where relevant)
+// the note that an extra item is required. Purely illustrative: doesn't touch the deck
+// or the player's real hand.
+function _tutShowCardAnatomy(card) {
+  const el = document.createElement('img');
+  el.id = 'tut-card-enlarged';
+  el.src = card.img;
+  el.style.cssText = `
+    position:fixed; z-index:899999; top:50%; left:50%; transform:translate(-50%,-58%);
+    height:60vh; max-width:80vw; object-fit:contain; border-radius:8px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.8); border:1px solid rgba(212,168,85,0.5);`;
+  document.body.appendChild(el);
+  el.onload = () => {
+    const r = el.getBoundingClientRect();
+    // Approximate regions on the standard card layout: bar sits ~89-93% down (location
+    // dot+name on the left, score plaque centred, transport icon right); caption text
+    // (destination + price) sits in the bottom ~8%.
+    _tutAddCallout(r.left + r.width * 0.06, r.top + r.height * 0.885, '↑ Where it\u2019s used');
+    _tutAddCallout(r.left + r.width * 0.40, r.top + r.height * 0.885, '↑ Points it\u2019s worth');
+    _tutAddCallout(r.left + r.width * 0.06, r.top + r.height * 0.965, '↑ Destination & price to buy it');
+    if (card.reqNote) _tutAddCallout(r.left + r.width * 0.06, r.top + r.height * 1.01, '↑ ' + card.reqNote);
+  };
+}
+
+function _tutBuildSteps() {
+  const p = () => players[0];
+  return [
+    {
+      title: 'Welcome to Cabinets of Curiosity',
+      text: 'This is a real game, playing itself, so you can watch exactly how a turn works. Click <b>Next</b> whenever you\u2019re ready — nothing happens until you do.',
+      target: () => null,
+    },
+    {
+      title: 'The Map',
+      text: 'This is your world — real 18th-century trade routes. You\u2019ll sail between ports, collecting rare and unusual objects for a private collector\u2019s cabinet of curiosities.',
+      target: () => document.getElementById('map-wrapper'),
+    },
+    {
+      title: 'Your Panel',
+      text: 'This is you. Your silver and ingots (the two currencies), your reputation, and the items you\u2019re currently carrying all live here.',
+      target: () => document.getElementById('panel-p1'),
+    },
+    {
+      title: 'Each Turn',
+      text: 'A turn is simple: <b>draw a card</b>, then decide whether to <b>move</b>, <b>buy</b>, or just <b>end your turn</b>. Let\u2019s draw one now.',
+      target: () => document.getElementById('decks-centre'),
+    },
+    {
+      title: 'Drawing a Card',
+      text: 'On land you draw from the land deck; at sea, the sea deck. Cards can be a stroke of luck, a run-in with the taxman, or — most often — an <b>Opportunity</b>: a lead on something worth collecting.',
+      target: () => document.getElementById('deck-land'),
+      action: async () => {
+        if (!p().cardDrawn) { try { await _aiDrawAndResolve(0); } catch(e){} }
+      },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'Every Opportunity card tells you three things: <b>where</b> to take it, <b>what it\u2019s worth</b>, and <b>the price</b> to actually buy the item once you arrive.',
+      target: () => null,
+      action: () => { _tutShowCardAnatomy({ img: 'images/op-silvermith.jpeg' }); },
+    },
+    {
+      title: 'Some Need More Than Money',
+      text: 'A few of the rarest items ask for something extra — a specific tool, or another curiosity you\u2019ve found elsewhere — not just coin. Keep an eye on a card\u2019s note for this.',
+      target: () => null,
+      action: () => { _tutShowCardAnatomy({ img: 'images/puzzleball.jpeg', reqNote: 'This one also needs a telescope in hand' }); },
+    },
+    {
+      title: 'Your Held Cards',
+      text: 'Cards you\u2019ve drawn sit here, face down to anyone but you. In Rival mode, your opponent has no idea what you\u2019re planning until you act on it.',
+      target: () => document.getElementById('held-p1'),
+    },
+    {
+      title: 'The Bodleian Library',
+      text: 'Early on, you\u2019ll receive an invitation to Oxford. There, you\u2019re shown three cards face up and keep just one — a rare chance to actually choose, rather than draw blind.',
+      target: () => null,
+    },
+    {
+      title: 'Travelling',
+      text: 'Reaching a card\u2019s destination costs real turns — a short hop might be one turn, a transatlantic crossing several. We\u2019ll skip ahead here so you can see what happens on arrival.',
+      target: () => document.getElementById('map-wrapper'),
+    },
+    {
+      title: 'Buying an Item',
+      text: 'London itself sells a couple of useful instruments with no card needed. Let\u2019s pick up a Quadrant — 3 ingots, straightforward.',
+      target: () => document.getElementById('map-wrapper'),
+      action: async () => {
+        const pl = p();
+        if ((pl.ingots||0) < 3) pl.ingots = (pl.ingots||0) + 3;
+        try { openPort('London', PORT_IMAGES['London']); } catch(e) {}
+        await _aiWait(400);
+        try {
+          const item = (PORT_ITEMS['London']||[]).find(w => w.label === 'Quadrant');
+          if (item && !(pl.items||[]).some(it => it.img === item.img)) buyPortItem(item);
+        } catch(e) {}
+        await _aiWait(300);
+      },
+    },
+    {
+      title: 'The Cabinet',
+      text: 'Everything you buy has to earn a place here to actually score — a curiosity sitting in your pocket is worth nothing until it\u2019s on display. Let\u2019s open it.',
+      target: () => document.getElementById('cab-overlay'),
+      action: async () => {
+        try { openCabinet(); } catch(e) {}
+        await _aiWait(500);
+      },
+    },
+    {
+      title: 'Placing an Item',
+      text: 'Drag a held item onto any slot it fits. Placing something pays you a small ingot reward immediately — filling the cabinet is how you actually earn your keep, turn by turn.',
+      target: () => document.getElementById('cab-slot-layer'),
+    },
+    {
+      title: 'Matching Sets',
+      text: 'Collect a full set of something — every mineral type, every shell family, one of each coral — and you\u2019ll earn a large bonus on top of each item\u2019s own score at the end.',
+      target: () => null,
+    },
+    {
+      title: 'Ending the Game',
+      text: 'Once your cabinet is completely full, the collector offers to appraise it. Accept, and your final <b>Prestige</b> score — every item plus every bonus you completed — is revealed.',
+      target: () => null,
+    },
+  ];
+}
 </script>
 </body>
 </html>
