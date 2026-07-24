@@ -2389,6 +2389,46 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   background: inherit;
   border-right: 1px solid #c8923a; border-bottom: 1px solid #c8923a;
 }
+#tut-box.tut-box-center {
+  bottom: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+#tut-doors {
+  position: fixed; inset: 0; z-index: 900001;
+  background: url('images/cabinetclosed.jpg') center/cover no-repeat;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.8s ease;
+}
+#tut-doors.show { opacity: 1; }
+#tut-doors .tut-doors-title {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 2.6rem;
+  letter-spacing: 0.1em;
+  color: #e8c878;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+  text-align: center;
+  margin-bottom: 10px;
+}
+#tut-doors .tut-doors-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  color: #f0dfc0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  margin-bottom: 40px;
+}
+#tut-doors .tut-doors-click {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: rgba(240,223,192,0.8);
+  animation: tutPulse 1.8s ease-in-out infinite;
+}
+@keyframes tutPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
 </style>
 </head>
@@ -14577,16 +14617,32 @@ function startTutorial() {
   _tutActive = true;
   const ms = document.getElementById('mode-select-overlay');
   if (ms) ms.remove();
-  gameMode = 'solo';
-  initPlayers(1);
-  chosenMerchant[0] = { src: MERCHANT_IMGS['red'], bx:'0%', by:'0%', idx:0 };
-  const nameInput = document.getElementById('char-name-p1');
-  if (nameInput) nameInput.value = 'Merchant';
-  // beginVoyage() reads #char-name-p1's value itself and removes the char-select
-  // overlay (and the map-cover) internally — don't do either of those here first,
-  // or beginVoyage's own DOM read throws on a now-missing element.
-  try { beginVoyage(); } catch (e) { console.error('tutorial beginVoyage failed', e); }
-  setTimeout(() => { _tutSteps = _tutBuildSteps(); _tutIdx = 0; _tutShowStep(); }, 1000);
+
+  const doors = document.createElement('div');
+  doors.id = 'tut-doors';
+  doors.innerHTML = `
+    <div class="tut-doors-title">CABINETS OF CURIOSITY</div>
+    <div class="tut-doors-sub">How to Play</div>
+    <div class="tut-doors-click">Click to begin</div>`;
+  document.body.appendChild(doors);
+  requestAnimationFrame(() => doors.classList.add('show'));
+
+  doors.addEventListener('click', function onDoorsClick() {
+    doors.removeEventListener('click', onDoorsClick);
+    doors.classList.remove('show');
+    setTimeout(() => {
+      doors.remove();
+      gameMode = 'solo';
+      initPlayers(1);
+      chosenMerchant[0] = { src: MERCHANT_IMGS['red'], bx:'0%', by:'0%', idx:0 };
+      const nameInput = document.getElementById('char-name-p1');
+      if (nameInput) nameInput.value = 'Merchant';
+      try { beginVoyage(); } catch (e) { console.error('tutorial beginVoyage failed', e); }
+      // Wait a beat so the opening Bodleian invite actually lands in-hand before we
+      // start narrating — the player should visibly already have received it.
+      setTimeout(() => { _tutSteps = _tutBuildSteps(); _tutIdx = 0; _tutShowStep(); }, 1400);
+    }, 800);
+  });
 }
 
 function _tutEnsureDOM() {
@@ -14648,13 +14704,16 @@ function _tutRender(step) {
     spot.style.opacity = '0';
   }
 
-  // Narration box sits bottom-centre, well clear of the map and panels — steady,
-  // predictable position so the eye always knows where to look for the explanation,
-  // while the spotlight ring is what moves to point at the thing being discussed.
-  box.style.left = '50%';
-  box.style.bottom = '26px';
-  box.style.top = 'auto';
-  box.style.transform = 'translateX(-50%)';
+  // Narration box normally sits bottom-centre, clear of the map and card row —
+  // but a step can ask for it centred instead (boxPos:'center'), e.g. when
+  // explaining the map itself, so it doesn't sit on top of what it's describing.
+  box.classList.toggle('tut-box-center', step.boxPos === 'center');
+  if (step.boxPos !== 'center') {
+    box.style.left = '50%';
+    box.style.bottom = '26px';
+    box.style.top = 'auto';
+    box.style.transform = 'translateX(-50%)';
+  }
 
   if (step.callouts) step.callouts();
 }
@@ -14665,7 +14724,21 @@ function _tutAddCallout(x, y, text, dir) {
   el.textContent = text;
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
+  el.style.opacity = '0';
+  el.style.transition = 'opacity 0.4s ease';
   document.body.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '1'; });
+  return el;
+}
+
+// Reveals a list of {x,y,text} callouts one at a time, pausing between each, so a
+// sequence of points ("the price, then the destination, then the trek length…")
+// genuinely builds up in order rather than all appearing at once.
+async function _tutAddCalloutsSequential(list, pauseMs) {
+  for (const c of list) {
+    _tutAddCallout(c.x, c.y, c.text);
+    await _aiWait(pauseMs || 900);
+  }
 }
 
 function _tutNext() {
@@ -14730,67 +14803,128 @@ function _tutShowCardAnatomy(card) {
   };
 }
 
+// ── Scripted mini-actions used by specific tutorial steps ──
+
+async function _tutGoToBodleian() {
+  const p = players[0];
+  let s = ships.find(sh => sh.routeId === 'london_bodleian');
+  if (!s) { s = { id: nextShipId++, routeId: 'london_bodleian', nodeIndex: 1, unmanned: false }; ships.push(s); }
+  else s.nodeIndex = 1;
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  try { renderShips(); buildSVG(); } catch (e) {}
+  await _aiWait(500);
+  try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
+  await _aiWait(500);
+}
+
+async function _tutBodleianPickRuby() {
+  const cardData = [
+    { img:'images/op-rubyminer.jpeg',    label:'Raw Ruby Crystal',            location:'Kongu Nadu', dest:'Kongu Nadu', price:12, currency:'ingots' },
+    { img:'images/op-amethyst2.jpeg',    label:'Amethyst Geode',              location:'Minas Gerais', dest:'Minas Gerais', price:8,  currency:'ingots' },
+    { img:'images/op-imperialtopaz.jpeg',label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', dest:'Ouro Preto', price:12, currency:'ingots' },
+  ];
+  _bodleianVisits[0] = { cards: cardData, revealed: false };
+  _bodleianPeeked = cardData;
+  try { openBodleianPort(); } catch (e) {}
+  await _aiWait(1600);                          // let all three visibly flip face-up
+  try { selectBodleianCard(0); } catch (e) {}    // picks the Ruby
+  await _aiWait(700);
+  const area = document.getElementById('bodleian-select-area');
+  if (area) area.style.display = 'none';
+  try { closePort(); } catch (e) {}
+}
+
+async function _tutReturnToLondon() {
+  const p = players[0];
+  const old = ships.find(sh => sh.routeId === 'london_bodleian');
+  if (old) ships = ships.filter(sh => sh.id !== old.id);
+  let s = { id: nextShipId++, routeId: 'london_bodleian_return', nodeIndex: 1, unmanned: false };
+  ships.push(s);
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  try { renderShips(); buildSVG(); } catch (e) {}
+  await _aiWait(500);
+  p.landLocation = 'London';
+  try { closePort(); } catch (e) {}
+}
+
+// Anatomy walkthrough on the player's REAL held Ruby card (rather than a floating
+// demo image) — finds it in the actual hand and draws callouts around it in place.
+function _tutAnatomyOnHeldCard(imgFragment, calloutSets) {
+  const hand = document.getElementById('held-p1');
+  const cardEl = hand && [...hand.querySelectorAll('.held-card')].find(el => {
+    const img = el.querySelector('img');
+    return img && img.src && img.src.includes(imgFragment);
+  });
+  if (!cardEl) return;
+  const r = cardEl.getBoundingClientRect();
+  calloutSets.forEach(c => _tutAddCallout(r.left + r.width * c.fx, r.top + r.height * c.fy, c.text));
+}
+
 function _tutBuildSteps() {
   const p = () => players[0];
   return [
     {
-      title: 'Welcome to Cabinets of Curiosity',
-      text: 'This is a real game, playing itself, so you can watch exactly how a turn works. Click <b>Next</b> whenever you\u2019re ready — nothing happens until you do.',
-      target: () => null,
-    },
-    {
-      title: 'The Map',
-      text: 'This is your world — real 18th-century trade routes. You\u2019ll sail between ports, collecting rare and unusual objects for a private collector\u2019s cabinet of curiosities.',
+      title: 'The Game Board',
+      text: 'This is the game board — an antique map showing real 18th century trade routes, which you\u2019ll use to collect unusual objects for the collector\u2019s cabinet.',
       target: () => document.getElementById('map-wrapper'),
+      boxPos: 'center',
     },
     {
       title: 'Your Panel',
-      text: 'This is you. Your silver and ingots (the two currencies), your reputation, and the items you\u2019re currently carrying all live here.',
+      text: 'This is you. Silver coins and ingots you will use to buy the items — there are 10 coins to an ingot — plus your reputation and the items you\u2019re currently carrying, all live here.',
       target: () => document.getElementById('panel-p1'),
     },
     {
       title: 'Each Turn',
-      text: 'A turn is simple: <b>draw a card</b>, then decide whether to <b>move</b>, <b>buy</b>, or just <b>end your turn</b>. Let\u2019s draw one now.',
+      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done. As you travel you will receive information about specific items in the form of Opportunity Cards.',
       target: () => document.getElementById('decks-centre'),
     },
     {
-      title: 'Drawing a Card',
-      text: 'On land you draw from the land deck; at sea, the sea deck. Cards can be a stroke of luck, a run-in with the taxman, or — most often — an <b>Opportunity</b>: a lead on something worth collecting.',
-      target: () => document.getElementById('deck-land'),
-      action: async () => {
-        if (!p().cardDrawn) { try { await _aiDrawAndResolve(0); } catch(e){} }
-      },
-    },
-    {
-      title: 'Anatomy of an Opportunity Card',
-      text: 'Every Opportunity card tells you three things: <b>where</b> to take it, <b>what it\u2019s worth</b>, and <b>the price</b> to actually buy the item once you arrive.',
-      target: () => null,
-      action: () => { _tutShowCardAnatomy({ img: 'images/op-silvermith.jpeg' }); },
-    },
-    {
-      title: 'Some Need More Than Money',
-      text: 'A few of the rarest items ask for something extra — a specific tool, or another curiosity you\u2019ve found elsewhere — not just coin. Keep an eye on a card\u2019s note for this.',
-      target: () => null,
-      action: () => { _tutShowCardAnatomy({ img: 'images/puzzleball.jpeg', reqNote: 'This one also needs a telescope in hand' }); },
-    },
-    {
-      title: 'Your Held Cards',
-      text: 'Cards you\u2019ve drawn sit here, face down to anyone but you. In Rival mode, your opponent has no idea what you\u2019re planning until you act on it.',
+      title: 'The Bodleian Invitation',
+      text: 'The first card of every game is always the Bodleian Library invitation — each player gets one (there are two more shuffled into the deck). You can use it at the start to get you going, or save it for later.',
       target: () => document.getElementById('held-p1'),
     },
     {
-      title: 'The Bodleian Library',
-      text: 'Early on, you\u2019ll receive an invitation to Oxford. There, you\u2019re shown three cards face up and keep just one — a rare chance to actually choose, rather than draw blind.',
-      target: () => null,
+      title: 'A Rare Chance',
+      text: 'The Bodleian invitation gives you a rare chance to actually choose your lead, rather than draw one blind — a genuine head start if you use it early.',
+      target: () => document.getElementById('held-p1'),
     },
     {
-      title: 'Travelling',
-      text: 'Reaching a card\u2019s destination costs real turns — a short hop might be one turn, a transatlantic crossing several. We\u2019ll skip ahead here so you can see what happens on arrival.',
+      title: 'Visiting the Bodleian',
+      text: 'So in your first turn, you might choose to visit the Bodleian.',
       target: () => document.getElementById('map-wrapper'),
+      action: async () => { await _tutGoToBodleian(); },
     },
     {
-      title: 'Buying an Item',
-      text: 'London itself sells a couple of useful instruments with no card needed. Let\u2019s pick up a Quadrant — 3 ingots, straightforward.',
+      title: 'Choosing a Card',
+      text: 'Here you get to select from three Opportunity cards — the other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
+      target: () => document.getElementById('bodleian-select-area'),
+      action: async () => { await _tutBodleianPickRuby(); },
+    },
+    {
+      title: 'Back to London',
+      text: 'With our new lead in hand, we return to London.',
+      target: () => document.getElementById('map-wrapper'),
+      action: async () => { await _tutReturnToLondon(); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'Now we\u2019re back — let\u2019s look at the anatomy of an Opportunity card: where it\u2019s used, what it\u2019s worth, and the price to actually buy it.',
+      target: () => document.getElementById('held-p1'),
+      action: () => {
+        _tutAnatomyOnHeldCard('rubyminer', [
+          { fx: 0.5, fy: -0.12, text: 'Kept face down until you act on it' },
+        ]);
+      },
+    },
+    {
+      title: 'Opening a Port',
+      text: 'Clicking on your merchant token opens their location\u2019s window.',
+      target: () => document.getElementById('panel-p1'),
+    },
+    {
+      title: 'Shopping Locally',
+      text: 'So while still in the London port, you might want to purchase some items — each port has a few lower-tier items readily available.',
       target: () => document.getElementById('map-wrapper'),
       action: async () => {
         const pl = p();
@@ -14806,27 +14940,37 @@ function _tutBuildSteps() {
     },
     {
       title: 'The Cabinet',
-      text: 'Everything you buy has to earn a place here to actually score — a curiosity sitting in your pocket is worth nothing until it\u2019s on display. Let\u2019s open it.',
+      text: 'Everything you buy has to earn a place here to actually score. The collector refunds your outlay and half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.',
       target: () => document.getElementById('cab-overlay'),
+      action: async () => { try { openCabinet(); } catch(e) {} await _aiWait(500); },
+    },
+    {
+      title: 'Time to Travel',
+      text: 'This Ruby costs 12 ingots — you now have enough to purchase it. Let\u2019s see where it\u2019s located.',
+      target: () => document.getElementById('held-p1'),
       action: async () => {
-        try { openCabinet(); } catch(e) {}
-        await _aiWait(500);
+        try { closeCabinet(); } catch(e) {}
+        await _aiWait(300);
       },
     },
     {
-      title: 'Placing an Item',
-      text: 'Drag a held item onto any slot it fits. Placing something pays you a small ingot reward immediately — filling the cabinet is how you actually earn your keep, turn by turn.',
-      target: () => document.getElementById('cab-slot-layer'),
-    },
-    {
-      title: 'Matching Sets',
-      text: 'Collect a full set of something — every mineral type, every shell family, one of each coral — and you\u2019ll earn a large bonus on top of each item\u2019s own score at the end.',
-      target: () => null,
-    },
-    {
-      title: 'Ending the Game',
-      text: 'Once your cabinet is completely full, the collector offers to appraise it. Accept, and your final <b>Prestige</b> score — every item plus every bonus you completed — is revealed.',
-      target: () => null,
+      title: 'One Turn from Madras',
+      text: 'It\u2019s a one-turn trek from Madras.',
+      target: () => document.getElementById('map-wrapper'),
+      action: async () => {
+        const hand = document.getElementById('held-p1');
+        const cardEl = hand && [...hand.querySelectorAll('.held-card')].find(el => {
+          const img = el.querySelector('img');
+          return img && img.src && img.src.includes('rubyminer');
+        });
+        const r0 = cardEl ? cardEl.getBoundingClientRect() : null;
+        const seq = [];
+        if (r0) seq.push({ x: r0.left + r0.width*0.06, y: r0.top + r0.height*0.965, text: '12 ingots' });
+        seq.push({ x: window.innerWidth*0.5, y: window.innerHeight*0.28, text: 'Madras — the mule departs from here' });
+        seq.push({ x: window.innerWidth*0.5, y: window.innerHeight*0.36, text: 'Kongu Nadu — where the Ruby actually is' });
+        seq.push({ x: window.innerWidth*0.5, y: window.innerHeight*0.44, text: 'Just one turn to get there' });
+        await _tutAddCalloutsSequential(seq, 1000);
+      },
     },
   ];
 }
