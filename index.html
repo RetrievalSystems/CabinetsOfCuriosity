@@ -14807,17 +14807,11 @@ function _tutShowCardAnatomy(card) {
 
 async function _tutGoToBodleian() {
   const p = players[0];
-  let s = ships.find(sh => sh.routeId === 'london_bodleian');
-  if (!s) { s = { id: nextShipId++, routeId: 'london_bodleian', nodeIndex: 1, unmanned: false }; ships.push(s); }
-  else s.nodeIndex = 1;
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(500);
-  try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
-  await _aiWait(500);
-}
-
-async function _tutBodleianPickRuby() {
+  // Set the curated cards BEFORE arriving — openPort() already auto-triggers the
+  // Bodleian reveal itself the instant a player with the invite arrives there (via
+  // its own internal setTimeout). Calling openBodleianPort() a second time later
+  // raced against that automatic trigger and was the actual cause of the broken
+  // layout — this way the game's own trigger just finds our curated cards waiting.
   const cardData = [
     { img:'images/op-rubyminer.jpeg',    label:'Raw Ruby Crystal',            location:'Kongu Nadu', dest:'Kongu Nadu', price:12, currency:'ingots' },
     { img:'images/op-amethyst2.jpeg',    label:'Amethyst Geode',              location:'Minas Gerais', dest:'Minas Gerais', price:8,  currency:'ingots' },
@@ -14825,9 +14819,20 @@ async function _tutBodleianPickRuby() {
   ];
   _bodleianVisits[0] = { cards: cardData, revealed: false };
   _bodleianPeeked = cardData;
-  try { openBodleianPort(); } catch (e) {}
-  await _aiWait(1600);                          // let all three visibly flip face-up
-  try { selectBodleianCard(0); } catch (e) {}    // picks the Ruby
+
+  let s = ships.find(sh => sh.routeId === 'london_bodleian');
+  if (!s) { s = { id: nextShipId++, routeId: 'london_bodleian', nodeIndex: 1, unmanned: false }; ships.push(s); }
+  else s.nodeIndex = 1;
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  try { renderShips(); buildSVG(); } catch (e) {}
+  await _aiWait(500);
+  try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
+  await _aiWait(1000);   // let openPort's own internal trigger reveal the three cards
+}
+
+async function _tutBodleianPickRuby() {
+  await _aiWait(900);                            // let all three sit visible for a beat
+  try { selectBodleianCard(0); } catch (e) {}      // picks the Ruby
   await _aiWait(700);
   const area = document.getElementById('bodleian-select-area');
   if (area) area.style.display = 'none';
@@ -14878,16 +14883,19 @@ function _tutBuildSteps() {
       title: 'Each Turn',
       text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done. As you travel you will receive information about specific items in the form of Opportunity Cards.',
       target: () => document.getElementById('decks-centre'),
+      boxPos: 'center',
     },
     {
       title: 'The Bodleian Invitation',
       text: 'The first card of every game is always the Bodleian Library invitation — each player gets one (there are two more shuffled into the deck). You can use it at the start to get you going, or save it for later.',
       target: () => document.getElementById('held-p1'),
+      boxPos: 'center',
     },
     {
       title: 'A Rare Chance',
       text: 'The Bodleian invitation gives you a rare chance to actually choose your lead, rather than draw one blind — a genuine head start if you use it early.',
       target: () => document.getElementById('held-p1'),
+      boxPos: 'center',
     },
     {
       title: 'Visiting the Bodleian',
@@ -14912,6 +14920,7 @@ function _tutBuildSteps() {
       text: 'Now we\u2019re back — let\u2019s look at the anatomy of an Opportunity card: where it\u2019s used, what it\u2019s worth, and the price to actually buy it.',
       target: () => document.getElementById('held-p1'),
       action: () => {
+        try { closePort(); } catch (e) {}   // make sure nothing's left covering the hand
         _tutAnatomyOnHeldCard('rubyminer', [
           { fx: 0.5, fy: -0.12, text: 'Kept face down until you act on it' },
         ]);
@@ -14920,7 +14929,7 @@ function _tutBuildSteps() {
     {
       title: 'Opening a Port',
       text: 'Clicking on your merchant token opens their location\u2019s window.',
-      target: () => document.getElementById('panel-p1'),
+      target: () => document.querySelector('.player-pawn[data-player="0"]'),
     },
     {
       title: 'Shopping Locally',
