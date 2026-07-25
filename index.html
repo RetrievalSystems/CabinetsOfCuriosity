@@ -14672,14 +14672,19 @@ async function _tutShowStep() {
   _tutClearCallouts();
   if (_tutIdx >= _tutSteps.length) { _tutFinish(); return; }
   const step = _tutSteps[_tutIdx];
-  try { if (step.action) await step.action(); } catch (e) { console.error('tutorial step action failed', e); }
-  requestAnimationFrame(() => requestAnimationFrame(() => _tutRender(step)));
+  _tutRender(step);
+  // The action runs AFTER the initial render, not before — so the viewer sees the
+  // narration and (if applicable) the spotlight FIRST, then watches the scripted
+  // action unfold live. An action can call _tutRespotlight()/_tutSetText() at any
+  // point as it progresses, to point at something new or update the narration.
+  if (step.action) {
+    try { await step.action(); } catch (e) { console.error('tutorial step action failed', e); }
+  }
 }
 
 function _tutRender(step) {
   _tutEnsureDOM();
   const dim  = document.getElementById('tut-dim');
-  const spot = document.getElementById('tut-spot');
   const box  = document.getElementById('tut-box');
   dim.style.opacity = '1';
 
@@ -14690,18 +14695,7 @@ function _tutRender(step) {
   const backBtn = document.getElementById('tut-back-btn');
   if (backBtn) backBtn.style.visibility = (_tutIdx === 0) ? 'hidden' : 'visible';
 
-  const target = step.target ? step.target() : null;
-  if (target) {
-    const r = target.getBoundingClientRect();
-    const pad = 10;
-    spot.style.left = (r.left - pad) + 'px';
-    spot.style.top  = (r.top  - pad) + 'px';
-    spot.style.width  = (r.width  + pad * 2) + 'px';
-    spot.style.height = (r.height + pad * 2) + 'px';
-    spot.style.opacity = '1';
-  } else {
-    spot.style.opacity = '0';
-  }
+  _tutRespotlight(step.target);
 
   // Narration box normally sits bottom-centre, clear of the map and card row —
   // but a step can ask for it centred instead (boxPos:'center'), e.g. when
@@ -14715,6 +14709,41 @@ function _tutRender(step) {
   }
 
   if (step.callouts) step.callouts();
+}
+
+// Re-finds and repositions the spotlight ring around whatever a target function
+// currently returns — an action calls this at any point to move the highlight onto
+// something that's only just appeared (e.g. once a panel has actually opened), rather
+// than the spotlight being fixed to whatever existed at the very start of the step.
+// Passing null/undefined hides the spotlight (nothing currently worth pointing at).
+function _tutRespotlight(targetFn) {
+  _tutEnsureDOM();
+  const spot = document.getElementById('tut-spot');
+  const target = targetFn ? targetFn() : null;
+  if (target) {
+    const r = target.getBoundingClientRect();
+    const pad = 10;
+    spot.style.left = (r.left - pad) + 'px';
+    spot.style.top  = (r.top  - pad) + 'px';
+    spot.style.width  = (r.width  + pad * 2) + 'px';
+    spot.style.height = (r.height + pad * 2) + 'px';
+    spot.style.opacity = '1';
+  } else {
+    spot.style.opacity = '0';
+  }
+}
+function _tutHideSpotlight() { _tutRespotlight(null); }
+
+// Lets an action update the narration text/title mid-step, once something new has
+// actually happened on screen (e.g. "so we see Madras is on the inbound journey…"
+// appearing only after the tooltip's been shown, not before).
+function _tutSetText(html) {
+  const el = document.getElementById('tut-text');
+  if (el) el.innerHTML = html;
+}
+function _tutSetTitle(text) {
+  const el = document.getElementById('tut-title');
+  if (el) el.textContent = text;
 }
 
 function _tutAddCallout(x, y, text, dir) {
@@ -14787,23 +14816,80 @@ function _tutDismiss() {
   _tutClearCallouts();
 }
 
-// Shows a card enlarged and centred, purely for illustration (no game state touched).
+// Shows a card enlarged, positioned in the UPPER part of the screen so the narration
+// box (which sits lower / bottom) never overlaps it.
 function _tutShowCardImage(imgPath) {
   const el = document.createElement('img');
   el.id = 'tut-card-enlarged';
   el.src = imgPath;
   el.style.cssText = `
-    position:fixed; z-index:899999; top:46%; left:50%; transform:translate(-50%,-50%);
-    height:46vh; max-width:70vw; object-fit:contain; border-radius:8px;
+    position:fixed; z-index:899999; top:8%; left:50%; transform:translateX(-50%);
+    height:38vh; max-width:60vw; object-fit:contain; border-radius:8px;
     box-shadow:0 20px 60px rgba(0,0,0,0.8); border:1px solid rgba(212,168,85,0.5);`;
   document.body.appendChild(el);
 }
 
-// Demonstrates the ship-boarding interaction at London: opens the port, shows the
-// route tooltip (highlighting Madras within it, since it's on the Beijing Rose's
-// return leg), boards the ship, then disembarks again — landing the player back at
-// London, ready for the shopping/cabinet steps that follow.
+// Travel to the Bodleian only — the reveal and pick now happen in the NEXT step
+// (see _tutBodleianRevealAndPick), so the spotlight can correctly find the three
+// cards only once they actually exist, instead of racing ahead of them.
+async function _tutGoToBodleian() {
+  const p = players[0];
+  const cardData = [
+    { img:'images/op-rubyminer.jpeg',    label:'Raw Ruby Crystal',            location:'Kongu Nadu', dest:'Kongu Nadu', price:12, currency:'ingots' },
+    { img:'images/op-amethyst2.jpeg',    label:'Amethyst Geode',              location:'Minas Gerais', dest:'Minas Gerais', price:8,  currency:'ingots' },
+    { img:'images/op-imperialtopaz.jpeg',label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', dest:'Ouro Preto', price:12, currency:'ingots' },
+  ];
+  _bodleianVisits[0] = { cards: cardData, revealed: false };
+  _bodleianPeeked = cardData;
+
+  let s = ships.find(sh => sh.routeId === 'london_bodleian');
+  if (!s) { s = { id: nextShipId++, routeId: 'london_bodleian', nodeIndex: 1, unmanned: false }; ships.push(s); }
+  else s.nodeIndex = 1;
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  try { renderShips(); buildSVG(); } catch (e) {}
+  await _aiWait(600);
+  try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
+  await _aiWait(1000);   // openPort's own internal trigger reveals the three cards during this pause
+}
+
+// Now that the cards genuinely exist on screen (from the previous step's travel),
+// point the spotlight at them, let the viewer actually see all three for a good
+// while, THEN make the pick.
+async function _tutBodleianRevealAndPick() {
+  _tutRespotlight(() => document.getElementById('bodleian-select-area'));
+  await _aiWait(1800);                             // let all three sit visible and readable
+  try { selectBodleianCard(0); } catch (e) {}       // picks the Ruby
+  await _aiWait(700);
+  _tutHideSpotlight();
+  const area = document.getElementById('bodleian-select-area');
+  if (area) area.style.display = 'none';
+  try { closePort(); } catch (e) {}
+}
+
+// Sequential callouts naming each fact on the enlarged Ruby card as it's mentioned —
+// rough positions/timing to start with; easy to retune once you can see it live.
+async function _tutRubyAnatomyCallouts() {
+  const el = document.getElementById('tut-card-enlarged');
+  const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.4 };
+  await _aiWait(600);
+  _tutAddCallout(r.left + r.width*0.75, r.top + r.height*0.35, '32 points — a high score');
+  await _aiWait(1400);
+  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*0.92, 'Located in Kongu Nadu');
+  await _aiWait(1400);
+  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*1.06, 'Nearest port: Madras');
+  await _aiWait(1400);
+  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*0.92, '1 turn from Madras');
+  await _aiWait(1400);
+  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*1.06, 'Costs 12 ingots');
+  await _aiWait(1600);
+}
+
+// The London ship-boarding demo: spotlight the pawn first, THEN open the port after
+// a beat, THEN show the tooltip with Madras highlighted, update the narration to
+// explain why Canton comes first, then board — and quietly restore the player to
+// standing at London afterward, since the tutorial continues there.
 async function _tutShipHoverBoardDisembark() {
+  await _aiWait(1200);   // let the spotlighted pawn actually be seen before the port covers it
   const p = players[0];
   if ((p.ingots||0) < 3) p.ingots = (p.ingots||0) + 3;
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
@@ -14824,40 +14910,58 @@ async function _tutShipHoverBoardDisembark() {
       });
     }
   }
-  await _aiWait(1400);
+  _tutSetText('So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.');
+  await _aiWait(2200);
   const tt2 = document.getElementById('route-tooltip');
   if (tt2) tt2.style.opacity = '0';
 
-  // Board the Beijing Rose
+  // Board the Beijing Rose — the real function, real state change.
   let s = ships.find(sh => sh.routeId === 'bei' && sh.nodeIndex === 0);
   if (!s) { s = { id: nextShipId++, routeId: 'bei', nodeIndex: 0, unmanned: false }; ships.push(s); }
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(900);
+  await _aiWait(1000);
 
-  // Then disembark again, right back at London — demonstrating you can change your
-  // mind before the next turn actually begins.
+  // The tutorial's shopping/cabinet steps still need the player standing at London,
+  // so quietly restore that now — the port panel itself stays open throughout,
+  // nothing closes or re-opens in between.
   try { disembark(); } catch (e) {}
-  await _aiWait(500);
-  try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
-  await _aiWait(300);
+  await _aiWait(200);
 }
 
-// Demonstrates placing the Quadrant into the cabinet — real click-to-place, the same
-// path a genuine drag-and-drop ends at, just triggered directly rather than faking
-// native drag events.
+// Cabinet pre-beat: with the port already closed, spotlight the actual cabinet icon
+// from the main UI (not the overlay, which doesn't exist until opened), explain what
+// it is, then open it after a beat.
+async function _tutCabinetIntro() {
+  try { closePort(); } catch (e) {}
+  await _aiWait(400);
+  _tutRespotlight(() => document.getElementById('cabinet-btn'));
+  _tutSetText('While in London you can also access the cabinet.');
+  await _aiWait(1400);
+  try { openCabinet(); } catch (e) {}
+  await _aiWait(700);
+  _tutRespotlight(() => document.getElementById('cab-overlay'));
+  _tutSetText('Here you place and arrange the items you buy, dragging them from your inventory on the right into the specific sized bays.');
+}
+
+// Demonstrates placing the Quadrant into the cabinet via the real click-to-place
+// system, then updates the narration to the refund explanation once it's actually
+// sitting in its bay.
 async function _tutPlaceQuadrantDemo() {
+  await _aiWait(900);
   const p = players[0];
   const item = (p.items||[]).find(it => it.img && it.img.includes('quadrant'));
-  if (!item) return;
-  const invEl = [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
-    .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
-  try { cabSelectInv(item, invEl); } catch (e) {}
-  await _aiWait(700);
-  const dz = [...document.querySelectorAll('.cab-dz')]
-    .find(el => !el.classList.contains('filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
-  if (dz) { try { dz.click(); } catch (e) {} }
-  await _aiWait(600);
+  if (item) {
+    const invEl = [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
+      .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
+    try { cabSelectInv(item, invEl); } catch (e) {}
+    await _aiWait(700);
+    const dz = [...document.querySelectorAll('.cab-dz')]
+      .find(el => !el.classList.contains('filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
+    if (dz) { try { dz.click(); } catch (e) {} }
+    await _aiWait(700);
+  }
+  _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
 }
 
 // ── Scripted mini-actions used by specific tutorial steps ──
@@ -14885,15 +14989,6 @@ async function _tutGoToBodleian() {
   await _aiWait(500);
   try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
   await _aiWait(1000);   // let openPort's own internal trigger reveal the three cards
-}
-
-async function _tutBodleianPickRuby() {
-  await _aiWait(900);                            // let all three sit visible for a beat
-  try { selectBodleianCard(0); } catch (e) {}      // picks the Ruby
-  await _aiWait(700);
-  const area = document.getElementById('bodleian-select-area');
-  if (area) area.style.display = 'none';
-  try { closePort(); } catch (e) {}
 }
 
 async function _tutReturnToLondon() {
@@ -14946,7 +15041,6 @@ function _tutBuildSteps() {
       title: 'The Bodleian Invitation',
       text: 'The first card of every game is always the Bodleian Library invitation — each player gets one (there are two more shuffled into the On Land deck). You can use it at the start to get you going, or save it for later.',
       target: () => document.getElementById('held-p1'),
-      boxPos: 'center',
       action: () => { _tutShowCardImage('images/bodleian.jpeg'); },
     },
     {
@@ -14959,7 +15053,7 @@ function _tutBuildSteps() {
       title: 'The Bodleian',
       text: 'At the Bodleian you get to select from the top three Opportunity cards — the other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
-      action: async () => { await _tutBodleianPickRuby(); },
+      action: async () => { await _tutBodleianRevealAndPick(); },
     },
     {
       title: 'Back to London',
@@ -14969,13 +15063,19 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what its score is, how much it costs, and how long it takes to reach the destination.<br><br>So we can see this Ruby is worth 32 points (a high score), it is in Kongu Nadu, its nearest port is Madras, it takes 1 turn to get there from Madras, and it will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have.<br><br>So let\u2019s find how to get to Madras.',
-      target: () => document.getElementById('held-p1'),
-      action: () => { try { closePort(); } catch (e) {} },
+      text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what its score is, how much it costs, and how long it takes to reach the destination.',
+      target: () => null,
+      action: async () => {
+        try { closePort(); } catch (e) {}
+        _tutShowCardImage('images/op-rubyminer.jpeg');
+        await _tutRubyAnatomyCallouts();
+        _tutSetText('With the 20 coins and 10 ingots, that\u2019s all the money you currently have. So let\u2019s find how to get to Madras.');
+        await _aiWait(1800);
+      },
     },
     {
       title: 'Opening a Port',
-      text: 'Clicking on your merchant token opens their location\u2019s window. Let\u2019s open the London port and see the Beijing Rose — hovering over her shows every port she calls at, Madras included. You may click disembark before the next turn begins, if you change your mind about where you\u2019re headed.',
+      text: 'Clicking on your merchant token opens their location\u2019s window.',
       target: () => document.querySelector('.player-pawn[data-player="0"]'),
       action: async () => { await _tutShipHoverBoardDisembark(); },
     },
@@ -14994,17 +15094,16 @@ function _tutBuildSteps() {
     },
     {
       title: 'The Cabinet',
-      text: 'While in London you can also access the cabinet. Here you place and arrange the items you buy, by dragging them from your inventory on the right into the specific sized bays. The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.',
-      target: () => document.getElementById('cab-overlay'),
+      text: 'While in London you can also access the cabinet.',
+      target: () => document.getElementById('cabinet-btn'),
       action: async () => {
-        try { openCabinet(); } catch(e) {}
-        await _aiWait(600);
+        await _tutCabinetIntro();
         await _tutPlaceQuadrantDemo();
       },
     },
     {
       title: 'Time to Travel',
-      text: 'The Ruby costs 12 ingots — you now have more than enough to purchase it, and once we start the next turn you will be on your way.',
+      text: 'The Ruby costs 12 ingots — you now have more than enough to purchase it, and once we start the next turn you will be on your way. From here you can continue with this solo game, or end the tutorial and start a different one.',
       target: () => document.getElementById('held-p1'),
       action: async () => {
         try { closeCabinet(); } catch(e) {}
