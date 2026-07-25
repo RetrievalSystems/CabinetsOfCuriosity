@@ -15043,6 +15043,11 @@ function _tutBuildSteps() {
       target: () => document.getElementById('held-p1'),
       action: () => { _tutShowCardImage('images/bodleian.jpeg'); },
     },
+    // ── BATCH 1 ends here for now — later batches (Bodleian pick, port/ship demo,
+    // cabinet demo) get added back once this chunk is confirmed solid. ──
+  ];
+}
+/* ── LATER BATCHES — preserved here, re-enabled step by step as each is confirmed ──
     {
       title: 'A Rare Chance',
       text: 'The Bodleian invitation gives you a rare chance to have more choice over which item you\u2019d like to pursue — this can be a good start.',
@@ -15110,8 +15115,8 @@ function _tutBuildSteps() {
         await _aiWait(300);
       },
     },
-  ];
-}
+──────────────────────────────────────────────────────────────────────────────── */
+
 </script>
 </body>
 </html>
