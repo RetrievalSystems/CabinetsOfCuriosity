@@ -14855,6 +14855,9 @@ function _tutShowCardImage(imgPath) {
 // cards only once they actually exist, instead of racing ahead of them.
 async function _tutGoToBodleian() {
   const p = players[0];
+  // Guarantee the Ruby is among the three on offer — same trick as before, just
+  // pre-set so the game's OWN real arrival trigger finds these waiting, rather than
+  // generating random ones first.
   const cardData = [
     { img:'images/op-rubyminer.jpeg',    label:'Raw Ruby Crystal',            location:'Kongu Nadu', dest:'Kongu Nadu', price:12, currency:'ingots' },
     { img:'images/op-amethyst2.jpeg',    label:'Amethyst Geode',              location:'Minas Gerais', dest:'Minas Gerais', price:8,  currency:'ingots' },
@@ -14863,17 +14866,37 @@ async function _tutGoToBodleian() {
   _bodleianVisits[0] = { cards: cardData, revealed: false };
   _bodleianPeeked = cardData;
 
-  let s = ships.find(sh => sh.routeId === 'london_bodleian');
-  if (!s) { s = { id: nextShipId++, routeId: 'london_bodleian', nodeIndex: 1, unmanned: false }; ships.push(s); }
-  else s.nodeIndex = 1;
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  try { renderShips(); buildSVG(); } catch (e) {}
+  // Real UI, real mechanics from here — open the London port and highlight the
+  // actual horse & cart button before clicking it.
+  try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
+  await _aiWait(700);
+  const cartArea = document.getElementById('london-cart-area');
+  _tutRespotlight(() => cartArea);
+  await _aiWait(1200);
+  if (cartArea) cartArea.style.filter = 'brightness(1.7) drop-shadow(0 0 16px rgba(232,200,120,0.95))';
+  await _aiWait(500);
+  try { boardLondonCart(); } catch (e) {}   // this also closes the port itself
+  if (cartArea) cartArea.style.filter = '';
+  _tutHideSpotlight();
   await _aiWait(600);
-  try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
-  await _aiWait(1000);   // openPort's own internal trigger reveals the three cards during this pause
-}
 
-// Now that the cards genuinely exist on screen (from the previous step's travel),
+  // Highlight End Turn, then actually click it — this is what genuinely moves the
+  // cart one node along its route (London → Bodleian) and triggers the real
+  // arrival flow, opening the Bodleian port with three face-down cards.
+  const endBtn = document.getElementById('btn-end');
+  _tutRespotlight(() => endBtn);
+  await _aiWait(1300);
+  if (endBtn) endBtn.style.filter = 'brightness(1.7) drop-shadow(0 0 16px rgba(232,200,120,0.95))';
+  await _aiWait(500);
+  try { endTurn(); } catch (e) {}
+  if (endBtn) endBtn.style.filter = '';
+  _tutHideSpotlight();
+
+  await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
+
+  // Hold here on the three face-down cards, and only now reveal the narration text.
+  _tutSetText('The Bodleian invitation gives you a rare chance to have more choice over which item you\u2019d like to pursue, this can be a good start.');
+}
 // point the spotlight at them, let the viewer actually see all three for a good
 // while, THEN make the pick.
 async function _tutBodleianRevealAndPick() {
@@ -15078,7 +15101,25 @@ function _tutBuildSteps() {
       action: () => { try { showCard('images/bodleian.jpeg', null, false, false, false, {}); } catch(e) {} },
       onLeave: () => { try { dismissCard(); } catch(e) {} },
     },
-    // ── BATCH 1 ends here for now — later batches (Bodleian pick, port/ship demo,
+    {
+      title: 'A Rare Chance',
+      text: 'Let\u2019s head to the Bodleian.',
+      target: () => null,
+      action: async () => { await _tutGoToBodleian(); },
+    },
+    {
+      title: 'The Bodleian',
+      text: 'At the Bodleian you get to select from the top three Opportunity cards — the other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
+      target: () => document.getElementById('bodleian-select-area'),
+      action: async () => { await _tutBodleianRevealAndPick(); },
+    },
+    {
+      title: 'Back to London',
+      text: 'With our opportunity card in hand, we return to London.',
+      target: () => document.getElementById('map-wrapper'),
+      action: async () => { await _tutReturnToLondon(); },
+    },
+    // ── BATCH 2 ends here for now — later batches (anatomy, port/ship demo,
     // cabinet demo) get added back once this chunk is confirmed solid. ──
   ];
 }
