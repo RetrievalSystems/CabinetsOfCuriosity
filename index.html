@@ -2395,6 +2395,13 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
 }
+#tut-box.tut-box-right {
+  bottom: auto !important;
+  top: 50% !important;
+  left: auto !important;
+  right: 40px !important;
+  transform: translateY(-50%) !important;
+}
 #tut-doors {
   position: fixed; inset: 0; z-index: 900001;
   background: url('images/cabinetclosed.jpg') center/cover no-repeat;
@@ -12057,6 +12064,14 @@ function _dealBodleianInvite(pIdx) {
     setStatus(`${players[pIdx].name}: Your invitation arrived. Board a ship or end your turn.`);
   };
 
+  // In tutorial mode, the card's own reveal moment is scripted deliberately later —
+  // deal it into hand silently here (same end state) rather than showing this
+  // automatic popup, which would otherwise bleed into the tutorial's early steps.
+  if (typeof _tutActive !== 'undefined' && _tutActive) {
+    pendingCardEffect(); pendingCardEffect = null;
+    return;
+  }
+
   showCard('images/bodleian.jpeg', null, false, false, false, { autoClose: 2200 });
 }
 
@@ -14698,10 +14713,11 @@ function _tutRender(step) {
   _tutRespotlight(step.target);
 
   // Narration box normally sits bottom-centre, clear of the map and card row —
-  // but a step can ask for it centred instead (boxPos:'center'), e.g. when
-  // explaining the map itself, so it doesn't sit on top of what it's describing.
+  // but a step can ask for it centred, or shifted to the right (e.g. alongside a
+  // full-screen card reveal), instead.
   box.classList.toggle('tut-box-center', step.boxPos === 'center');
-  if (step.boxPos !== 'center') {
+  box.classList.toggle('tut-box-right', step.boxPos === 'right');
+  if (!step.boxPos) {
     box.style.left = '50%';
     box.style.bottom = '26px';
     box.style.top = 'auto';
@@ -14770,6 +14786,8 @@ async function _tutAddCalloutsSequential(list, pauseMs) {
 }
 
 function _tutNext() {
+  const leaving = _tutSteps[_tutIdx];
+  if (leaving && leaving.onLeave) { try { leaving.onLeave(); } catch (e) {} }
   _tutIdx++;
   _tutShowStep();
 }
@@ -15027,21 +15045,35 @@ function _tutBuildSteps() {
       boxPos: 'center',
     },
     {
-      title: 'Your Panel',
-      text: 'This is your merchant, the silver coins and ingots you will use to buy the items (there are 10 coins to an ingot) plus your reputation and the items you\u2019re currently carrying, all live here.',
+      title: 'Your Merchant',
+      text: 'This is your merchant. The silver coins and ingots you will use to buy the items (there are 10 coins to an ingot) plus your reputation and the items you\u2019re currently carrying, all live here.',
       target: () => document.getElementById('panel-p1'),
     },
     {
       title: 'Each Turn',
-      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done. Some cards require immediate action, some have immediate effects, some are simply part of the story. As you travel you will receive information about specific items in the form of tip offs — these allow you to draw from the off-screen Opportunity Card deck.',
+      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done.',
+      target: () => document.getElementById('decks-centre'),
+      boxPos: 'center',
+    },
+    {
+      title: 'Each Turn',
+      text: 'Some cards require immediate action, some have immediate effects, some are simply part of the story.',
+      target: () => document.getElementById('decks-centre'),
+      boxPos: 'center',
+    },
+    {
+      title: 'Each Turn',
+      text: 'As you travel you will receive information about specific items in the form of tip offs, these allow you to draw from the Opportunity Card deck (off screen).',
       target: () => document.getElementById('decks-centre'),
       boxPos: 'center',
     },
     {
       title: 'The Bodleian Invitation',
       text: 'The first card of every game is always the Bodleian Library invitation — each player gets one (there are two more shuffled into the On Land deck). You can use it at the start to get you going, or save it for later.',
-      target: () => document.getElementById('held-p1'),
-      action: () => { _tutShowCardImage('images/bodleian.jpeg'); },
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/bodleian.jpeg', null, false, false, false, {}); } catch(e) {} },
+      onLeave: () => { try { dismissCard(); } catch(e) {} },
     },
     // ── BATCH 1 ends here for now — later batches (Bodleian pick, port/ship demo,
     // cabinet demo) get added back once this chunk is confirmed solid. ──
