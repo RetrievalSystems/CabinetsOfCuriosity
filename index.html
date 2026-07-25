@@ -15015,33 +15015,6 @@ async function _tutPlaceQuadrantDemo() {
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
 }
 
-// ── Scripted mini-actions used by specific tutorial steps ──
-
-async function _tutGoToBodleian() {
-  const p = players[0];
-  // Set the curated cards BEFORE arriving — openPort() already auto-triggers the
-  // Bodleian reveal itself the instant a player with the invite arrives there (via
-  // its own internal setTimeout). Calling openBodleianPort() a second time later
-  // raced against that automatic trigger and was the actual cause of the broken
-  // layout — this way the game's own trigger just finds our curated cards waiting.
-  const cardData = [
-    { img:'images/op-rubyminer.jpeg',    label:'Raw Ruby Crystal',            location:'Kongu Nadu', dest:'Kongu Nadu', price:12, currency:'ingots' },
-    { img:'images/op-amethyst2.jpeg',    label:'Amethyst Geode',              location:'Minas Gerais', dest:'Minas Gerais', price:8,  currency:'ingots' },
-    { img:'images/op-imperialtopaz.jpeg',label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', dest:'Ouro Preto', price:12, currency:'ingots' },
-  ];
-  _bodleianVisits[0] = { cards: cardData, revealed: false };
-  _bodleianPeeked = cardData;
-
-  let s = ships.find(sh => sh.routeId === 'london_bodleian');
-  if (!s) { s = { id: nextShipId++, routeId: 'london_bodleian', nodeIndex: 1, unmanned: false }; ships.push(s); }
-  else s.nodeIndex = 1;
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(500);
-  try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch (e) {}
-  await _aiWait(1000);   // let openPort's own internal trigger reveal the three cards
-}
-
 async function _tutReturnToLondon() {
   const p = players[0];
   const old = ships.find(sh => sh.routeId === 'london_bodleian');
