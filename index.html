@@ -12064,11 +12064,14 @@ function _dealBodleianInvite(pIdx) {
     setStatus(`${players[pIdx].name}: Your invitation arrived. Board a ship or end your turn.`);
   };
 
-  // In tutorial mode, the card's own reveal moment is scripted deliberately later —
-  // deal it into hand silently here (same end state) rather than showing this
-  // automatic popup, which would otherwise bleed into the tutorial's early steps.
+  // In tutorial mode, the card's own reveal moment is scripted deliberately later.
+  // Leave pendingCardEffect exactly as set above — don't show the popup now, and
+  // don't invoke the effect either — so the card only actually lands in the hand
+  // once the tutorial's own step later shows this same card and the viewer clicks
+  // Next (which calls dismissCard(), the same real function that would normally
+  // fire this). Consuming it early meant the card was visible in hand from the very
+  // first tutorial step, spoiling the reveal that's meant to happen at its own step.
   if (typeof _tutActive !== 'undefined' && _tutActive) {
-    pendingCardEffect(); pendingCardEffect = null;
     return;
   }
 
