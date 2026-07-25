@@ -14901,7 +14901,14 @@ async function _tutGoToBodleian() {
 // while, THEN make the pick.
 async function _tutBodleianRevealAndPick() {
   _tutRespotlight(() => document.getElementById('bodleian-select-area'));
-  await _aiWait(1800);                             // let all three sit visible and readable
+  await _aiWait(600);
+  // The three cards sit face-down until actually clicked — this single click is
+  // what genuinely triggers the reveal (it also consumes the invite card and adds
+  // reputation, same as normal play). Nothing before this point ever performed that
+  // click, which is why the cards never flipped face-up no matter how long we waited.
+  const slot = document.querySelector('#bodleian-select-area .bodleian-card-slot');
+  if (slot) { try { slot.onclick && slot.onclick(); } catch (e) {} }
+  await _aiWait(1200);                             // let all three flip face-up and sit readable
   try { selectBodleianCard(0); } catch (e) {}       // picks the Ruby
   await _aiWait(700);
   _tutHideSpotlight();
