@@ -2402,6 +2402,13 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   right: 40px !important;
   transform: translateY(-50%) !important;
 }
+#tut-box.tut-box-left {
+  bottom: auto !important;
+  top: 50% !important;
+  left: 40px !important;
+  right: auto !important;
+  transform: translateY(-50%) !important;
+}
 #tut-doors {
   position: fixed; inset: 0; z-index: 900001;
   background: url('images/cabinetclosed.jpg') center/cover no-repeat;
@@ -14719,10 +14726,11 @@ function _tutRender(step) {
   _tutRespotlight(step.target);
 
   // Narration box normally sits bottom-centre, clear of the map and card row —
-  // but a step can ask for it centred, or shifted to the right (e.g. alongside a
-  // full-screen card reveal), instead.
+  // but a step can ask for it centred, or shifted to the right or left (e.g.
+  // alongside a full-screen card reveal), instead.
   box.classList.toggle('tut-box-center', step.boxPos === 'center');
   box.classList.toggle('tut-box-right', step.boxPos === 'right');
+  box.classList.toggle('tut-box-left', step.boxPos === 'left');
   if (!step.boxPos) {
     box.style.left = '50%';
     box.style.bottom = '26px';
@@ -14935,15 +14943,15 @@ async function _tutRubyAnatomyCallouts() {
   const el = document.getElementById('card-img');
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   await _aiWait(600);
-  _tutAddCallout(r.left + r.width*0.75, r.top + r.height*0.35, '32 points — a high score');
+  _tutAddCallout(window.innerWidth*0.5, window.innerHeight*0.5 + 100, '32 points — a high score');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*0.92, 'Located in Kongu Nadu');
+  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*0.92 - 20, 'Located in Kongu Nadu');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*1.06, 'Nearest port: Madras');
+  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*1.06 - 20, 'Nearest port: Madras');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*0.92, '1 turn from Madras');
+  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*0.92 - 20, '1 turn from Madras');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*1.06, 'Costs 12 ingots');
+  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*1.06 - 20, 'Costs 12 ingots');
   await _aiWait(1600);
 }
 
@@ -15125,6 +15133,7 @@ function _tutBuildSteps() {
       title: 'Anatomy of an Opportunity Card',
       text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what it\u2019s score is, how much it costs, and how long it takes to reach the destination.',
       target: () => null,
+      boxPos: 'left',
       action: async () => {
         try { closePort(); } catch (e) {}
         try { showCard('images/op-rubyminer.jpeg', null, false, false, false, {}); } catch (e) {}
