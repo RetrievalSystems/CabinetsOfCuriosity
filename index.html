@@ -14672,7 +14672,6 @@ function _tutEnsureDOM() {
     <div class="tut-title" id="tut-title"></div>
     <div class="tut-text" id="tut-text"></div>
     <div class="tut-controls">
-      <button class="tut-skip" id="tut-back-btn" onclick="_tutBack()">← Back</button>
       <button class="tut-skip" onclick="_tutSkip()">End tutorial</button>
       <button class="tut-next" id="tut-next-btn" onclick="_tutNext()">Next →</button>
     </div>`;
@@ -14691,6 +14690,11 @@ async function _tutShowStep() {
   if (_tutIdx >= _tutSteps.length) { _tutFinish(); return; }
   const step = _tutSteps[_tutIdx];
   _tutRender(step);
+  // Disable Next for the duration of the action — clicking early used to race ahead
+  // mid-sequence (e.g. hiding the Bodleian cards before the scripted click on the
+  // Ruby ever got there), which is exactly why things appeared to "just disappear".
+  const nextBtn = document.getElementById('tut-next-btn');
+  if (nextBtn) { nextBtn.disabled = true; nextBtn.style.opacity = '0.4'; nextBtn.style.cursor = 'default'; }
   // The action runs AFTER the initial render, not before — so the viewer sees the
   // narration and (if applicable) the spotlight FIRST, then watches the scripted
   // action unfold live. An action can call _tutRespotlight()/_tutSetText() at any
@@ -14698,6 +14702,7 @@ async function _tutShowStep() {
   if (step.action) {
     try { await step.action(); } catch (e) { console.error('tutorial step action failed', e); }
   }
+  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
 }
 
 function _tutRender(step) {
@@ -14710,8 +14715,6 @@ function _tutRender(step) {
   document.getElementById('tut-text').innerHTML = step.text;
   const nextBtn = document.getElementById('tut-next-btn');
   nextBtn.textContent = (_tutIdx === _tutSteps.length - 1) ? 'Finish ✓' : 'Next →';
-  const backBtn = document.getElementById('tut-back-btn');
-  if (backBtn) backBtn.style.visibility = (_tutIdx === 0) ? 'hidden' : 'visible';
 
   _tutRespotlight(step.target);
 
@@ -14793,16 +14796,6 @@ function _tutNext() {
   if (leaving && leaving.onLeave) { try { leaving.onLeave(); } catch (e) {} }
   _tutIdx++;
   _tutShowStep();
-}
-
-function _tutBack() {
-  if (_tutIdx <= 0) return;
-  _tutIdx--;
-  _tutClearCallouts();
-  // Deliberately does NOT re-run the step's action — Back is for re-reading what was
-  // just explained, not for rewinding real game state (which would risk re-buying an
-  // item, re-picking a Bodleian card, etc). Just re-show the narration and spotlight.
-  requestAnimationFrame(() => _tutRender(_tutSteps[_tutIdx]));
 }
 
 function _tutSkip() {
@@ -14909,12 +14902,23 @@ async function _tutBodleianRevealAndPick() {
   const slot = document.querySelector('#bodleian-select-area .bodleian-card-slot');
   if (slot) { try { slot.onclick && slot.onclick(); } catch (e) {} }
   await _aiWait(1200);                             // let all three flip face-up and sit readable
-  try { selectBodleianCard(0); } catch (e) {}       // picks the Ruby
-  await _aiWait(700);
+
+  // Find the specific Ruby slot (not just "index 0") and show a real highlighted
+  // click on it, the same way the cart/End Turn buttons were highlighted earlier.
+  const rubySlot = [...document.querySelectorAll('#bodleian-select-area .bodleian-card-slot')]
+    .find(el => { const img = el.querySelector('.bod-card-face'); return img && img.src && img.src.includes('rubyminer'); });
+  if (rubySlot) {
+    _tutRespotlight(() => rubySlot);
+    await _aiWait(900);
+    rubySlot.style.filter = 'brightness(1.5) drop-shadow(0 0 18px rgba(232,200,120,0.95))';
+    await _aiWait(500);
+  }
+  try { (rubySlot || slot).onclick && (rubySlot || slot).onclick(); } catch (e) {}   // picks the Ruby
+  if (rubySlot) rubySlot.style.filter = '';
   _tutHideSpotlight();
-  const area = document.getElementById('bodleian-select-area');
-  if (area) area.style.display = 'none';
-  try { closePort(); } catch (e) {}
+  // Deliberately doesn't close the port or hide anything further here — whatever the
+  // real game does after a pick just plays out and stays on screen until the player
+  // clicks Next (handled by this step's onLeave instead).
 }
 
 // Sequential callouts naming each fact on the enlarged Ruby card as it's mentioned —
@@ -15019,11 +15023,16 @@ async function _tutReturnToLondon() {
   const p = players[0];
   const old = ships.find(sh => sh.routeId === 'london_bodleian');
   if (old) ships = ships.filter(sh => sh.id !== old.id);
-  let s = { id: nextShipId++, routeId: 'london_bodleian_return', nodeIndex: 1, unmanned: false };
+  let s = { id: nextShipId++, routeId: 'london_bodleian_return', nodeIndex: 0, unmanned: false };
   ships.push(s);
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(500);
+  await _aiWait(1800);          // let the viewer see the token sitting at the Bodleian first
+
+  s.nodeIndex = 1;               // now actually advance it — London
+  try { renderShips(); buildSVG(); } catch (e) {}
+  await _aiWait(2200);          // the pawn's own CSS transition carries it smoothly between the two
+
   p.landLocation = 'London';
   try { closePort(); } catch (e) {}
 }
@@ -15092,6 +15101,11 @@ function _tutBuildSteps() {
       text: 'At the Bodleian you get to select from the top three Opportunity cards — the other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
       action: async () => { await _tutBodleianRevealAndPick(); },
+      onLeave: () => {
+        const area = document.getElementById('bodleian-select-area');
+        if (area) area.style.display = 'none';
+        try { closePort(); } catch (e) {}
+      },
     },
     {
       title: 'Back to London',
