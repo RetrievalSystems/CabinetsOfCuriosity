@@ -2385,9 +2385,17 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 .tut-callout::after {
   content: '';
   position: absolute;
+  top: -5px; left: 14px;
   width: 9px; height: 9px;
   background: inherit;
+  border-left: 1px solid #c8923a; border-top: 1px solid #c8923a;
+  transform: rotate(45deg);
+}
+.tut-callout.tut-point-down::after {
+  top: auto; bottom: -5px; left: 14px;
+  border-left: none; border-top: none;
   border-right: 1px solid #c8923a; border-bottom: 1px solid #c8923a;
+  transform: rotate(45deg);
 }
 #tut-box.tut-box-center {
   bottom: auto !important;
@@ -14778,7 +14786,7 @@ function _tutSetTitle(text) {
 
 function _tutAddCallout(x, y, text, dir) {
   const el = document.createElement('div');
-  el.className = 'tut-callout';
+  el.className = 'tut-callout' + (dir === 'down' ? ' tut-point-down' : '');
   el.textContent = text;
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
@@ -14943,15 +14951,15 @@ async function _tutRubyAnatomyCallouts() {
   const el = document.getElementById('card-img');
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   await _aiWait(600);
-  _tutAddCallout(window.innerWidth*0.5, window.innerHeight*0.5 + 130, '32 points — a high score');
+  _tutAddCallout(window.innerWidth*0.5 + 30, window.innerHeight*0.5 + 160, '32 points — a high score', 'down');
   await _aiWait(1400);
   _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 35, 'Located in Kongu Nadu');
+  _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu');
   await _aiWait(1400);
   _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 35, 'Costs 12 ingots');
+  _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots');
   await _aiWait(1600);
 }
 
