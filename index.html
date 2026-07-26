@@ -14943,15 +14943,15 @@ async function _tutRubyAnatomyCallouts() {
   const el = document.getElementById('card-img');
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   await _aiWait(600);
-  _tutAddCallout(window.innerWidth*0.5, window.innerHeight*0.5 + 100, '32 points — a high score');
+  _tutAddCallout(window.innerWidth*0.5, window.innerHeight*0.5 + 130, '32 points — a high score');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*0.92 - 20, 'Located in Kongu Nadu');
+  _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*1.06 - 20, 'Nearest port: Madras');
+  _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 35, 'Located in Kongu Nadu');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*0.92 - 20, '1 turn from Madras');
+  _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras');
   await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*1.06 - 20, 'Costs 12 ingots');
+  _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 35, 'Costs 12 ingots');
   await _aiWait(1600);
 }
 
