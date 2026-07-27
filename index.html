@@ -14969,8 +14969,8 @@ function _tutShowAnatomyCallouts(n) {
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   const defs = [
     () => _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score', 'down'),
-    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
-    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Located in Kongu Nadu'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots'),
   ];
@@ -15082,10 +15082,14 @@ async function _tutReturnToLondon() {
   // Genuinely arrive — same state changes the real disembark() makes. Without this,
   // the player was still nominally "aboard" the return-trip ship afterward, which is
   // exactly what was silently suppressing the boarding UI at the next port.
+  // Critically, landLocation must be the actual node OBJECT (matching disembark()'s
+  // own `p.landLocation = ROUTES[s.routeId].nodes[s.nodeIndex]`) — the rest of the
+  // game reads `landLocation.name`, and a bare string here silently breaks that check,
+  // which is what was actually causing the boarding UI to never appear.
   s.unmanned = true;
   p.shipId = null;
   p.disembarked = true;
-  p.landLocation = 'London';
+  p.landLocation = ROUTES['london_bodleian_return'].nodes[1];
   try { closePort(); } catch (e) {}
 }
 
@@ -15205,14 +15209,14 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'Its nearest port is Madras.',
+      text: 'It is in Kongu Nadu.',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(2); },
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'It is in Kongu Nadu.',
+      text: 'Its nearest port is Madras.',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(3); },
