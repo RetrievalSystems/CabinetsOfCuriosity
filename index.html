@@ -2314,7 +2314,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
    ══════════════════════════════════════════════════════════════════ */
 #tut-dim {
   position: fixed; inset: 0; z-index: 899997;
-  background: rgba(8,5,2,0.55);
+  background: rgba(8,5,2,0.28);
   pointer-events: none;
   transition: opacity 0.4s ease;
 }
@@ -15240,17 +15240,77 @@ function _tutBuildSteps() {
       title: 'Opening a Port',
       text: 'So let\u2019s see how to get to Madras. Clicking on your merchant token opens their location\u2019s window.',
       target: () => document.querySelector('.player-pawn[data-player="0"]'),
-      action: async () => { await _tutShipHoverBoardDisembark(); },
+    },
+    {
+      title: 'Opening a Port',
+      text: 'Let\u2019s open the port and find our way to Madras.',
+      target: () => null,
+      action: () => {
+        const p = players[0];
+        if ((p.ingots||0) < 3) p.ingots = (p.ingots||0) + 3;
+        try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
+      },
+    },
+    {
+      title: 'Every Port Along the Way',
+      text: 'Hovering over a ship shows every port on her route — Madras included.',
+      target: () => document.getElementById('port-ship-box'),
+      action: () => {
+        const shipBox = document.getElementById('port-ship-box');
+        if (shipBox) {
+          try { showPortConnectionsTooltip('Canton', shipBox); } catch (e) {}
+          const tt = document.getElementById('route-tooltip');
+          if (tt) {
+            [...tt.querySelectorAll('*')].forEach(el => {
+              if (el.children.length === 0 && /Madras/i.test(el.textContent||'')) {
+                el.style.color = '#e8c878';
+                el.style.fontWeight = '700';
+                el.style.textShadow = '0 0 8px rgba(232,200,120,0.8)';
+              }
+            });
+          }
+        }
+      },
+    },
+    {
+      title: 'Via Canton',
+      text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.',
+      target: () => null,
+      action: () => {
+        const tt = document.getElementById('route-tooltip');
+        if (tt) tt.style.opacity = '0';
+        _tutHideSpotlight();
+      },
+    },
+    {
+      title: 'Boarding',
+      text: 'Let\u2019s board.',
+      target: () => null,
+      action: async () => {
+        const p = players[0];
+        let s = ships.find(sh => sh.routeId === 'bei' && sh.nodeIndex === 0);
+        if (!s) { s = { id: nextShipId++, routeId: 'bei', nodeIndex: 0, unmanned: false }; ships.push(s); }
+        p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+        try { renderShips(); buildSVG(); } catch (e) {}
+        await _aiWait(900);
+      },
     },
     {
       title: 'Shopping Locally',
       text: 'So while still in the London port, you might want to purchase some items — each port has a few lower-tier items readily available.',
       target: () => document.getElementById('map-wrapper'),
       action: async () => {
-        const pl = players[0];
+        const p = players[0];
+        // The tutorial's shopping/cabinet steps still need the player standing at
+        // London — disembark() restores that, but it also closes the port itself as
+        // part of its own normal behaviour, so re-open it fresh right after.
+        try { disembark(); } catch (e) {}
+        await _aiWait(300);
+        try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
+        await _aiWait(400);
         try {
           const item = (PORT_ITEMS['London']||[]).find(w => w.label === 'Quadrant');
-          if (item && !(pl.items||[]).some(it => it.img === item.img)) buyPortItem(item);
+          if (item && !(p.items||[]).some(it => it.img === item.img)) buyPortItem(item);
         } catch(e) {}
         await _aiWait(300);
       },
