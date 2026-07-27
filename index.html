@@ -2295,7 +2295,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
   z-index: 5;
   font-family: 'Cinzel Decorative', serif;
-  font-size: 0.7rem;
+  font-size: 1.4rem;
   letter-spacing: 0.14em;
   color: rgba(212,168,50,0.55);
   text-align: center;
@@ -15078,6 +15078,12 @@ async function _tutReturnToLondon() {
   try { renderShips(); buildSVG(); } catch (e) {}
   await _aiWait(2200);          // the pawn's own CSS transition carries it smoothly between the two
 
+  // Genuinely arrive — same state changes the real disembark() makes. Without this,
+  // the player was still nominally "aboard" the return-trip ship afterward, which is
+  // exactly what was silently suppressing the boarding UI at the next port.
+  s.unmanned = true;
+  p.shipId = null;
+  p.disembarked = true;
   p.landLocation = 'London';
   try { closePort(); } catch (e) {}
 }
