@@ -2292,12 +2292,14 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   background: linear-gradient(90deg, transparent, rgba(212,168,50,0.6), transparent);
 }
 #intro-loading-text {
+  position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
+  z-index: 5;
   font-family: 'Cinzel Decorative', serif;
   font-size: 0.7rem;
   letter-spacing: 0.14em;
   color: rgba(212,168,50,0.55);
   text-align: center;
-  margin-bottom: 8px;
+  white-space: nowrap;
   animation: introLoadingPulse 2.4s ease-in-out infinite;
 }
 @keyframes introLoadingPulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.8; } }
@@ -14979,16 +14981,23 @@ async function _tutRubyAnatomyCallouts() {
 // explain why Canton comes first, then board — and quietly restore the player to
 // standing at London afterward, since the tutorial continues there.
 async function _tutShipHoverBoardDisembark() {
-  await _aiWait(1200);   // let the spotlighted pawn actually be seen before the port covers it
+  await _aiWait(1400);   // let the spotlighted pawn actually be seen before anything else
+  await _aiWait(900);    // a further beat after the token highlight, before the port opens
   const p = players[0];
   if ((p.ingots||0) < 3) p.ingots = (p.ingots||0) + 3;
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
-  await _aiWait(500);
+  await _aiWait(700);
+
+  _tutSetText('Let\u2019s find our way to Madras.');
+  await _aiWait(1600);
 
   const shipBox = document.getElementById('port-ship-box');
+  _tutRespotlight(() => shipBox);   // highlight Canton — the ship bound there
+  await _aiWait(1300);
+
   if (shipBox) {
-    try { showPortConnectionsTooltip('Canton', shipBox); } catch (e) {}
-    await _aiWait(300);
+    try { showPortConnectionsTooltip('Canton', shipBox); } catch (e) {}   // show the routes
+    await _aiWait(700);
     const tt = document.getElementById('route-tooltip');
     if (tt) {
       [...tt.querySelectorAll('*')].forEach(el => {
@@ -15000,6 +15009,7 @@ async function _tutShipHoverBoardDisembark() {
       });
     }
   }
+  _tutHideSpotlight();
   _tutSetText('So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.');
   await _aiWait(2200);
   const tt2 = document.getElementById('route-tooltip');
