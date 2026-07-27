@@ -14960,20 +14960,21 @@ async function _tutBodleianRevealAndPick() {
 
 // Sequential callouts naming each fact on the enlarged Ruby card as it's mentioned —
 // rough positions/timing to start with; easy to retune once you can see it live.
-async function _tutRubyAnatomyCallouts() {
+// Draws the first n of the five Ruby anatomy callouts (fresh each call, since the
+// engine clears all callouts on every step transition anyway) — each tutorial step
+// calls this with one more than the last, so the set visibly builds up click by
+// click rather than on an internal timer.
+function _tutShowAnatomyCallouts(n) {
   const el = document.getElementById('card-img');
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
-  await _aiWait(600);
-  _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score', 'down');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots');
-  await _aiWait(1600);
+  const defs = [
+    () => _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score', 'down'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
+    () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
+    () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots'),
+  ];
+  for (let i = 0; i < n && i < defs.length; i++) defs[i]();
 }
 
 // The London ship-boarding demo: spotlight the pawn first, THEN open the port after
@@ -15123,15 +15124,35 @@ function _tutBuildSteps() {
     },
     {
       title: 'Each Turn',
-      text: 'Some cards require immediate action, some have immediate effects, some are simply part of the story.',
-      target: () => document.getElementById('decks-centre'),
-      boxPos: 'center',
+      text: 'Some cards require immediate action.',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/captainsoffer.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
+    },
+    {
+      title: 'Each Turn',
+      text: 'Some have immediate effects.',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/pirates.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
+    },
+    {
+      title: 'Each Turn',
+      text: 'Some are simply part of the story.',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/seagulls.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
       title: 'Each Turn',
       text: 'As you travel you will receive information about specific items in the form of tip offs, these allow you to draw from the Opportunity Card deck (off screen).',
-      target: () => document.getElementById('decks-centre'),
-      boxPos: 'center',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/tipoff1.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
       title: 'The Bodleian Invitation',
@@ -15173,16 +15194,47 @@ function _tutBuildSteps() {
         try { closePort(); } catch (e) {}
         try { showCard('images/op-rubyminer.jpeg', null, false, false, false, {}); } catch (e) {}
         await _aiWait(400);
-        await _tutRubyAnatomyCallouts();
-        _tutSetText('With the 20 coins, that\u2019s all the money you currently have.');
-        await _aiWait(2000);
-        _tutSetText('So let\u2019s see how to get to Madras.');
       },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'So we can see this Ruby is worth 32 points — a high score.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(1); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'Its nearest port is Madras.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(2); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It is in Kongu Nadu.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(3); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It takes 1 turn to get there from Madras.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(4); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(5); },
       onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
       title: 'Opening a Port',
-      text: 'Clicking on your merchant token opens their location\u2019s window.',
+      text: 'So let\u2019s see how to get to Madras. Clicking on your merchant token opens their location\u2019s window.',
       target: () => document.querySelector('.player-pawn[data-player="0"]'),
       action: async () => { await _tutShipHoverBoardDisembark(); },
     },
