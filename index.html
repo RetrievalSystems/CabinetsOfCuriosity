@@ -2216,14 +2216,16 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   border-color: rgba(212,168,85,0.6);
   background: rgba(212,168,85,0.06);
 }
-.mode-card-icon { font-size: 2.8rem; line-height: 1; }
+.mode-card-icon {
+  width: 84px; height: 84px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(212,168,85,0.4);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
 .mode-card-title {
   font-family: 'Cinzel', serif; font-size: 0.88rem; letter-spacing: 0.18em;
   color: #e8c878; text-align: center;
-}
-.mode-card-desc {
-  font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.1em;
-  color: rgba(212,168,85,0.45); text-align: center; line-height: 1.8;
 }
 
 /* ── Solo-mode: hide all P2 UI ──────────────────────────────────────────── */
@@ -14176,24 +14178,20 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   <div class="mode-select-title">Choose your voyage</div>
   <div class="mode-cards">
     <div class="mode-card" onclick="chooseSolo()">
-      <div class="mode-card-icon">🧭</div>
+      <img class="mode-card-icon" src="images/soloicon.jpg" alt="">
       <div class="mode-card-title">Solo Merchant</div>
-      <div class="mode-card-desc">One trader.<br>One voyage.<br>The whole world<br>to explore.</div>
     </div>
     <div class="mode-card" onclick="chooseRival()">
-      <div class="mode-card-icon">⚔</div>
+      <img class="mode-card-icon" src="images/rivalsicon.jpg" alt="">
       <div class="mode-card-title">Rival Merchants</div>
-      <div class="mode-card-desc">Two traders<br>racing the<br>same seas.<br>Only one legend.</div>
     </div>
     <div class="mode-card" onclick="chooseCollab()">
-      <div class="mode-card-icon">🤝</div>
+      <img class="mode-card-icon" src="images/collabicon.jpg" alt="">
       <div class="mode-card-title">Collaborative</div>
-      <div class="mode-card-desc">Two traders,<br>one cabinet.<br>Pool your finds.<br>One legend, shared.</div>
     </div>
     <div class="mode-card" onclick="startTutorial()">
-      <div class="mode-card-icon">📖</div>
+      <img class="mode-card-icon" src="images/howtoplayicon.png" alt="">
       <div class="mode-card-title">How to Play</div>
-      <div class="mode-card-desc">Watch a real<br>turn unfold,<br>narrated<br>step by step.</div>
     </div>
   </div>
 </div>
@@ -15283,31 +15281,11 @@ function _tutBuildSteps() {
       },
     },
     {
-      title: 'Boarding',
-      text: 'Let\u2019s board.',
-      target: () => null,
-      action: async () => {
-        const p = players[0];
-        let s = ships.find(sh => sh.routeId === 'bei' && sh.nodeIndex === 0);
-        if (!s) { s = { id: nextShipId++, routeId: 'bei', nodeIndex: 0, unmanned: false }; ships.push(s); }
-        p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-        try { renderShips(); buildSVG(); } catch (e) {}
-        await _aiWait(900);
-      },
-    },
-    {
       title: 'Shopping Locally',
       text: 'So while still in the London port, you might want to purchase some items — each port has a few lower-tier items readily available.',
       target: () => document.getElementById('map-wrapper'),
       action: async () => {
         const p = players[0];
-        // The tutorial's shopping/cabinet steps still need the player standing at
-        // London — disembark() restores that, but it also closes the port itself as
-        // part of its own normal behaviour, so re-open it fresh right after.
-        try { disembark(); } catch (e) {}
-        await _aiWait(300);
-        try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
-        await _aiWait(400);
         try {
           const item = (PORT_ITEMS['London']||[]).find(w => w.label === 'Quadrant');
           if (item && !(p.items||[]).some(it => it.img === item.img)) buyPortItem(item);
