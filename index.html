@@ -14917,7 +14917,7 @@ async function _tutGoToBodleian() {
   await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
 
   // Hold here on the three face-down cards, and only now reveal the narration text.
-  _tutSetText('The Bodleian invitation gives you a rare chance to have more choice over which item you\u2019d like to pursue, this can be a good start.');
+  _tutSetText('The Bodleian invitation offers more information than the tip offs — here you can choose from the top 3 opportunity cards.');
 }
 // point the spotlight at them, let the viewer actually see all three for a good
 // while, THEN make the pick.
@@ -14969,8 +14969,8 @@ function _tutShowAnatomyCallouts(n) {
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   const defs = [
     () => _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score', 'down'),
-    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Located in Kongu Nadu'),
-    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Nearest port: Madras'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots'),
   ];
@@ -15167,14 +15167,14 @@ function _tutBuildSteps() {
       onLeave: () => { try { dismissCard(); } catch(e) {} },
     },
     {
-      title: 'A Rare Chance',
+      title: 'The Research Trip',
       text: 'Let\u2019s head to the Bodleian.',
       target: () => null,
       action: async () => { await _tutGoToBodleian(); },
     },
     {
       title: 'The Bodleian',
-      text: 'At the Bodleian you get to select from the top three Opportunity cards — the other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
+      text: 'The other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
       action: async () => { await _tutBodleianRevealAndPick(); },
       onLeave: () => {
