@@ -2217,9 +2217,10 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   background: rgba(212,168,85,0.06);
 }
 .mode-card-icon {
-  width: 84px; height: 84px;
+  height: 84px; width: auto;
+  max-width: 160px;
   border-radius: 8px;
-  object-fit: cover;
+  object-fit: contain;
   border: 1px solid rgba(212,168,85,0.4);
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
 }
@@ -15256,7 +15257,7 @@ function _tutBuildSteps() {
       action: () => {
         const shipBox = document.getElementById('port-ship-box');
         if (shipBox) {
-          try { showPortConnectionsTooltip('Canton', shipBox); } catch (e) {}
+          try { showPortConnectionsTooltip('London', shipBox); } catch (e) {}
           const tt = document.getElementById('route-tooltip');
           if (tt) {
             [...tt.querySelectorAll('*')].forEach(el => {
