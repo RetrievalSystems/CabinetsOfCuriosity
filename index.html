@@ -2291,6 +2291,16 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   width: min(500px, 78vw); height: 1px;
   background: linear-gradient(90deg, transparent, rgba(212,168,50,0.6), transparent);
 }
+#intro-loading-text {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: rgba(212,168,50,0.55);
+  text-align: center;
+  margin-bottom: 8px;
+  animation: introLoadingPulse 2.4s ease-in-out infinite;
+}
+@keyframes introLoadingPulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.8; } }
 #intro-black {
   position: absolute; inset: 0; background: #000;
   opacity: 0; transition: opacity 0.8s ease; z-index: 1;
@@ -14253,6 +14263,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     </div>
     <img id="intro-scroll" src="images/scroll.jpeg" alt="">
     <div id="intro-plaque">
+      <div id="intro-loading-text">Preparing the ships</div>
       <div id="intro-loadbar-track"><div id="intro-loadbar-fill"></div></div>
     </div>
   </div>
@@ -14951,7 +14962,7 @@ async function _tutRubyAnatomyCallouts() {
   const el = document.getElementById('card-img');
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   await _aiWait(600);
-  _tutAddCallout(window.innerWidth*0.5, window.innerHeight*0.5 + 190, '32 points — a high score', 'down');
+  _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score', 'down');
   await _aiWait(1400);
   _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras');
   await _aiWait(1400);
@@ -15148,11 +15159,50 @@ function _tutBuildSteps() {
         await _aiWait(400);
         await _tutRubyAnatomyCallouts();
         _tutSetText('With the 20 coins, that\u2019s all the money you currently have.');
+        await _aiWait(2000);
+        _tutSetText('So let\u2019s see how to get to Madras.');
       },
       onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
-    // ── BATCH 3 ends here for now — later batches (port/ship demo, cabinet demo)
-    // get added back once this chunk is confirmed solid. ──
+    {
+      title: 'Opening a Port',
+      text: 'Clicking on your merchant token opens their location\u2019s window.',
+      target: () => document.querySelector('.player-pawn[data-player="0"]'),
+      action: async () => { await _tutShipHoverBoardDisembark(); },
+    },
+    {
+      title: 'Shopping Locally',
+      text: 'So while still in the London port, you might want to purchase some items — each port has a few lower-tier items readily available.',
+      target: () => document.getElementById('map-wrapper'),
+      action: async () => {
+        const pl = players[0];
+        try {
+          const item = (PORT_ITEMS['London']||[]).find(w => w.label === 'Quadrant');
+          if (item && !(pl.items||[]).some(it => it.img === item.img)) buyPortItem(item);
+        } catch(e) {}
+        await _aiWait(300);
+      },
+    },
+    {
+      title: 'The Cabinet',
+      text: 'Whenever in London you can also access the cabinet.',
+      target: () => document.getElementById('cabinet-btn'),
+      action: async () => {
+        await _tutCabinetIntro();
+        await _tutPlaceQuadrantDemo();
+      },
+    },
+    {
+      title: 'Time to Travel',
+      text: 'The Ruby costs 12 ingots — you now have more than enough to purchase it and once we start the next turn you will be on your way.',
+      target: () => document.getElementById('held-p1'),
+      action: async () => {
+        try { closeCabinet(); } catch(e) {}
+        await _aiWait(300);
+      },
+    },
+    // ── BATCH 4 ends here for now — later batches get added back once this
+    // chunk is confirmed solid. ──
   ];
 }
 /* ── LATER BATCHES — preserved here, re-enabled step by step as each is confirmed ──
