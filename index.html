@@ -2217,7 +2217,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   background: rgba(212,168,85,0.06);
 }
 .mode-card-icon {
-  height: min(180px, 10.5vw); width: auto;
+  height: min(200px, 11.7vw); width: auto;
   object-fit: contain;
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
 }
@@ -15233,9 +15233,21 @@ function _tutBuildSteps() {
     },
     {
       title: 'Each Turn',
-      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done.',
-      target: () => document.getElementById('decks-centre'),
+      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done. Go ahead, click the On Land deck.',
+      target: () => document.getElementById('deck-land'),
       boxPos: 'center',
+      action: async () => {
+        const p = players[0];
+        // cardDrawn is already true from the Bodleian invite — briefly allow a
+        // genuine extra draw here so the click actually does something, purely
+        // so the player gets used to the motion of clicking the deck itself.
+        const hadDrawn = p.cardDrawn;
+        p.cardDrawn = false;
+        await _tutWaitForRealClick(() => document.getElementById('deck-land'));
+        await _aiWait(1200);   // let whatever card appears settle
+        try { dismissCard(); } catch (e) {}
+        p.cardDrawn = hadDrawn;
+      },
     },
     {
       title: 'Each Turn',
