@@ -2202,26 +2202,23 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   color: rgba(212,168,85,0.55); text-transform: uppercase;
 }
 .mode-cards {
-  display: flex; gap: 32px; align-items: stretch;
+  display: flex; gap: 40px; align-items: stretch;
+  width: 92vw; max-width: 1700px; justify-content: center;
 }
 .mode-card {
-  width: 220px; padding: 36px 28px 32px;
-  border: 1px solid rgba(212,168,85,0.2);
+  flex: 1 1 0;
+  padding: 36px 28px 32px;
   background: rgba(255,255,255,0.025);
   display: flex; flex-direction: column; align-items: center; gap: 16px;
-  cursor: pointer; transition: border-color 0.3s, background 0.3s;
+  cursor: pointer; transition: background 0.3s;
   border-radius: 2px;
 }
 .mode-card:hover {
-  border-color: rgba(212,168,85,0.6);
   background: rgba(212,168,85,0.06);
 }
 .mode-card-icon {
-  height: 84px; width: auto;
-  max-width: 160px;
-  border-radius: 8px;
+  height: 220px; width: 100%;
   object-fit: contain;
-  border: 1px solid rgba(212,168,85,0.4);
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
 }
 .mode-card-title {
@@ -14180,7 +14177,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 
 <!-- ══ MODE SELECT (shown after intro video) ════════════════════════════ -->
 <div id="mode-select-overlay">
-  <div class="mode-select-title">Choose your voyage</div>
   <div class="mode-cards">
     <div class="mode-card" onclick="chooseSolo()">
       <img class="mode-card-icon" src="images/soloicon.jpg" alt="">
@@ -15155,7 +15151,21 @@ async function _tutPlaceQuadrantDemo() {
 
 async function _tutReturnToLondon() {
   _tutSetText('Go ahead and click the horse & carriage to return to London.');
+  // TEMP DIAGNOSTIC — logs exactly what calls closePort() during this wait, and
+  // whether it happens on a real click vs. something else (hover, re-render, etc).
+  const _origClosePortDiag = window.closePort;
+  window.closePort = function(...args) {
+    console.log('[TUT-DIAG] closePort() called during return-cart wait — stack:', new Error().stack);
+    return _origClosePortDiag.apply(this, args);
+  };
+  document.addEventListener('mouseover', function _diagMouseOver(e) {
+    const cartBtn = document.querySelector('#bodleian-return-area .buy-item-frame');
+    if (cartBtn && (e.target === cartBtn || cartBtn.contains(e.target) || (cartBtn.parentElement && cartBtn.parentElement.contains(e.target)))) {
+      console.log('[TUT-DIAG] mouseover near cart button — target:', e.target.id || e.target.className);
+    }
+  });
   await _tutWaitForRealClick(() => document.querySelector('#bodleian-return-area .buy-item-frame'));
+  window.closePort = _origClosePortDiag;
   await _aiWait(600);
 
   _tutSetText('Now click End Turn.');
@@ -15270,7 +15280,10 @@ function _tutBuildSteps() {
       onLeave: () => {
         const area = document.getElementById('bodleian-select-area');
         if (area) area.style.display = 'none';
-        try { closePort(); } catch (e) {}
+        // NOT closing the port here — the very next step needs the Bodleian port
+        // panel still open, since the real return-cart button it waits for lives
+        // inside it. Closing prematurely left nothing there to click, which is why
+        // the wait silently skipped straight past with nothing to interact with.
       },
     },
     {
