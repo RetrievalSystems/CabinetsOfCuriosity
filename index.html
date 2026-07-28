@@ -2206,7 +2206,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   width: 92vw; max-width: 1700px; justify-content: center;
 }
 .mode-card {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   padding: 36px 28px 32px;
   background: rgba(255,255,255,0.025);
   display: flex; flex-direction: column; align-items: center; gap: 16px;
@@ -2217,7 +2217,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   background: rgba(212,168,85,0.06);
 }
 .mode-card-icon {
-  height: 220px; width: 100%;
+  height: 220px; width: auto;
   object-fit: contain;
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
 }
@@ -14967,7 +14967,7 @@ async function _tutGoToBodleian() {
   // Now the player clicks End Turn themselves — this is what genuinely moves the
   // cart one node along its route (London → Bodleian) and triggers the real
   // arrival flow, opening the Bodleian port with three face-down cards.
-  _tutSetText('Now click End Turn.');
+  _tutSetText('Now click End Turn to start the journey.');
   await _tutWaitForRealClick(() => document.getElementById('btn-end'));
   await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
 
@@ -15134,16 +15134,27 @@ async function _tutPlaceQuadrantDemo() {
   await _aiWait(900);
   const p = players[0];
   const item = (p.items||[]).find(it => it.img && it.img.includes('quadrant'));
+  console.log('[TUT-DIAG] quadrant found in p.items:', !!item);
+  console.log('[TUT-DIAG] cabInLondon:', typeof cabInLondon !== 'undefined' ? cabInLondon : 'undefined');
+  console.log('[TUT-DIAG] playerNode(p).name:', (typeof playerNode==='function' ? playerNode(p)?.name : 'n/a'));
   if (item) {
     const findInvEl = () => [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
       .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
+    console.log('[TUT-DIAG] inventory row found:', !!findInvEl());
     _tutSetText('Click the Quadrant in your inventory, on the right.');
     await _tutWaitForRealClick(findInvEl);
+    console.log('[TUT-DIAG] after inv click — cabSelectedItem:', typeof cabSelectedItem !== 'undefined' ? JSON.stringify(cabSelectedItem && {source: cabSelectedItem.source, size: cabSelectedItem.ci?.size}) : 'undefined');
     await _aiWait(600);
     const findDz = () => [...document.querySelectorAll('.cab-dz')]
       .find(el => !el.classList.contains('cab-filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
+    const dzPreview = findDz();
+    console.log('[TUT-DIAG] empty tall dz found:', !!dzPreview, dzPreview ? {cellId: dzPreview.dataset.cellId, side: dzPreview.dataset.side} : null);
+    if (dzPreview && typeof cabCanDropCheck === 'function' && typeof cabSelectedItem !== 'undefined' && cabSelectedItem) {
+      console.log('[TUT-DIAG] cabCanDropCheck result:', cabCanDropCheck(dzPreview.dataset.cellId, dzPreview.dataset.side, cabSelectedItem.ci?.size));
+    }
     _tutSetText('Now click an empty bay it fits to place it.');
     await _tutWaitForRealClick(findDz);
+    console.log('[TUT-DIAG] after dz click — quadrant still in p.items:', (p.items||[]).some(it => it.img && it.img.includes('quadrant')));
     await _aiWait(700);
   }
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
