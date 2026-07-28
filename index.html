@@ -14838,7 +14838,12 @@ function _tutWaitForRealHover(targetFn) {
   return new Promise(resolve => {
     const el = targetFn();
     if (!el) { resolve(); return; }
-    _tutAllowInteraction(el);
+    // Deliberately NOT calling _tutAllowInteraction here — mouseenter isn't
+    // blocked by the click-guard at all, so there's no need to exempt this
+    // element from it. Doing so previously left it click-allowed for the whole
+    // hover-wait, which is exactly what let the ship be boarded prematurely,
+    // before the dedicated boarding step. Real clicking is allowed later,
+    // explicitly, when that step actually begins its own wait.
     const nextBtn = document.getElementById('tut-next-btn');
     if (nextBtn) nextBtn.style.display = 'none';
     const prevFilter = el.style.filter;
