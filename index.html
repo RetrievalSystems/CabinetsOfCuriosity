@@ -15238,11 +15238,13 @@ function _tutBuildSteps() {
       boxPos: 'center',
       action: async () => {
         const deckEl = document.getElementById('deck-land');
-        // This click is purely practice — no real draw should happen (the actual
-        // card types get shown properly in the steps right after this). The deck
-        // is genuinely disabled right now (cardDrawn is already true from the
-        // Bodleian invite), so briefly lift that just so the click registers at
-        // all, while also neutralising drawCard itself so nothing real fires.
+        // The click itself is just practice motion — no real draw happens (the
+        // deck is genuinely disabled right now, cardDrawn already true from the
+        // Bodleian invite), so briefly lift that just so the click registers,
+        // neutralising drawCard so nothing real fires. Immediately afterward we
+        // trigger the real showCard() — same native "jump" deal animation as an
+        // actual draw — showing the Captain's Offer card, and just pretend that's
+        // what the player's click turned up.
         const wasDisabled = deckEl.classList.contains('disabled');
         deckEl.classList.remove('disabled');
         const _origDrawCard = window.drawCard;
@@ -15250,14 +15252,10 @@ function _tutBuildSteps() {
         await _tutWaitForRealClick(() => deckEl);
         window.drawCard = _origDrawCard;
         deckEl.classList.toggle('disabled', wasDisabled);
+        await _aiWait(200);
+        try { showCard('images/captainsoffer.jpeg', null, false, false, false, {}); } catch (e) {}
+        _tutSetText('Some cards require immediate action.');
       },
-    },
-    {
-      title: 'Each Turn',
-      text: 'Some cards require immediate action.',
-      target: () => null,
-      boxPos: 'right',
-      action: () => { try { showCard('images/captainsoffer.jpeg', null, false, false, false, {}); } catch (e) {} },
       onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
