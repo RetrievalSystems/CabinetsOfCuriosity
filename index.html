@@ -15245,16 +15245,41 @@ function _tutBuildSteps() {
         // trigger the real showCard() — same native "jump" deal animation as an
         // actual draw — showing the Captain's Offer card, and just pretend that's
         // what the player's click turned up.
+        // Two SEPARATE classes independently hide the deck's "peek" card-back
+        // graphic — .disabled (which also blocks clicks) AND .card-drawn (purely
+        // visual, set whenever cardDrawn is already true, which it already is
+        // here from the Bodleian invite). Missing this second one is exactly why
+        // the deck still looked empty even once it became clickable.
         const wasDisabled = deckEl.classList.contains('disabled');
-        deckEl.classList.remove('disabled');
+        const wasCardDrawn = deckEl.classList.contains('card-drawn');
+        deckEl.classList.remove('disabled', 'card-drawn');
         const _origDrawCard = window.drawCard;
         window.drawCard = () => {};
         await _tutWaitForRealClick(() => deckEl);
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';   // stays hidden a moment longer —
+                                                          // the click's own wait re-shows Next
+                                                          // immediately, before the card below
+                                                          // has actually appeared
         window.drawCard = _origDrawCard;
         deckEl.classList.toggle('disabled', wasDisabled);
-        await _aiWait(200);
+        deckEl.classList.toggle('card-drawn', wasCardDrawn);
+        // #card-overlay sits at z-index 70 — far below the tutorial's own dim
+        // layer (899997+), so the real card was rendering underneath it and
+        // getting washed out almost invisible. Hide the dim/spotlight while the
+        // card is actually showing; the next step's own render naturally brings
+        // them back. Also shift the narration box off-centre first, since the
+        // card itself displays centred and the box was sitting right on top of it.
+        const box = document.getElementById('tut-box');
+        if (box) { box.classList.remove('tut-box-center'); box.classList.add('tut-box-right'); }
+        const dim = document.getElementById('tut-dim');
+        if (dim) dim.style.opacity = '0';
+        _tutHideSpotlight();
+        await _aiWait(450);   // let the spotlight/dim fully finish fading before the
+                               // card appears — otherwise its ring briefly ghosts over it
         try { showCard('images/captainsoffer.jpeg', null, false, false, false, {}); } catch (e) {}
         _tutSetText('Some cards require immediate action.');
+        if (nextBtn) nextBtn.style.display = '';
       },
       onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
