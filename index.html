@@ -14817,8 +14817,11 @@ function _tutWaitForRealClick(targetFn) {
     const el = targetFn();
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
+    const prevFilter = el.style.filter;
+    el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
       el.removeEventListener('click', handler, true);
+      el.style.filter = prevFilter;
       _tutRevokeInteraction();
       resolve();
     };
@@ -14834,8 +14837,11 @@ function _tutWaitForRealHover(targetFn) {
     const el = targetFn();
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
+    const prevFilter = el.style.filter;
+    el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
       el.removeEventListener('mouseenter', handler);
+      el.style.filter = prevFilter;
       resolve();
     };
     el.addEventListener('mouseenter', handler);
@@ -15363,10 +15369,27 @@ function _tutBuildSteps() {
       title: 'Via Canton',
       text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.',
       target: () => null,
-      action: () => {
+      action: async () => {
         const tt = document.getElementById('route-tooltip');
         if (tt) tt.style.opacity = '0';
         _tutHideSpotlight();
+        await _aiWait(1800);
+        _tutSetText('Ok, let\u2019s arrange your boarding for Canton.');
+        _tutRespotlight(() => document.getElementById('port-ship-box'));
+        // The real boarding handler closes the port itself as part of its normal
+        // behaviour — neutralise that just for this one click so the port stays
+        // open, since the next step needs it open to go shopping.
+        const _origClosePort = window.closePort;
+        window.closePort = () => {};
+        await _tutWaitForRealClick(() => document.getElementById('port-ship-box'));
+        await _aiWait(200);
+        window.closePort = _origClosePort;
+        _tutHideSpotlight();
+        // The click itself is the advance here, rather than a separate Next click.
+        // Deferred to the next tick so THIS step's own cleanup (re-enabling Next)
+        // finishes first — calling _tutNext() synchronously here would let it race
+        // against that cleanup and briefly leave Next wrongly enabled on the new step.
+        setTimeout(() => _tutNext(), 0);
       },
     },
     {
