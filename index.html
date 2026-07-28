@@ -14976,7 +14976,36 @@ function _tutShowAnatomyCallouts(n) {
   for (let i = 0; i < n && i < defs.length; i++) defs[i]();
 }
 
-// The London ship-boarding demo: spotlight the pawn first, THEN open the port after
+// A restricted version of showPortConnectionsTooltip() for this one tutorial
+// moment — the generic function pulls in EVERY liner route that touches London
+// (there are several), when all we want here is the Beijing Rose's own two legs.
+function _tutShowBeiTooltip(anchorEl) {
+  const tt = document.getElementById('route-tooltip');
+  if (!tt) return;
+  const outStops = ROUTES['bei'].nodes.filter(n => n.name && n.isPort).map(n => n.name);
+  const inStops  = ROUTES['bei_return'].nodes.filter(n => n.name && n.isPort).map(n => n.name);
+  let html = `<div class="rtt-ship-name">Beijing Rose</div>`;
+  html += `<div class="rtt-leg rtt-outbound"><div class="rtt-leg-title">London — Canton · outbound</div>`;
+  outStops.forEach(s => { html += `<div class="rtt-stop">${s}</div>`; });
+  html += `</div>`;
+  html += `<div class="rtt-leg rtt-return"><div class="rtt-leg-title">Canton — London · inbound</div>`;
+  inStops.forEach(s => { html += `<div class="rtt-stop">${s}</div>`; });
+  html += `</div>`;
+  tt.innerHTML = html;
+  tt.style.display = 'block';
+  tt.style.opacity = '1';
+  const r = anchorEl.getBoundingClientRect();
+  let left = r.right + 12;
+  let top  = r.top  - 10;
+  const ttW = tt.offsetWidth, ttH = tt.offsetHeight;
+  if (left + ttW > window.innerWidth  - 8) left = r.left - ttW - 12;
+  if (top  < 8)                            top  = 8;
+  if (top  + ttH > window.innerHeight - 8) top  = window.innerHeight - ttH - 8;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+}
+
+
 // a beat, THEN show the tooltip with Madras highlighted, update the narration to
 // explain why Canton comes first, then board — and quietly restore the player to
 // standing at London afterward, since the tutorial continues there.
@@ -15051,14 +15080,27 @@ async function _tutPlaceQuadrantDemo() {
   await _aiWait(900);
   const p = players[0];
   const item = (p.items||[]).find(it => it.img && it.img.includes('quadrant'));
+  console.log('[TUT-DIAG] quadrant in inventory:', !!item, '— cabInLondon:', typeof cabInLondon !== 'undefined' ? cabInLondon : 'undefined');
   if (item) {
     const invEl = [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
       .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
-    try { cabSelectInv(item, invEl); } catch (e) {}
+    console.log('[TUT-DIAG] inventory row found:', !!invEl);
+    if (invEl) { _tutRespotlight(() => invEl); invEl.style.filter = 'brightness(1.5) drop-shadow(0 0 12px rgba(232,200,120,0.9))'; }
+    await _aiWait(900);
+    try { cabSelectInv(item, invEl); } catch (e) { console.log('[TUT-DIAG] cabSelectInv threw:', e); }
+    if (invEl) invEl.style.filter = '';
     await _aiWait(700);
     const dz = [...document.querySelectorAll('.cab-dz')]
-      .find(el => !el.classList.contains('filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
-    if (dz) { try { dz.click(); } catch (e) {} }
+      .find(el => !el.classList.contains('cab-filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
+    console.log('[TUT-DIAG] empty tall slot found:', !!dz);
+    if (dz) {
+      _tutRespotlight(() => dz);
+      dz.style.filter = 'brightness(1.5) drop-shadow(0 0 12px rgba(232,200,120,0.9))';
+      await _aiWait(900);
+      dz.style.filter = '';
+      try { dz.click(); } catch (e) { console.log('[TUT-DIAG] dz.click threw:', e); }
+    }
+    _tutHideSpotlight();
     await _aiWait(700);
   }
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
@@ -15257,7 +15299,7 @@ function _tutBuildSteps() {
       action: () => {
         const shipBox = document.getElementById('port-ship-box');
         if (shipBox) {
-          try { showPortConnectionsTooltip('London', shipBox); } catch (e) {}
+          try { _tutShowBeiTooltip(shipBox); } catch (e) {}
           const tt = document.getElementById('route-tooltip');
           if (tt) {
             [...tt.querySelectorAll('*')].forEach(el => {
@@ -15284,14 +15326,17 @@ function _tutBuildSteps() {
     {
       title: 'Shopping Locally',
       text: 'So while still in the London port, you might want to purchase some items — each port has a few lower-tier items readily available.',
-      target: () => document.getElementById('map-wrapper'),
+      target: () => [...document.querySelectorAll('#buy-items-area .buy-item-row')]
+        .find(row => { const img = row.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); }),
       action: async () => {
-        const p = players[0];
-        try {
-          const item = (PORT_ITEMS['London']||[]).find(w => w.label === 'Quadrant');
-          if (item && !(p.items||[]).some(it => it.img === item.img)) buyPortItem(item);
-        } catch(e) {}
-        await _aiWait(300);
+        await _aiWait(1000);
+        const row = [...document.querySelectorAll('#buy-items-area .buy-item-row')]
+          .find(r => { const img = r.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); });
+        const btn = row ? row.querySelector('.port-action-btn') : null;
+        if (btn) { btn.style.filter = 'brightness(1.6) drop-shadow(0 0 12px rgba(232,200,120,0.9))'; }
+        await _aiWait(900);
+        if (btn) { try { btn.click(); } catch (e) {} btn.style.filter = ''; }
+        await _aiWait(400);
       },
     },
     {
