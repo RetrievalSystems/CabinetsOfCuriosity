@@ -15006,6 +15006,9 @@ async function _tutBodleianRevealAndPick() {
   if (area0) area0.style.display = 'flex';
   if (rubySlot) rubySlot.style.filter = '';
   _tutHideSpotlight();
+  const nextBtn = document.getElementById('tut-next-btn');
+  if (nextBtn) nextBtn.style.display = 'none';   // stays hidden through the lingering pause below —
+                                                   // the caller auto-advances once it's done, no manual Next
   await _aiWait(2600);
   // Deliberately doesn't close the port or hide anything further here — whatever the
   // real game does after a pick just plays out and stays on screen until the player
@@ -15019,7 +15022,7 @@ async function _tutBodleianRevealAndPick() {
 // calls this with one more than the last, so the set visibly builds up click by
 // click rather than on an internal timer.
 function _tutShowAnatomyCallouts(n) {
-  const el = document.getElementById('card-img');
+  const el = document.getElementById('held-detail-img');
   const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
   const defs = [
     () => _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score, and 1/8 of a bonus group', 'down'),
@@ -15258,7 +15261,12 @@ function _tutBuildSteps() {
       title: 'The Bodleian',
       text: 'The other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
-      action: async () => { await _tutBodleianRevealAndPick(); },
+      action: async () => {
+        await _tutBodleianRevealAndPick();
+        // Straight into returning to London — no separate Next click needed here,
+        // since the very next step immediately asks for another real click anyway.
+        setTimeout(() => _tutNext(), 0);
+      },
       onLeave: () => {
         const area = document.getElementById('bodleian-select-area');
         if (area) area.style.display = 'none';
@@ -15272,13 +15280,29 @@ function _tutBuildSteps() {
       action: async () => { await _tutReturnToLondon(); },
     },
     {
+      title: 'Your Card, Kept Safe',
+      text: 'The card stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
+      target: () => document.getElementById('held-p1'),
+    },
+    {
+      title: 'Your Card, Kept Safe',
+      text: 'You can look at the information on it anytime by clicking it — go ahead and click the card.',
+      target: () => [...document.querySelectorAll('#held-p1 .held-card')]
+        .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('rubyminer'); }),
+      action: async () => {
+        const findCard = () => [...document.querySelectorAll('#held-p1 .held-card')]
+          .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('rubyminer'); });
+        await _tutWaitForRealClick(findCard);
+        setTimeout(() => _tutNext(), 0);
+      },
+    },
+    {
       title: 'Anatomy of an Opportunity Card',
       text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what it\u2019s score is, how much it costs, and how long it takes to reach the destination.',
       target: () => null,
       boxPos: 'left',
       action: async () => {
         try { closePort(); } catch (e) {}
-        try { showCard('images/op-rubyminer.jpeg', null, false, false, false, {}); } catch (e) {}
         await _aiWait(400);
       },
     },
@@ -15316,7 +15340,7 @@ function _tutBuildSteps() {
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(5); },
-      onLeave: () => { try { dismissCard(); } catch (e) {} },
+      onLeave: () => { try { closeHeldDetail(); } catch (e) {} },
     },
     {
       title: 'Opening a Port',
