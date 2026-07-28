@@ -14746,6 +14746,7 @@ function _tutRender(step) {
   document.getElementById('tut-text').innerHTML = step.text;
   const nextBtn = document.getElementById('tut-next-btn');
   nextBtn.textContent = (_tutIdx === _tutSteps.length - 1) ? 'Finish ✓' : 'Next →';
+  nextBtn.style.display = '';
 
   _tutRespotlight(step.target);
 
@@ -14812,17 +14813,22 @@ function _tutRevokeInteraction() { _tutAllowedEl = null; }
 
 // Resolves once the player genuinely clicks the target themselves. The real
 // onclick still fires as normal — this just also detects that it happened.
+// Next is hidden for the duration: having it active alongside a live in-game
+// click let the two interfere with each other and break the sequence.
 function _tutWaitForRealClick(targetFn) {
   return new Promise(resolve => {
     const el = targetFn();
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (nextBtn) nextBtn.style.display = 'none';
     const prevFilter = el.style.filter;
     el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
       el.removeEventListener('click', handler, true);
       el.style.filter = prevFilter;
       _tutRevokeInteraction();
+      if (nextBtn) nextBtn.style.display = '';
       resolve();
     };
     el.addEventListener('click', handler, true);
@@ -14837,11 +14843,14 @@ function _tutWaitForRealHover(targetFn) {
     const el = targetFn();
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (nextBtn) nextBtn.style.display = 'none';
     const prevFilter = el.style.filter;
     el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
       el.removeEventListener('mouseenter', handler);
       el.style.filter = prevFilter;
+      if (nextBtn) nextBtn.style.display = '';
       resolve();
     };
     el.addEventListener('mouseenter', handler);
@@ -14951,32 +14960,19 @@ async function _tutGoToBodleian() {
   _bodleianVisits[0] = { cards: cardData, revealed: false };
   _bodleianPeeked = cardData;
 
-  // Real UI, real mechanics from here — open the London port and highlight the
-  // actual horse & cart button before clicking it.
+  // Real UI, real mechanics from here — open the London port and let the player
+  // click the actual horse & cart button themselves.
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
   await _aiWait(700);
-  const cartArea = document.getElementById('london-cart-area');
-  _tutRespotlight(() => cartArea);
-  await _aiWait(1200);
-  if (cartArea) cartArea.style.filter = 'brightness(1.7) drop-shadow(0 0 16px rgba(232,200,120,0.95))';
-  await _aiWait(500);
-  try { boardLondonCart(); } catch (e) {}   // this also closes the port itself
-  if (cartArea) cartArea.style.filter = '';
-  _tutHideSpotlight();
+  _tutSetText('Go ahead and click the horse & cart.');
+  await _tutWaitForRealClick(() => document.getElementById('london-cart-area'));
   await _aiWait(600);
 
-  // Highlight End Turn, then actually click it — this is what genuinely moves the
+  // Now the player clicks End Turn themselves — this is what genuinely moves the
   // cart one node along its route (London → Bodleian) and triggers the real
   // arrival flow, opening the Bodleian port with three face-down cards.
-  const endBtn = document.getElementById('btn-end');
-  _tutRespotlight(() => endBtn);
-  await _aiWait(1300);
-  if (endBtn) endBtn.style.filter = 'brightness(1.7) drop-shadow(0 0 16px rgba(232,200,120,0.95))';
-  await _aiWait(500);
-  try { endTurn(); } catch (e) {}
-  if (endBtn) endBtn.style.filter = '';
-  _tutHideSpotlight();
-
+  _tutSetText('Now click End Turn.');
+  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
   await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
 
   // Hold here on the three face-down cards, and only now reveal the narration text.
@@ -15155,18 +15151,13 @@ async function _tutPlaceQuadrantDemo() {
 }
 
 async function _tutReturnToLondon() {
-  const p = players[0];
-  const old = ships.find(sh => sh.routeId === 'london_bodleian');
-  if (old) ships = ships.filter(sh => sh.id !== old.id);
-  let s = { id: nextShipId++, routeId: 'london_bodleian_return', nodeIndex: 0, unmanned: false };
-  ships.push(s);
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(1800);          // let the viewer see the token sitting at the Bodleian first
+  _tutSetText('Go ahead and click the horse & carriage to return to London.');
+  await _tutWaitForRealClick(() => document.querySelector('#bodleian-return-area .buy-item-frame'));
+  await _aiWait(600);
 
-  s.nodeIndex = 1;               // now actually advance it — London
-  try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(2200);          // the pawn's own CSS transition carries it smoothly between the two
+  _tutSetText('Now click End Turn.');
+  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  await _aiWait(2200);   // the pawn's own CSS transition carries it smoothly between the two
 
   // Genuinely arrive — same state changes the real disembark() makes. Without this,
   // the player was still nominally "aboard" the return-trip ship afterward, which is
@@ -15175,7 +15166,9 @@ async function _tutReturnToLondon() {
   // own `p.landLocation = ROUTES[s.routeId].nodes[s.nodeIndex]`) — the rest of the
   // game reads `landLocation.name`, and a bare string here silently breaks that check,
   // which is what was actually causing the boarding UI to never appear.
-  s.unmanned = true;
+  const p = players[0];
+  const s = getShip(p.shipId);
+  if (s) { s.unmanned = true; }
   p.shipId = null;
   p.disembarked = true;
   p.landLocation = ROUTES['london_bodleian_return'].nodes[1];
@@ -15334,7 +15327,6 @@ function _tutBuildSteps() {
         if ((p.ingots||0) < 3) p.ingots = (p.ingots||0) + 3;
         await _tutWaitForRealClick(() => document.getElementById('pawn-hit'));
         await _aiWait(300);
-        _tutSetText('Now click Enter London to step inside.');
         await _tutWaitForRealClick(() => document.querySelector('.pawn-popup-btn'));
       },
     },
@@ -15360,6 +15352,23 @@ function _tutBuildSteps() {
                 el.style.textShadow = '0 0 8px rgba(232,200,120,0.8)';
               }
             });
+            // Expand the spotlight to cover both the ship AND the tooltip — the
+            // tooltip was still sitting in the dark otherwise.
+            const r1 = shipBox.getBoundingClientRect();
+            const r2 = tt.getBoundingClientRect();
+            const left   = Math.min(r1.left, r2.left);
+            const top    = Math.min(r1.top, r2.top);
+            const right  = Math.max(r1.right, r2.right);
+            const bottom = Math.max(r1.bottom, r2.bottom);
+            const spot = document.getElementById('tut-spot');
+            if (spot) {
+              const pad = 10;
+              spot.style.left = (left - pad) + 'px';
+              spot.style.top = (top - pad) + 'px';
+              spot.style.width = (right - left + pad*2) + 'px';
+              spot.style.height = (bottom - top + pad*2) + 'px';
+              spot.style.opacity = '1';
+            }
           }
         }
       },
