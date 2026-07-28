@@ -15237,20 +15237,19 @@ function _tutBuildSteps() {
       target: () => document.getElementById('deck-land'),
       boxPos: 'center',
       action: async () => {
-        const p = players[0];
-        // cardDrawn is already true from the Bodleian invite — briefly allow a
-        // genuine extra draw here so the click actually does something, purely
-        // so the player gets used to the motion of clicking the deck itself.
-        const hadDrawn = p.cardDrawn;
-        p.cardDrawn = false;
-        try { updateHUD(); } catch (e) {}   // refreshes the deck's disabled class — without
-                                             // this the deck stayed visually/functionally
-                                             // disabled even though cardDrawn was now false
-        await _tutWaitForRealClick(() => document.getElementById('deck-land'));
-        await _aiWait(1200);   // let whatever card appears settle
-        try { dismissCard(); } catch (e) {}
-        p.cardDrawn = hadDrawn;
-        try { updateHUD(); } catch (e) {}
+        const deckEl = document.getElementById('deck-land');
+        // This click is purely practice — no real draw should happen (the actual
+        // card types get shown properly in the steps right after this). The deck
+        // is genuinely disabled right now (cardDrawn is already true from the
+        // Bodleian invite), so briefly lift that just so the click registers at
+        // all, while also neutralising drawCard itself so nothing real fires.
+        const wasDisabled = deckEl.classList.contains('disabled');
+        deckEl.classList.remove('disabled');
+        const _origDrawCard = window.drawCard;
+        window.drawCard = () => {};
+        await _tutWaitForRealClick(() => deckEl);
+        window.drawCard = _origDrawCard;
+        deckEl.classList.toggle('disabled', wasDisabled);
       },
     },
     {
