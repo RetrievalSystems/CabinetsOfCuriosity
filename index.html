@@ -14768,15 +14768,15 @@ function _tutRender(step) {
 // something that's only just appeared (e.g. once a panel has actually opened), rather
 // than the spotlight being fixed to whatever existed at the very start of the step.
 // Passing null/undefined hides the spotlight (nothing currently worth pointing at).
-function _tutRespotlight(targetFn) {
+function _tutRespotlight(targetFn, offsetX, offsetY) {
   _tutEnsureDOM();
   const spot = document.getElementById('tut-spot');
   const target = targetFn ? targetFn() : null;
   if (target) {
     const r = target.getBoundingClientRect();
     const pad = 10;
-    spot.style.left = (r.left - pad) + 'px';
-    spot.style.top  = (r.top  - pad) + 'px';
+    spot.style.left = (r.left - pad + (offsetX||0)) + 'px';
+    spot.style.top  = (r.top  - pad + (offsetY||0)) + 'px';
     spot.style.width  = (r.width  + pad * 2) + 'px';
     spot.style.height = (r.height + pad * 2) + 'px';
     spot.style.opacity = '1';
@@ -14972,12 +14972,21 @@ async function _tutGoToBodleian() {
   // Now the player clicks End Turn themselves — this is what genuinely moves the
   // cart one node along its route (London → Bodleian) and triggers the real
   // arrival flow, opening the Bodleian port with three face-down cards.
+  console.log('[TUT-DIAG] setting OUTBOUND "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click End Turn to start the journey.');
   await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  // Next reappears the instant this wait resolves — but there's still real work
+  // left below (letting arrival settle, revealing the narration). Re-hide it so
+  // it doesn't sit there clickable, inviting an early click that skips past all
+  // of that — which is exactly what read as a second, separate "click End Turn"
+  // still needing a Next press right after it.
+  const nextBtn1 = document.getElementById('tut-next-btn');
+  if (nextBtn1) nextBtn1.style.display = 'none';
   await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
 
   // Hold here on the three face-down cards, and only now reveal the narration text.
   _tutSetText('The Bodleian invitation offers more information than the tip offs — here you can choose from the top 3 opportunity cards.');
+  if (nextBtn1) nextBtn1.style.display = '';
 }
 // point the spotlight at them, let the viewer actually see all three for a good
 // while, THEN make the pick.
@@ -15160,7 +15169,17 @@ async function _tutPlaceQuadrantDemo() {
     _tutSetText('Now click an empty bay it fits to place it.');
     await _tutWaitForRealClick(findDz);
     console.log('[TUT-DIAG] after dz click — quadrant still in p.items:', (p.items||[]).some(it => it.img && it.img.includes('quadrant')));
-    await _aiWait(700);
+    // Wait for genuine confirmation the item actually left the inventory (real
+    // placement succeeded) rather than assuming it worked right after the click —
+    // that assumption is exactly what caused this to sometimes whizz past an
+    // unsuccessful placement, or stall on a step that never actually completes.
+    let waited = 0;
+    while ((p.items||[]).some(it => it.img && it.img.includes('quadrant')) && waited < 4000) {
+      await _aiWait(200);
+      waited += 200;
+    }
+    console.log('[TUT-DIAG] placement confirmed after', waited, 'ms wait');
+    await _aiWait(500);   // let the settle/placement animation finish visually
   }
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
 }
@@ -15184,8 +15203,13 @@ async function _tutReturnToLondon() {
   window.closePort = _origClosePortDiag;
   await _aiWait(600);
 
+  console.log('[TUT-DIAG] setting RETURN "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click End Turn.');
   await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  const nextBtn2 = document.getElementById('tut-next-btn');
+  if (nextBtn2) nextBtn2.style.display = 'none';   // same fix as the outbound leg — keep
+                                                     // hidden until the arrival work below
+                                                     // has genuinely finished
   await _aiWait(2200);   // the pawn's own CSS transition carries it smoothly between the two
 
   // Genuinely arrive — same state changes the real disembark() makes. Without this,
@@ -15202,6 +15226,7 @@ async function _tutReturnToLondon() {
   p.disembarked = true;
   p.landLocation = ROUTES['london_bodleian_return'].nodes[1];
   try { closePort(); } catch (e) {}
+  if (nextBtn2) nextBtn2.style.display = '';
 }
 
 // Anatomy walkthrough on the player's REAL held Ruby card (rather than a floating
@@ -15347,12 +15372,12 @@ function _tutBuildSteps() {
       action: async () => { await _tutReturnToLondon(); },
     },
     {
-      title: 'Your Card, Kept Safe',
+      title: 'The Cards in Your Hand',
       text: 'The card stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
       target: () => document.getElementById('held-p1'),
     },
     {
-      title: 'Your Card, Kept Safe',
+      title: 'The Cards in Your Hand',
       text: 'You can look at the information on it anytime by clicking it — go ahead and click the card.',
       target: () => [...document.querySelectorAll('#held-p1 .held-card')]
         .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('rubyminer'); }),
@@ -15475,7 +15500,7 @@ function _tutBuildSteps() {
         _tutHideSpotlight();
         await _aiWait(1800);
         _tutSetText('Ok, let\u2019s arrange your boarding for Canton.');
-        _tutRespotlight(() => document.getElementById('port-ship-box'));
+        _tutRespotlight(() => document.getElementById('port-ship-box'), -80, -15);
         // The real boarding handler closes the port itself as part of its normal
         // behaviour — neutralise that just for this one click so the port stays
         // open, since the next step needs it open to go shopping.
