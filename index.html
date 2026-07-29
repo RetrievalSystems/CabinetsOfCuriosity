@@ -15552,6 +15552,54 @@ function _tutBuildSteps() {
       action: async () => {
         try { closeCabinet(); } catch(e) {}
         await _aiWait(300);
+        // Board the Beijing Rose for real this time — the earlier boarding during
+        // "Via Canton" was deliberately quiet/temporary so shopping could continue;
+        // this is the genuine one that actually carries the player onward.
+        const p = players[0];
+        let s = ships.find(sh => sh.routeId === 'bei' && sh.nodeIndex === 0);
+        if (!s) { s = { id: nextShipId++, routeId: 'bei', nodeIndex: 0, unmanned: false }; ships.push(s); }
+        p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+        try { renderShips(); buildSVG(); } catch (e) {}
+      },
+    },
+    {
+      title: 'Setting Sail',
+      text: 'Click End Turn to set sail.',
+      target: () => document.getElementById('btn-end'),
+      action: async () => {
+        await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';
+        await _aiWait(1400);   // let the ship's own departure animation settle
+        if (nextBtn) nextBtn.style.display = '';
+      },
+    },
+    {
+      title: 'The Astrolabe',
+      text: 'While at sea your astrolabe will monitor ship damage and the level of pirate activity.',
+      target: () => document.getElementById('ast-bay-p0'),
+    },
+    {
+      title: 'Pirate Activity',
+      text: 'With every pirate sighting the meter advances, until it is full and the pirates attempt to board and a battle ensues.',
+      target: () => document.getElementById('ast-bay-p0'),
+      action: async () => {
+        for (let i = 0; i < PIRATE_BATTLE_STEPS; i++) {
+          await _aiWait(900);
+          try { advancePirateTracker(0); } catch (e) {}
+        }
+        await _aiWait(2600);   // let the zoom/battle moment actually be seen
+        // Clean exit — reset the pirate meter, close the battle overlay, and
+        // unzoom, same as a real voyage-end reset, rather than leaving the
+        // player genuinely stuck mid-battle for the rest of the tutorial.
+        try {
+          const p = players[0];
+          const s = getShip(p.shipId);
+          if (s) resetPirateStateOnVoyageEnd(s);
+          setBattleOverlay(false);
+          unzoomAstrolabe(0);
+          document.getElementById('ast-stack-p0')?.classList.remove('ast-battle');
+        } catch (e) {}
       },
     },
     // ── BATCH 4 ends here for now — later batches get added back once this
