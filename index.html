@@ -15479,8 +15479,8 @@ function _tutBuildSteps() {
             const spot = document.getElementById('tut-spot');
             if (spot) {
               const pad = 10;
-              spot.style.left = (left - pad) + 'px';
-              spot.style.top = (top - pad) + 'px';
+              spot.style.left = (left - pad - 80) + 'px';
+              spot.style.top = (top - pad - 15) + 'px';
               spot.style.width = (right - left + pad*2) + 'px';
               spot.style.height = (bottom - top + pad*2) + 'px';
               spot.style.opacity = '1';
@@ -15500,7 +15500,7 @@ function _tutBuildSteps() {
         _tutHideSpotlight();
         await _aiWait(1800);
         _tutSetText('Ok, let\u2019s arrange your boarding for Canton.');
-        _tutRespotlight(() => document.getElementById('port-ship-box'), -80, -15);
+        _tutRespotlight(() => document.getElementById('port-ship-box'));
         // The real boarding handler closes the port itself as part of its normal
         // behaviour — neutralise that just for this one click so the port stays
         // open, since the next step needs it open to go shopping.
