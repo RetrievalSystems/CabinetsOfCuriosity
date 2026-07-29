@@ -15170,32 +15170,21 @@ async function _tutPlaceQuadrantDemo() {
   console.log('[TUT-DIAG] cabInLondon:', typeof cabInLondon !== 'undefined' ? cabInLondon : 'undefined');
   console.log('[TUT-DIAG] playerNode(p).name:', (typeof playerNode==='function' ? playerNode(p)?.name : 'n/a'));
   if (item) {
-    const findInvEl = () => [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
-      .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
-    console.log('[TUT-DIAG] inventory row found:', !!findInvEl());
-    _tutSetText('Click (or drag) the Quadrant in your inventory, on the right.');
-    await _tutWaitForRealClick(findInvEl);
-    console.log('[TUT-DIAG] after inv click — cabSelectedItem:', typeof cabSelectedItem !== 'undefined' ? JSON.stringify(cabSelectedItem && {source: cabSelectedItem.source, size: cabSelectedItem.ci?.size}) : 'undefined');
-    await _aiWait(600);
-    const findDz = () => [...document.querySelectorAll('.cab-dz')]
-      .find(el => !el.classList.contains('cab-filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
-    const dzPreview = findDz();
-    console.log('[TUT-DIAG] empty tall dz found:', !!dzPreview, dzPreview ? {cellId: dzPreview.dataset.cellId, side: dzPreview.dataset.side} : null);
-    if (dzPreview && typeof cabCanDropCheck === 'function' && typeof cabSelectedItem !== 'undefined' && cabSelectedItem) {
-      console.log('[TUT-DIAG] cabCanDropCheck result:', cabCanDropCheck(dzPreview.dataset.cellId, dzPreview.dataset.side, cabSelectedItem.ci?.size));
-    }
-    _tutSetText('Now click an empty bay it fits to place it.');
-    await _tutWaitForRealClick(findDz);
-    console.log('[TUT-DIAG] after dz click — quadrant still in p.items:', (p.items||[]).some(it => it.img && it.img.includes('quadrant')));
-    // Wait for genuine confirmation the item actually left the inventory (real
-    // placement succeeded) rather than assuming it worked right after the click —
-    // that assumption is exactly what caused this to sometimes whizz past an
-    // unsuccessful placement, or stall on a step that never actually completes.
+    // One combined instruction upfront, covering the whole action — a strict
+    // click-inventory-THEN-click-bay sequence breaks if the player instead drags
+    // it in one continuous motion (a real drag doesn't cleanly fire as two
+    // separate clicks in order). So instead of waiting for each stage in turn,
+    // the whole cabinet overlay is allowed for the duration, and this just polls
+    // for the real outcome — works the same whether the player clicks twice or
+    // drags it straight in.
+    _tutSetText('Click (or drag) the Quadrant in your inventory on the right, then click (or drop) on an available bay in the cabinet.');
+    _tutAllowInteraction(document.getElementById('cab-overlay'));
     let waited = 0;
-    while ((p.items||[]).some(it => it.img && it.img.includes('quadrant')) && waited < 4000) {
+    while ((p.items||[]).some(it => it.img && it.img.includes('quadrant')) && waited < 15000) {
       await _aiWait(200);
       waited += 200;
     }
+    _tutRevokeInteraction();
     console.log('[TUT-DIAG] placement confirmed after', waited, 'ms wait');
     await _aiWait(500);   // let the settle/placement animation finish visually
   }
