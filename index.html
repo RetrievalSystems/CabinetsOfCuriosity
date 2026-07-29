@@ -2354,7 +2354,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   margin-bottom: 14px;
 }
 #tut-box .tut-controls {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
 }
 #tut-box .tut-progress {
   font-size: 0.8rem;
@@ -2379,6 +2379,19 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   background: transparent;
   color: rgba(240,223,192,0.6);
   border-color: rgba(200,150,80,0.3);
+}
+#tut-skip-btn {
+  position: fixed; z-index: 899999;
+  bottom: 26px; right: 40px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: 7px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(200,150,80,0.3);
+  background: transparent;
+  color: rgba(240,223,192,0.6);
 }
 /* Callout labels pointing at parts of an enlarged card during the anatomy step */
 .tut-callout {
@@ -14699,10 +14712,15 @@ function _tutEnsureDOM() {
     <div class="tut-title" id="tut-title"></div>
     <div class="tut-text" id="tut-text"></div>
     <div class="tut-controls">
-      <button class="tut-skip" onclick="_tutSkip()">End tutorial</button>
       <button class="tut-next" id="tut-next-btn" onclick="_tutNext()">Next →</button>
     </div>`;
   document.body.appendChild(box);
+  const skipBtn = document.createElement('button');
+  skipBtn.id = 'tut-skip-btn';
+  skipBtn.className = 'tut-skip';
+  skipBtn.textContent = 'End tutorial';
+  skipBtn.onclick = _tutSkip;
+  document.body.appendChild(skipBtn);
 }
 
 function _tutClearCallouts() {
@@ -15155,7 +15173,7 @@ async function _tutPlaceQuadrantDemo() {
     const findInvEl = () => [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
       .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
     console.log('[TUT-DIAG] inventory row found:', !!findInvEl());
-    _tutSetText('Click the Quadrant in your inventory, on the right.');
+    _tutSetText('Click (or drag) the Quadrant in your inventory, on the right.');
     await _tutWaitForRealClick(findInvEl);
     console.log('[TUT-DIAG] after inv click — cabSelectedItem:', typeof cabSelectedItem !== 'undefined' ? JSON.stringify(cabSelectedItem && {source: cabSelectedItem.source, size: cabSelectedItem.ci?.size}) : 'undefined');
     await _aiWait(600);
@@ -15181,7 +15199,7 @@ async function _tutPlaceQuadrantDemo() {
     console.log('[TUT-DIAG] placement confirmed after', waited, 'ms wait');
     await _aiWait(500);   // let the settle/placement animation finish visually
   }
-  _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
+  _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again.');
 }
 
 async function _tutReturnToLondon() {
@@ -15479,8 +15497,8 @@ function _tutBuildSteps() {
             const spot = document.getElementById('tut-spot');
             if (spot) {
               const pad = 10;
-              spot.style.left = (left - pad - 80) + 'px';
-              spot.style.top = (top - pad - 15) + 'px';
+              spot.style.left = (left - pad - 120) + 'px';
+              spot.style.top = (top - pad - 35) + 'px';
               spot.style.width = (right - left + pad*2) + 'px';
               spot.style.height = (bottom - top + pad*2) + 'px';
               spot.style.opacity = '1';
@@ -15524,12 +15542,9 @@ function _tutBuildSteps() {
         .find(row => { const img = row.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); }),
       action: async () => {
         await _aiWait(700);
-        const findBtn = () => {
-          const row = [...document.querySelectorAll('#buy-items-area .buy-item-row')]
-            .find(r => { const img = r.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); });
-          return row ? row.querySelector('.port-action-btn') : null;
-        };
-        await _tutWaitForRealClick(findBtn);
+        const findRow = () => [...document.querySelectorAll('#buy-items-area .buy-item-row')]
+          .find(r => { const img = r.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); });
+        await _tutWaitForRealClick(findRow);
       },
     },
     {
@@ -15543,7 +15558,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Time to Travel',
-      text: 'The Ruby costs 12 ingots — you now have more than enough to purchase it and once we start the next turn you will be on your way.',
+      text: 'Then you decide where to travel next. The Ruby costs 12 ingots — you now have more than enough to purchase it and once we start the next turn you will be on your way.',
       target: () => document.getElementById('held-p1'),
       action: async () => {
         try { closeCabinet(); } catch(e) {}
