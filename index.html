@@ -14934,13 +14934,10 @@ function _tutFinish() {
   if (box) {
     box.innerHTML = `
       <div class="tut-title">You're ready</div>
-      <div class="tut-text">That's the whole loop — draw, travel, buy, place, repeat, until the cabinet's full and the collector calls for his appraisal. Everything you just watched was a real game, so feel free to keep playing this one, or start fresh.</div>
+      <div class="tut-text">You may now continue with this solo game or start afresh.</div>
       <div class="tut-controls">
-        <span class="tut-progress"></span>
-        <div style="display:flex; gap:8px;">
-          <button class="tut-skip" onclick="location.reload()">Start fresh</button>
-          <button class="tut-next" onclick="_tutDismiss()">Keep playing this game</button>
-        </div>
+        <button class="tut-skip" onclick="location.reload()">Start fresh</button>
+        <button class="tut-next" onclick="_tutDismiss()">Continue this game</button>
       </div>`;
   }
 }
@@ -15591,6 +15588,11 @@ function _tutBuildSteps() {
         // for real play).
         try { zoomAstrolabe(0); } catch (e) {}
         await _aiWait(700);
+        // Re-spotlight now that the zoom has actually happened — the initial
+        // render (before this action ran) measured the astrolabe at its small,
+        // pre-zoom size, so without this the highlight stays sized for the
+        // small version while the astrolabe itself is now full screen.
+        _tutRespotlight(() => document.getElementById('ast-bay-p0'));
         for (let i = 0; i < PIRATE_BATTLE_STEPS - 1; i++) {
           await _aiWait(1000);
           try { advancePirateTracker(0); } catch (e) {}
@@ -15623,6 +15625,10 @@ function _tutBuildSteps() {
           renderAstrolabe(0);
           unzoomAstrolabe(0);
         } catch (e) {}
+        // Explicitly hide the spotlight now — it was sized for the full-screen
+        // zoomed astrolabe, which just shrank back down, and the next step
+        // isn't about the astrolabe at all.
+        _tutHideSpotlight();
       },
     },
     {
@@ -15640,7 +15646,7 @@ function _tutBuildSteps() {
           advanceStormToken('atlantic', 'S');
         } catch (e) {}
         await _aiWait(500);
-        try { zoomToNode({ x: STORM_SPAWN.atlantic.x, y: STORM_SPAWN.atlantic.y, abs: true }, 2.2); } catch (e) {}
+        try { zoomToNode({ x: STORM_SPAWN.atlantic.x, y: STORM_SPAWN.atlantic.y + 100, abs: true }, 2.2); } catch (e) {}
         await _aiWait(1000);
         try { advanceStormToken('atlantic', 'S'); } catch (e) {}   // a real move, now that it's spawned
         await _aiWait(900);
@@ -15651,7 +15657,7 @@ function _tutBuildSteps() {
       text: 'Whenever your ship collides with a storm token it will take one damage.',
       target: () => null,
       action: async () => {
-        try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y, abs: true }, 2.2); } catch (e) {}
+        try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y + 100, abs: true }, 2.2); } catch (e) {}
         await _aiWait(700);
         try { advanceStormToken('indian', 'S'); } catch (e) {}   // a real move too
         await _aiWait(900);
@@ -15662,7 +15668,14 @@ function _tutBuildSteps() {
       text: 'If your ship reaches maximum damage it will shipwreck and you will start your next turn from the nearest port — you retain your silver but lose all items in inventory.',
       target: () => null,
       action: async () => {
-        try { zoomOut(); } catch (e) {}
+        await _aiWait(1600);
+        try {
+          const p = players[0];
+          const s = getShip(p.shipId);
+          const node = s ? ROUTES[s.routeId].nodes[s.nodeIndex] : null;
+          if (node) zoomToNode(node, 2.4); else zoomOut();
+        } catch (e) { try { zoomOut(); } catch (e2) {} }
+        await _aiWait(700);
       },
     },
     // ── BATCH 4 ends here for now — later batches get added back once this
