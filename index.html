@@ -15582,7 +15582,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Pirate Activity',
-      text: 'With every pirate sighting the meter advances, until it is full and the pirates attempt to board and a battle ensues.',
+      text: 'With every pirate sighting the meter advances, until it is full whereupon the pirates attempt to board and a battle ensues.',
       target: () => document.getElementById('ast-bay-p0'),
       action: async () => {
         // Full-screen zoom, same as a real encounter — triggered manually here
@@ -15596,10 +15596,26 @@ function _tutBuildSteps() {
           try { advancePirateTracker(0); } catch (e) {}
         }
         await _aiWait(2000);   // let the near-full meter actually be seen
-        // Clean exit — we deliberately never reached the real trigger, so just
-        // reset the meter directly and unzoom, rather than a full voyage-end
-        // reset (which assumes a battle actually happened).
+      },
+    },
+    {
+      title: 'Ship Damage',
+      text: 'For every hit the pirates strike, the ship takes one damage.',
+      target: () => document.getElementById('ast-bay-p0'),
+      action: async () => {
+        const p = players[0];
+        const s = getShip(p.shipId);
+        for (let i = 0; i < 3; i++) {
+          await _aiWait(900);
+          if (s) { s.pirateHits = (s.pirateHits || 0) + 1; try { drawShipHP(0); } catch (e) {} }
+        }
+        await _aiWait(1800);
+        // Clean exit — we deliberately never reached the real battle trigger, so
+        // just reset directly (meter and hull both) rather than a full
+        // voyage-end reset, which assumes a battle actually happened.
         try {
+          if (s) s.pirateHits = 0;
+          drawShipHP(0);
           if (typeof pirateState !== 'undefined' && pirateState[0]) {
             pirateState[0].steps = 0;
             pirateState[0].wheelRot = 0;
@@ -15607,6 +15623,46 @@ function _tutBuildSteps() {
           renderAstrolabe(0);
           unzoomAstrolabe(0);
         } catch (e) {}
+      },
+    },
+    {
+      title: 'The Storms',
+      text: 'Storm cards move the three storms around the board — they are moved automatically for you.',
+      target: () => null,
+      action: async () => {
+        // advanceStormToken() spawns a storm at its marked point on the first
+        // call (since all three start inactive in a fresh game), then genuinely
+        // moves it on each call after — the exact same function a real storm
+        // card triggers, so this is authentic movement, not a static placement.
+        try {
+          advanceStormToken('whirlpool', 'S');
+          advanceStormToken('indian', 'S');
+          advanceStormToken('atlantic', 'S');
+        } catch (e) {}
+        await _aiWait(500);
+        try { zoomToNode({ x: STORM_SPAWN.atlantic.x, y: STORM_SPAWN.atlantic.y, abs: true }, 2.2); } catch (e) {}
+        await _aiWait(1000);
+        try { advanceStormToken('atlantic', 'S'); } catch (e) {}   // a real move, now that it's spawned
+        await _aiWait(900);
+      },
+    },
+    {
+      title: 'Indian Ocean Storm',
+      text: 'Whenever your ship collides with a storm token it will take one damage.',
+      target: () => null,
+      action: async () => {
+        try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y, abs: true }, 2.2); } catch (e) {}
+        await _aiWait(700);
+        try { advanceStormToken('indian', 'S'); } catch (e) {}   // a real move too
+        await _aiWait(900);
+      },
+    },
+    {
+      title: 'Shipwreck',
+      text: 'If your ship reaches maximum damage it will shipwreck and you will start your next turn from the nearest port — you retain your silver but lose all items in inventory.',
+      target: () => null,
+      action: async () => {
+        try { zoomOut(); } catch (e) {}
       },
     },
     // ── BATCH 4 ends here for now — later batches get added back once this
