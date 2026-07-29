@@ -2386,12 +2386,13 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   font-family: 'Cinzel', serif;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
-  padding: 7px 16px;
+  padding: 9px 18px;
   border-radius: 4px;
   cursor: pointer;
-  border: 1px solid rgba(200,150,80,0.3);
-  background: transparent;
-  color: rgba(240,223,192,0.6);
+  border: 1px solid rgba(200,150,80,0.4);
+  background: linear-gradient(160deg,#2a1a08,#160c04);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  color: rgba(240,223,192,0.75);
 }
 /* Callout labels pointing at parts of an enlarged card during the anatomy step */
 .tut-callout {
@@ -14816,7 +14817,7 @@ let _tutAllowedEl = null;
 
 document.addEventListener('click', (e) => {
   if (!_tutActive) return;                                  // tutorial not running — never block
-  if (e.target.closest('#tut-box, #tut-doors')) return;      // the tutorial's own controls always work
+  if (e.target.closest('#tut-box, #tut-doors, #tut-skip-btn')) return;   // the tutorial's own controls always work
   if (_tutAllowedEl && (_tutAllowedEl === e.target || _tutAllowedEl.contains(e.target))) return;
   e.stopPropagation();
   e.preventDefault();
@@ -15571,7 +15572,7 @@ function _tutBuildSteps() {
         const nextBtn = document.getElementById('tut-next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
         await _aiWait(1400);   // let the ship's own departure animation settle
-        if (nextBtn) nextBtn.style.display = '';
+        setTimeout(() => _tutNext(), 0);
       },
     },
     {
@@ -15584,21 +15585,27 @@ function _tutBuildSteps() {
       text: 'With every pirate sighting the meter advances, until it is full and the pirates attempt to board and a battle ensues.',
       target: () => document.getElementById('ast-bay-p0'),
       action: async () => {
-        for (let i = 0; i < PIRATE_BATTLE_STEPS; i++) {
-          await _aiWait(900);
+        // Full-screen zoom, same as a real encounter — triggered manually here
+        // rather than by the real battle condition, since we're stopping one
+        // sighting short of it deliberately (the actual attack stays a surprise
+        // for real play).
+        try { zoomAstrolabe(0); } catch (e) {}
+        await _aiWait(700);
+        for (let i = 0; i < PIRATE_BATTLE_STEPS - 1; i++) {
+          await _aiWait(1000);
           try { advancePirateTracker(0); } catch (e) {}
         }
-        await _aiWait(2600);   // let the zoom/battle moment actually be seen
-        // Clean exit — reset the pirate meter, close the battle overlay, and
-        // unzoom, same as a real voyage-end reset, rather than leaving the
-        // player genuinely stuck mid-battle for the rest of the tutorial.
+        await _aiWait(2000);   // let the near-full meter actually be seen
+        // Clean exit — we deliberately never reached the real trigger, so just
+        // reset the meter directly and unzoom, rather than a full voyage-end
+        // reset (which assumes a battle actually happened).
         try {
-          const p = players[0];
-          const s = getShip(p.shipId);
-          if (s) resetPirateStateOnVoyageEnd(s);
-          setBattleOverlay(false);
+          if (typeof pirateState !== 'undefined' && pirateState[0]) {
+            pirateState[0].steps = 0;
+            pirateState[0].wheelRot = 0;
+          }
+          renderAstrolabe(0);
           unzoomAstrolabe(0);
-          document.getElementById('ast-stack-p0')?.classList.remove('ast-battle');
         } catch (e) {}
       },
     },
