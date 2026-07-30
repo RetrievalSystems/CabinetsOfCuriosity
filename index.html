@@ -15065,6 +15065,23 @@ function _tutShowAnatomyCallouts(n) {
 // A restricted version of showPortConnectionsTooltip() for this one tutorial
 // moment — the generic function pulls in EVERY liner route that touches London
 // (there are several), when all we want here is the Beijing Rose's own two legs.
+// Moves a storm in a random direction, repeatedly, spaced out so the movement
+// is actually visible rather than instant — a random direction can occasionally
+// send it off the grid and dissipate it, so this re-spawns (the same real
+// advanceStormToken() auto-spawn behaviour) if that happens, keeping the demo
+// going rather than a storm just vanishing mid-explanation.
+const _STORM_DIR_LIST = ['N','S','E','W','NE','NW','SE','SW'];
+async function _tutJitterStorm(ocean, times, gapMs) {
+  for (let i = 0; i < times; i++) {
+    await _aiWait(gapMs);
+    try {
+      const dir = _STORM_DIR_LIST[Math.floor(Math.random() * _STORM_DIR_LIST.length)];
+      advanceStormToken(ocean, dir);
+      if (!stormState[ocean].active) advanceStormToken(ocean, dir);   // re-spawn if that move dissipated it
+    } catch (e) {}
+  }
+}
+
 function _tutShowBeiTooltip(anchorEl) {
   const tt = document.getElementById('route-tooltip');
   if (!tt) return;
@@ -15651,7 +15668,7 @@ function _tutBuildSteps() {
         try { zoomToNode({ x: STORM_SPAWN.atlantic.x, y: STORM_SPAWN.atlantic.y + 100, abs: true }, 2.2); } catch (e) {}
         await _aiWait(1000);
         try { advanceStormToken('atlantic', 'S'); } catch (e) {}   // a real move, now that it's spawned
-        await _aiWait(900);
+        await _tutJitterStorm('atlantic', 4, 2000);
       },
     },
     {
@@ -15662,7 +15679,7 @@ function _tutBuildSteps() {
         try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y + 100, abs: true }, 2.2); } catch (e) {}
         await _aiWait(700);
         try { advanceStormToken('indian', 'S'); } catch (e) {}   // a real move too
-        await _aiWait(900);
+        await _tutJitterStorm('indian', 4, 2000);
       },
     },
     {
