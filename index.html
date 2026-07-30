@@ -7967,14 +7967,14 @@ function _bodPreviewEl() {
   if (!el) {
     el = document.createElement('div');
     el.id = 'bod-preview';
-    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:flex;opacity:0;align-items:center;'
-      + 'justify-content:center;pointer-events:none;background:rgba(8,5,2,0.80);'
+    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:block;opacity:0;'
+      + 'pointer-events:none;background:rgba(8,5,2,0.80);'
       + 'transition:opacity 0.2s ease;';
     const img = document.createElement('img');
     img.id = 'bod-preview-img';
-    img.style.cssText = 'max-height:90vh;max-width:74vw;object-fit:contain;border-radius:8px;'
+    img.style.cssText = 'position:fixed;top:50%;left:50%;max-height:90vh;max-width:74vw;object-fit:contain;border-radius:8px;'
       + 'box-shadow:0 14px 54px rgba(0,0,0,0.72);border:1px solid rgba(212,168,85,0.45);'
-      + 'transform:scale(0.82);opacity:0;'
+      + 'transform:translate(-50%,-50%) scale(0.82);opacity:0;'
       + 'transition:transform 0.26s cubic-bezier(0.2,0.8,0.3,1.04),opacity 0.2s ease;';
     el.appendChild(img);
     document.body.appendChild(el);
@@ -7988,26 +7988,28 @@ function _showBodPreview(src, slotEl) {
   if (el.dataset.src !== src) { img.src = src; el.dataset.src = src; }
   if (el.dataset.shown === '1') return;             // already open -> don't restart the grow
 
-  // Grow outward from the hovered card's actual screen position, rather than
-  // jumping straight to a centred zoom — compute how far that slot sits from
-  // the viewport centre and start the transform offset there.
-  let originTransform = 'scale(0.82)';
+  // Stay at the hovered card's own horizontal position when zooming (left stays
+  // left, middle stays middle, right stays right), rather than every card
+  // converging on a shared central spot — growing in place is clearer than a
+  // slide-to-centre that made it hard to tell which card was which.
+  let initScale = 0.82;
   if (slotEl) {
     const r = slotEl.getBoundingClientRect();
-    const dx = (r.left + r.width  / 2) - window.innerWidth  / 2;
-    const dy = (r.top  + r.height / 2) - window.innerHeight / 2;
-    const initScale = Math.max(0.14, Math.min(0.4, r.width / (window.innerWidth * 0.74)));
-    originTransform = `translate(${dx}px, ${dy}px) scale(${initScale})`;
+    const cx = r.left + r.width / 2;
+    const cy = r.top  + r.height / 2;
+    img.style.left = cx + 'px';
+    img.style.top  = cy + 'px';
+    initScale = Math.max(0.14, Math.min(0.4, r.width / (window.innerWidth * 0.74)));
   }
 
   void el.offsetWidth;
   el.style.opacity = '1';
   img.style.transition = 'none';
-  img.style.transform = originTransform;
+  img.style.transform = `translate(-50%,-50%) scale(${initScale})`;
   img.style.opacity = '0';
   void img.offsetWidth;                             // commit the origin state before animating
   img.style.transition = 'transform 0.26s cubic-bezier(0.2,0.8,0.3,1.04), opacity 0.2s ease';
-  img.style.transform = 'translate(0,0) scale(1)';
+  img.style.transform = 'translate(-50%,-50%) scale(1)';
   img.style.opacity = '1';
   el.dataset.shown = '1';
 }
