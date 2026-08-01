@@ -14985,11 +14985,6 @@ async function _tutGoToBodleian() {
   await _aiWait(700);
   _tutSetText('Go ahead and click the horse & cart.');
   await _tutWaitForRealClick(() => document.getElementById('london-cart-area'));
-  // Same gap-closing fix as the return leg — re-hide Next immediately, before
-  // the next wait (End Turn) begins, rather than leaving it briefly visible
-  // and clickable in between the two.
-  const nextBtnGapOut = document.getElementById('tut-next-btn');
-  if (nextBtnGapOut) nextBtnGapOut.style.display = 'none';
   await _aiWait(600);
 
   // Now the player clicks End Turn themselves — this is what genuinely moves the
@@ -14998,11 +14993,6 @@ async function _tutGoToBodleian() {
   console.log('[TUT-DIAG] setting OUTBOUND "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click End Turn to start the journey.');
   await _tutWaitForRealClick(() => document.getElementById('btn-end'));
-  // Same defensive fix as the return leg — neutralise endTurn() the instant
-  // this first click is detected, so a second invocation (whatever the cause)
-  // can't do anything.
-  const _origEndTurn1 = window.endTurn;
-  window.endTurn = () => {};
   // Next reappears the instant this wait resolves — but there's still real work
   // left below (letting arrival settle, revealing the narration). Re-hide it so
   // it doesn't sit there clickable, inviting an early click that skips past all
@@ -15011,7 +15001,6 @@ async function _tutGoToBodleian() {
   const nextBtn1 = document.getElementById('tut-next-btn');
   if (nextBtn1) nextBtn1.style.display = 'none';
   await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
-  window.endTurn = _origEndTurn1;
 
   // Hold here on the three face-down cards, and only now reveal the narration text.
   _tutSetText('The Bodleian invitation offers more information than the tip offs — here you can choose from the top 3 opportunity cards.');
@@ -15222,32 +15211,16 @@ async function _tutPlaceQuadrantDemo() {
 async function _tutReturnToLondon() {
   _tutSetText('Go ahead and click the horse & carriage to return to London.');
   await _tutWaitForRealClick(() => document.querySelector('#bodleian-return-area .buy-item-frame'));
-  // Close the gap immediately — _tutWaitForRealClick restores Next the instant
-  // it resolves, but there's a second wait coming right up (End Turn). Without
-  // re-hiding it here first, Next sat visible and clickable in between the two
-  // waits — clicking it advanced the tutorial early, while this function kept
-  // running in the background regardless and later set the End Turn text
-  // anyway, which is what read as that text "popping back up" after the fact.
-  const nextBtnGap = document.getElementById('tut-next-btn');
-  if (nextBtnGap) nextBtnGap.style.display = 'none';
   await _aiWait(600);
 
   console.log('[TUT-DIAG] setting RETURN "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click End Turn.');
   await _tutWaitForRealClick(() => document.getElementById('btn-end'));
-  // Defensively neutralise endTurn() itself the instant this first click is
-  // detected — something was re-triggering this exact prompt a second time
-  // right after the first click, and this guarantees a second invocation
-  // (whatever is causing it) simply can't do anything, rather than chasing
-  // the exact re-trigger source.
-  const _origEndTurn2 = window.endTurn;
-  window.endTurn = () => {};
   const nextBtn2 = document.getElementById('tut-next-btn');
   if (nextBtn2) nextBtn2.style.display = 'none';   // same fix as the outbound leg — keep
                                                      // hidden until the arrival work below
                                                      // has genuinely finished
   await _aiWait(2200);   // the pawn's own CSS transition carries it smoothly between the two
-  window.endTurn = _origEndTurn2;
 
   // Genuinely arrive — same state changes the real disembark() makes. Without this,
   // the player was still nominally "aboard" the return-trip ship afterward, which is
