@@ -15003,7 +15003,11 @@ async function _tutGoToBodleian() {
   // click the actual horse & cart button themselves.
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
   await _aiWait(700);
-  _tutSetText('Go ahead and click the horse & cart.');
+  _tutSetText('When you have a card that requires an inland or upriver journey, the travel option will appear to the left of the regular shipping routes in the main port.');
+  await _aiWait(3400);
+  _tutSetText('The Bodleian is in Oxford, a one turn journey from the London port.');
+  await _aiWait(2600);
+  _tutSetText('Go ahead and click the horse & carriage.');
   await _tutWaitForRealClick(() => document.getElementById('london-cart-area'));
   await _aiWait(600);
 
@@ -15226,6 +15230,8 @@ async function _tutPlaceQuadrantDemo() {
     await _aiWait(500);   // let the settle/placement animation finish visually
   }
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again.');
+  await _aiWait(3200);
+  _tutSetText('When your cabinet is full, you will be asked if you want to have the collector appraise it — this is your final score.');
 }
 
 async function _tutReturnToLondon() {
@@ -15570,7 +15576,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Time to Travel',
-      text: 'Then you decide where to travel next. The Ruby costs 12 ingots — you now have more than enough to purchase it and once we start the next turn you will be on your way.',
+      text: 'The Ruby costs 12 ingots — you now have more than enough to purchase it - once we start the next turn you will be on your way.',
       target: () => document.getElementById('held-p1'),
       action: async () => {
         try { closeCabinet(); } catch(e) {}
