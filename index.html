@@ -2942,7 +2942,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Horse & cart — shown at London (always available) -->
         <div id="london-cart-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardLondonCart()" title="Horse &amp; cart to the Bodleian" data-route-id="london_bodleian">
-            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;">
+            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Horse &amp; Cart<br>→ Bodleian</span>
         </div>
@@ -2950,7 +2950,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Bodleian return cart — shown at Bodleian Library port -->
         <div id="bodleian-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnLondonCart()" title="Return to London" data-route-id="london_bodleian_return">
-            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;">
+            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Cart<br>← London</span>
         </div>
@@ -14929,6 +14929,26 @@ async function _tutAddCalloutsSequential(list, pauseMs) {
   }
 }
 
+// Lets an action pause and wait for a deliberate Next click, without actually
+// advancing the step index — for pure narration moments where nothing else asks
+// the player to click, so Next needs to be the explicit, real trigger to continue
+// rather than a timed auto-advance (which reads as the step "whizzing through").
+function _tutWaitForNext() {
+  return new Promise(resolve => {
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (!nextBtn) { resolve(); return; }
+    nextBtn.style.display = '';
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    nextBtn.style.cursor = 'pointer';
+    nextBtn.onclick = () => {
+      nextBtn.onclick = () => _tutNext();   // restore real behaviour
+      nextBtn.style.display = 'none';        // hide again until the action decides otherwise
+      resolve();
+    };
+  });
+}
+
 function _tutNext() {
   const leaving = _tutSteps[_tutIdx];
   if (leaving && leaving.onLeave) { try { leaving.onLeave(); } catch (e) {} }
@@ -15004,9 +15024,9 @@ async function _tutGoToBodleian() {
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
   await _aiWait(700);
   _tutSetText('When you have a card that requires an inland or upriver journey, the travel option will appear to the left of the regular shipping routes in the main port.');
-  await _aiWait(3400);
+  await _tutWaitForNext();
   _tutSetText('The Bodleian is in Oxford, a one turn journey from the London port.');
-  await _aiWait(2600);
+  await _tutWaitForNext();
   _tutSetText('Go ahead and click the horse & carriage.');
   await _tutWaitForRealClick(() => document.getElementById('london-cart-area'));
   await _aiWait(600);
