@@ -5980,6 +5980,18 @@ window.addEventListener('resize', () => {
   // originally sized for.
   zoomOut();
   buildSVG(); renderShips(); renderStormTokens(); requestAnimationFrame(renderPortHotspots);
+  // The cabinet has the exact same class of bug, entirely separately — cabSX/cabSY are
+  // calculated once from the cabinet image's actual rendered size and never refreshed on
+  // resize, so items drift out of their bays (worse toward the bottom, furthest from the
+  // scale's origin) the same way the map's ports did. Only refresh if the cabinet has
+  // actually been built at least once.
+  if (typeof cabBuilt !== 'undefined' && cabBuilt) {
+    try {
+      cabCalcScale();
+      CAB_SLOT_DEFS.forEach(def => cabRenderCell(def));
+      cabRefreshInventory(cabActivePIdx);
+    } catch (e) {}
+  }
 });
 
 // ════════════════════════════════════════════════
@@ -6064,18 +6076,21 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
-const PORT_XY = {   // exact drawn-port coords from the read-out; overrides _routeXY per port
-  'London':            { x:834,  y:276 },
-  'Amsterdam':         { x:849,  y:273 },
-  'Lisbon':            { x:787,  y:320 },
-  'Rio':               { x:513,  y:570 },
-  'Cape of Good Hope': { x:881,  y:605 },
-  'Bombay':            { x:1093, y:419 },
-  'Madras':            { x:1115, y:445 },
-  'Ceylon':            { x:1128, y:460 },
-  'Batavia':           { x:1222, y:502 },
-  'Canton':            { x:1246, y:396 },
-  'Nagasaki':          { x:1297, y:360 },
+const PORT_XY = {   // X values corrected for the real image's 7200x4107 aspect ratio vs the
+  // previously-assumed 1440x900 — the mismatch (1.75 vs 1.6) meant every port drifted west,
+  // worse the further east, exactly matching the measured on-screen gap in testing. Y values
+  // unchanged — measurements showed no consistent vertical drift, just horizontal.
+  'London':            { x:843,  y:276 },
+  'Amsterdam':         { x:858,  y:273 },
+  'Lisbon':            { x:795,  y:320 },
+  'Rio':               { x:515,  y:570 },
+  'Cape of Good Hope': { x:891,  y:605 },
+  'Bombay':            { x:1108, y:419 },
+  'Madras':            { x:1130, y:445 },
+  'Ceylon':            { x:1143, y:460 },
+  'Batavia':           { x:1239, y:502 },
+  'Canton':            { x:1264, y:396 },
+  'Nagasaki':          { x:1316, y:360 },
 };
 
 // Glue the dot layer to the board by mirroring the map's transform onto it.
@@ -14948,6 +14963,11 @@ function _tutDismiss() {
   document.getElementById('tut-dim')?.remove();
   document.getElementById('tut-box')?.remove();
   _tutClearCallouts();
+  // The tutorial's last real step zooms in tight on the ship (2.4x) and never
+  // zooms back out — without this, the player resumes normal play with the
+  // map's zoom/pan still stuck at that tutorial-specific state, which is
+  // exactly what would make every port look "drifted" relative to normal view.
+  try { zoomOut(); } catch (e) {}
 }
 
 // Shows a card enlarged, positioned in the UPPER part of the screen so the narration
