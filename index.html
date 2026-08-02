@@ -736,11 +736,35 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 }
 @keyframes peek-bounce {
   0%   { transform: translateX(-50%) translateY(0); }
-  20%  { transform: translateX(-50%) translateY(-10px); }
+  20%  { transform: translateX(-50%) translateY(-15px); }
   40%  { transform: translateX(-50%) translateY(0); }
-  60%  { transform: translateX(-50%) translateY(-10px); }
+  60%  { transform: translateX(-50%) translateY(-15px); }
   80%  { transform: translateX(-50%) translateY(0); }
   100% { transform: translateX(-50%) translateY(0); }
+}
+.deck-peek-base {
+  position: absolute;
+  bottom: calc(96% - 235px); /* peeks down over the deck body — identical to .deck-peek */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 101px;
+  height: 62px;
+  border-radius: 7px 7px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -5px 18px rgba(0,0,0,0.75), 0 -1px 5px rgba(0,0,0,0.45);
+  z-index: 14;              /* just behind .deck-peek (15), so the jumping copy stays on top */
+  pointer-events: none;      /* clicks still go to .deck-peek / the deck itself */
+}
+.deck-peek-base img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.deck-stack.disabled .deck-peek-base,
+.deck-stack.card-drawn .deck-peek-base {
+  opacity: 0;
 }
 .deck-peek {
   position: absolute;
@@ -2670,6 +2694,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
     </div>
     <div id="decks-row">
       <div class="deck-stack" id="deck-land" onclick="drawCard('land')">
+        <div class="deck-peek-base"><img src="images/img-card-back.jpg" alt=""></div>
         <div class="deck-peek" id="peek-land"><img src="images/img-card-back.jpg" alt="Draw card"></div>
         <div class="deck-face">
           <div class="deck-face-inner">
@@ -2679,6 +2704,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
       </div>
       <div class="deck-stack disabled" id="deck-sea" onclick="drawCard('sea')">
+        <div class="deck-peek-base"><img src="images/img-card-back.jpg" alt=""></div>
         <div class="deck-peek" id="peek-sea"><img src="images/img-card-back.jpg" alt="Draw card"></div>
         <div class="deck-face">
           <div class="deck-face-inner">
@@ -5543,6 +5569,29 @@ function triggerPeekBounce() {
   setTimeout(() => peek.classList.remove('peek-bounce'), 750);
   setStatus('Draw a card first! ⬆');
 }
+
+// Also nudge the peek card after 3 seconds of no activity, on top of the existing
+// "clicked elsewhere but still needs to draw" trigger — some playtesters just sit
+// there unsure what to do next, so this gives an unprompted hint too.
+let _peekIdleTimer = null;
+function _resetPeekIdleTimer() {
+  if (_peekIdleTimer) clearTimeout(_peekIdleTimer);
+  _peekIdleTimer = setTimeout(() => {
+    if (!cp()?.cardDrawn) {
+      const peek = document.querySelector('.deck-stack:not(.disabled) .deck-peek');
+      if (peek) {
+        peek.classList.remove('peek-bounce');
+        void peek.offsetWidth;
+        peek.classList.add('peek-bounce');
+        setTimeout(() => peek.classList.remove('peek-bounce'), 750);
+      }
+    }
+    _resetPeekIdleTimer();   // keep nudging every 3s while still idle and undrawn
+  }, 3000);
+}
+document.addEventListener('click', _resetPeekIdleTimer, true);
+document.addEventListener('keydown', _resetPeekIdleTimer, true);
+_resetPeekIdleTimer();
 
 function updateDeckPeek() {
   const drawn = cp()?.cardDrawn || false;
@@ -15035,7 +15084,7 @@ async function _tutGoToBodleian() {
   // cart one node along its route (London → Bodleian) and triggers the real
   // arrival flow, opening the Bodleian port with three face-down cards.
   console.log('[TUT-DIAG] setting OUTBOUND "click End Turn" text now, step index:', _tutIdx);
-  _tutSetText('Now click End Turn to start the journey.');
+  _tutSetText('Now click \u2018end turn\u2019 to finish up this round and start your journey.');
   await _tutWaitForRealClick(() => document.getElementById('btn-end'));
   // Next reappears the instant this wait resolves — but there's still real work
   // left below (letting arrival settle, revealing the narration). Re-hide it so
