@@ -747,7 +747,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   bottom: calc(96% - 235px); /* peeks down over the deck body — identical to .deck-peek */
   left: 50%;
   transform: translateX(-50%);
-  width: 101px;
+  width: 71px;
   height: 62px;
   border-radius: 7px 7px 0 0;
   overflow: hidden;
@@ -771,7 +771,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   bottom: calc(96% - 235px); /* peeks down over the deck body */
   left: 50%;
   transform: translateX(-50%);
-  width: 101px;
+  width: 71px;
   height: 62px;          /* ~10% larger */
   border-radius: 7px 7px 0 0;
   overflow: hidden;
@@ -6496,6 +6496,19 @@ function renderShips() {
     const off = SHIP_OFFSETS[idx % SHIP_OFFSETS.length];
     img.style.left = (sx + off.x) + 'px';
     img.style.top  = (sy + off.y) + 'px';
+
+    // Face the ship toward its actual direction of travel. The artwork's natural
+    // orientation faces west, so heading east needs a horizontal flip. Compare
+    // against the previous render's position rather than route geometry, since
+    // that's simplest and correctly handles reversed/return legs too. No
+    // horizontal movement (e.g. first render, or a vertical-only leg) keeps
+    // whatever facing was already set, rather than flickering.
+    const prevSx = img.dataset.prevSx !== undefined ? parseFloat(img.dataset.prevSx) : sx;
+    if (sx > prevSx + 0.5) img.dataset.facing = 'east';
+    else if (sx < prevSx - 0.5) img.dataset.facing = 'west';
+    img.dataset.prevSx = sx;
+    const flip = img.dataset.facing === 'east' ? -1 : 1;
+    img.style.transform = `translate(-50%,-50%) scaleX(${flip})`;
   });
 
   // Remove tokens for ships that no longer exist
