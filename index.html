@@ -12581,7 +12581,7 @@ const ITEM_SCORES = {
     itemType:'mineral',   shellFamily:null,    mineralType:'tourmaline',region:'asia'},
   'ruby':                 { w:9,  c:8,  s:8,  a:7,  total:32, label:'Raw Ruby Crystal',
     itemType:'mineral',   shellFamily:null,    mineralType:'ruby',   region:'asia'    },
-  'cobalt':               { w:6,  c:5,  s:7,  a:8,  total:26, label:'Raw Cobalt Sample',
+  'cobalt':               { w:4,  c:3,  s:5,  a:6,  total:18, label:'Raw Cobalt Sample',
     itemType:'mineral',   shellFamily:null, mineralType:'cobalt', region:'europe' },
   'nettiflamelily':       { w:10, c:8,  s:10, a:7,  total:35, label:'Pith Flame Lily',
     itemType:'botanical', shellFamily:null, mineralType:null,      region:'asia' },
@@ -12600,6 +12600,7 @@ const SCORE_CRITERIA = [
 
 // ── Bonus definitions ──────────────────────────────────────────────────────
 // Each bonus has: id, name, pts, desc, and a test(scoredItems) → bool
+// Ordered by score, highest to lowest.
 const BONUS_DEFS = [
   {
     id: 'miscellanea', name: 'Miscellanea', pts: 30,
@@ -12608,6 +12609,16 @@ const BONUS_DEFS = [
       // Strip trailing numbers so 'Amethyst Geode 2' and 'Amethyst Geode 3' count as same type
       const baseLabels = items.map(i => i.sc.label.replace(/\s*\d+$/, '').trim());
       return baseLabels.length === new Set(baseLabels).size;
+    },
+  },
+  {
+    id: 'mineralogist', name: 'Mineralogist', pts: 25,
+    desc: 'All 8 mineral types',
+    test(items) {
+      const minerals = items.filter(i => i.sc.itemType === 'mineral');
+      const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
+      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','cobalt','agate'];
+      return ALL_MINERALS.every(m => types.has(m));
     },
   },
   {
@@ -12622,6 +12633,17 @@ const BONUS_DEFS = [
     },
   },
   {
+    id: 'cosmopolite', name: 'Cosmopolite', pts: 15,
+    desc: 'Items from all 6 world regions (Africa, Americas, Asia, Europe, Oceania, At Sea)',
+    test(items) {
+      const regions = new Set(items.map(i => i.sc.region).filter(Boolean));
+      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))];
+      // Allow match with at least 5 of 6 in case oceania items haven't been added yet
+      // Actually strictly require all 6 per spec — designer can add oceania items
+      return ALL_REGIONS.every(r => regions.has(r));
+    },
+  },
+  {
     id: 'zoophytologist', name: 'Zoophytologist', pts: 10,
     desc: 'One of every coral',
     test(items) {
@@ -12632,35 +12654,39 @@ const BONUS_DEFS = [
     },
   },
   {
-    id: 'mineralogist', name: 'Mineralogist', pts: 25,
-    desc: 'All 8 mineral types',
-    test(items) {
-      const minerals = items.filter(i => i.sc.itemType === 'mineral');
-      const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
-      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','cobalt','agate'];
-      return ALL_MINERALS.every(m => types.has(m));
-    },
-  },
-  {
     id: 'geometrist', name: 'Geometrist', pts: 10,
-    desc: 'The complete set of Nuremberg models',
+    desc: 'Complete set of 3 polyhedra models',
     test(items) {
       const FULL_SET = 3; // update to 5 when more models added
       return items.filter(i => i.sc.label.replace(/\s*\d+$/, '').trim() === 'Nuremberg Model').length >= FULL_SET;
     },
   },
-  {
-    id: 'cosmopolite', name: 'Cosmopolite', pts: 15,
-    desc: 'Items from all 6 world regions',
-    test(items) {
-      const regions = new Set(items.map(i => i.sc.region).filter(Boolean));
-      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))];
-      // Allow match with at least 5 of 6 in case oceania items haven't been added yet
-      // Actually strictly require all 6 per spec — designer can add oceania items
-      return ALL_REGIONS.every(r => regions.has(r));
-    },
-  },
 ];
+
+// Shows/hides the Bonus Groups dropdown, letting players see all six bonus sets
+// (and their point values) at a glance to help plan which items to collect together.
+function toggleBonusGroupsPanel() {
+  const panel = document.getElementById('bonus-groups-panel');
+  if (!panel) return;
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  panel.innerHTML = BONUS_DEFS.map(b => `
+    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+      padding:7px 0; border-bottom:1px solid rgba(212,168,85,0.18);">
+      <div>
+        <div style="color:#e8c860; font-size:0.75rem; letter-spacing:.04em;">${b.name}</div>
+        <div style="color:rgba(240,223,192,0.65); font-size:0.65rem; margin-top:2px;">${b.desc}</div>
+      </div>
+      <div style="color:#d4a832; font-size:0.75rem; white-space:nowrap;">+${b.pts}</div>
+    </div>`).join('');
+  panel.style.display = 'block';
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('bonus-groups-wrap');
+  const panel = document.getElementById('bonus-groups-panel');
+  if (panel && panel.style.display === 'block' && wrap && !wrap.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
 
 // Normalise an item id/img path to a lowercase key for ITEM_SCORES lookup
 // Always prefer img (the actual filename) over id (which may be "amethyst1_card_123456")
@@ -14234,7 +14260,13 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     <div id="cab-title">THE CABINET OF CURIOSITIES</div>
     <span id="cab-player-name"></span>
     <span id="cab-london-badge">🔒 Not in London</span>
-    <button id="cab-score-btn" onclick="promptCabinetFull(cabActivePIdx)" style="background:linear-gradient(135deg,#3a1e08,#1a0e04);color:#d4a832;border:1px solid #6b4416;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.12em;padding:5px 14px;cursor:pointer;border-radius:2px;margin-right:8px;">🏛 SCORE CABINET</button>
+    <div id="bonus-groups-wrap" style="position:relative;display:inline-block;margin-right:8px;">
+      <button id="cab-bonus-btn" onclick="toggleBonusGroupsPanel()" style="background:linear-gradient(135deg,#3a1e08,#1a0e04);color:#d4a832;border:1px solid #6b4416;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.12em;padding:5px 14px;cursor:pointer;border-radius:2px;">🏆 BONUS GROUPS</button>
+      <div id="bonus-groups-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+        background:linear-gradient(160deg,#241407,#160c04);border:1px solid #6b4416;border-radius:4px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.6);padding:12px 16px;width:340px;font-family:'Cinzel',serif;">
+      </div>
+    </div>
     <button id="cab-close-btn" onclick="closeCabinet()">✕ CLOSE</button>
   </div>
   <div id="cab-body">
