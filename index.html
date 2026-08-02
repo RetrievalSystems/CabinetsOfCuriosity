@@ -2518,7 +2518,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div id="map-cover" style="position:absolute;inset:0;background:#0a0603;z-index:9998;pointer-events:none;transition:opacity 0.6s;"></div>
   <div id="map-viewport">
     <img id="map-img" src="images/mapdefaultstorms.jpg" alt="World Map" onload="setTimeout(function(){cacheImgSize();buildSVG();renderShips();requestAnimationFrame(renderPortHotspots);},0)">
-    <div id="map-coords" style="
+    <div id="map-coords-disabled" style="
       display:none; position:absolute; bottom:8px; left:8px; z-index:500;
       font-family:'Courier New',monospace; font-size:0.72rem;
       background:rgba(8,4,2,0.82); color:#e8c860;
@@ -6139,21 +6139,21 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
-const PORT_XY = {   // X values corrected for the real image's 7200x4107 aspect ratio vs the
-  // previously-assumed 1440x900 — the mismatch (1.75 vs 1.6) meant every port drifted west,
-  // worse the further east, exactly matching the measured on-screen gap in testing. Y values
-  // unchanged — measurements showed no consistent vertical drift, just horizontal.
-  'London':            { x:843,  y:276 },
-  'Amsterdam':         { x:858,  y:273 },
-  'Lisbon':            { x:795,  y:320 },
-  'Rio':               { x:515,  y:570 },
-  'Cape of Good Hope': { x:891,  y:605 },
-  'Bombay':            { x:1108, y:419 },
-  'Madras':            { x:1130, y:445 },
-  'Ceylon':            { x:1143, y:460 },
-  'Batavia':           { x:1239, y:502 },
-  'Canton':            { x:1264, y:396 },
-  'Nagasaki':          { x:1316, y:360 },
+const PORT_XY = {   // Reverted to original values — the earlier "aspect ratio" correction was
+  // actually chasing a symptom of the resize handler hijacking the zoom state (fixed
+  // separately), not a genuine coordinate error. With that root cause fixed, fresh
+  // measurement confirmed these original values were correct all along.
+  'London':            { x:834,  y:276 },
+  'Amsterdam':         { x:849,  y:273 },
+  'Lisbon':            { x:787,  y:320 },
+  'Rio':               { x:513,  y:570 },
+  'Cape of Good Hope': { x:881,  y:605 },
+  'Bombay':            { x:1093, y:419 },
+  'Madras':            { x:1115, y:445 },
+  'Ceylon':            { x:1128, y:460 },
+  'Batavia':           { x:1222, y:502 },
+  'Canton':            { x:1246, y:396 },
+  'Nagasaki':          { x:1297, y:360 },
 };
 
 // Glue the dot layer to the board by mirroring the map's transform onto it.
