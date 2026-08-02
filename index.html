@@ -2518,7 +2518,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div id="map-cover" style="position:absolute;inset:0;background:#0a0603;z-index:9998;pointer-events:none;transition:opacity 0.6s;"></div>
   <div id="map-viewport">
     <img id="map-img" src="images/mapdefaultstorms.jpg" alt="World Map" onload="setTimeout(function(){cacheImgSize();buildSVG();renderShips();requestAnimationFrame(renderPortHotspots);},0)">
-    <div id="map-coords-disabled" style="
+    <div id="map-coords" style="
       display:none; position:absolute; bottom:8px; left:8px; z-index:500;
       font-family:'Courier New',monospace; font-size:0.72rem;
       background:rgba(8,4,2,0.82); color:#e8c860;
@@ -6019,6 +6019,7 @@ function buildSVG() {
     });
   }
 }
+let _lastWinW = window.innerWidth, _lastWinH = window.innerHeight;
 window.addEventListener('resize', () => {
   cacheImgSize();
   // currentZoomTx/Ty/Scale were only ever recalculated by an explicit zoom action (arriving
@@ -6026,10 +6027,21 @@ window.addEventListener('resize', () => {
   // on top of the map (port dots, the pawn's click-zone) reads those same three numbers, so a
   // resize with no zoom event in between left them stale: the map image itself re-laid-out
   // correctly, but the dots and pawn still used the OLD window's scale/pan, making them look
-  // like they'd "drifted" — worse the further from the zoom's anchor point. Re-fitting here
-  // keeps everything glued together at any window size, not just the one it happened to be
-  // originally sized for.
-  zoomOut();
+  // like they'd "drifted" — worse the further from the zoom's anchor point.
+  //
+  // IMPORTANT: this must PRESERVE whatever zoom state was already active (almost always
+  // zoomed on the ship, via zoomToNode) rather than force a switch to the full-map zoomOut()
+  // view — calling zoomOut() here was hijacking the current view on every resize, which is
+  // exactly the unwanted "zooming in and out on its own" behaviour. Instead, keep the same
+  // scale and the same underlying map point centred, just re-centred for the new window size.
+  const oldCenterVX = (_lastWinW/2  - currentZoomTx) / currentZoomScale;
+  const oldCenterVY = (_lastWinH/2  - currentZoomTy) / currentZoomScale;
+  currentZoomTx = Math.round(window.innerWidth/2  - oldCenterVX * currentZoomScale);
+  currentZoomTy = Math.round(window.innerHeight/2 - oldCenterVY * currentZoomScale);
+  viewport.style.transform = `translate(${currentZoomTx}px,${currentZoomTy}px) scale(${currentZoomScale})`;
+  _syncPortDots();
+  _lastWinW = window.innerWidth;
+  _lastWinH = window.innerHeight;
   buildSVG(); renderShips(); renderStormTokens(); requestAnimationFrame(renderPortHotspots);
   // The cabinet has the exact same class of bug, entirely separately — cabSX/cabSY are
   // calculated once from the cabinet image's actual rendered size and never refreshed on
