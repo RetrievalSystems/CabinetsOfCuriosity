@@ -8641,7 +8641,7 @@ function openGotoCaves() {
         <img src="images/redcoral.png" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Precious Coral</span>
+        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Red Precious Coral</span>
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
         <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
       </div>
@@ -8657,12 +8657,12 @@ function buyRedCoral() {
   redcoralStock--;
   p.heldCards.splice(cardIdx, 1);
   p.items = p.items || [];
-  p.items.push({ id:'redcoral_'+Date.now(), img:'images/redcoral.png', label:'Precious Coral', type:'goods', price:12 });
+  p.items.push({ id:'redcoral_'+Date.now(), img:'images/redcoral.png', label:'Red Precious Coral', type:'goods', price:12 });
   renderHeldCards(currentPIdx);
   document.getElementById('goto-buy-area').style.display='none';
   updateInventory(currentPIdx); updateHUD();
-  log(`${p.name} acquires the Precious Coral — an unbroken red branch — 12 ingots. The card is spent.`);
-  _sweepDeadSingularCards(c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), 'Precious Coral');
+  log(`${p.name} acquires the Red Precious Coral — an unbroken red branch — 12 ingots. The card is spent.`);
+  _sweepDeadSingularCards(c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), 'Red Precious Coral');
 }
 function returnNagasakiSkiff() {
   const p = cp();
@@ -9432,13 +9432,18 @@ function mkCard(img, effect, opts={}) {
 
 const SEA_CARD_TEMPLATES = [
   // ── Omens & flavour ──
-  mkCard('images/dolphins.jpeg',         (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); }),
+  // Dolphins ×4
+  ...Array(4).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
   // ── Seasick deckhand ×4 (pure flavour, no effect) ──
   ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
-  mkCard('images/whale_18_41_05.jpeg',   (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); }),
-  mkCard('images/moonbow.jpeg',          (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); }),
-  mkCard('images/captainstable.jpeg',    (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
+  // St. Elmo's Fire ×4
+  ...Array(4).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
+  // Whale sighting ×4
+  ...Array(4).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
+  // Lunar Rainbow ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); })),
+  // Captain's Table ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/captainstable.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); })),
   // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
   ...Array(12).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
@@ -9754,7 +9759,7 @@ const OPPORTUNITY_CARDS = [
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
   ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
-  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
+  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Red Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
   ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
@@ -9782,7 +9787,7 @@ const OPPORTUNITY_CARDS = [
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
   ...Array(4).fill({ img:'images/op-mandrake.jpeg', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' }),
   // ── Brain Coral x1 — False Bay, 3 ingots (a once-in-a-lifetime find) ──
-  ...Array(2).fill({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots', note:'The collector\u2019s agent here also wants a fine pocket watch' }),
 ].map((c, i) => ({ ...c, _id: i }));
 
 let oppDeck      = [];
@@ -9804,10 +9809,10 @@ function buildOppDeck() {
 const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-dragonvaseworkshop'), stock: () => dragonVaseStock, label: 'Dragon Vase', reqItem: 'cobalt' },
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket' },
-  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Precious Coral' },
+  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline' },
   { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
-  { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral' },
+  { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
 function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
 
@@ -10398,18 +10403,21 @@ const PORT_ITEMS = {
   ],
   'False Bay': [
     { img:'images/braincoral.png', label:'Brain Coral', price:3, currency:'ingots',
-      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', hardLimit:true, note:'A once-in-a-lifetime find' },
+      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', hardLimit:true,
+      reqItem:'pocketwatch', reqItemLabel:'Pocket Watch',
+      note:'A once-in-a-lifetime find — the collector\u2019s agent here also wants a fine pocket watch' },
   ],
   'Rio': [
     { img:'images/riocup.png', label:'Coconut Cup', price:2, currency:'ingots', pool:'rio_cup', repeatable:true, note:'5 available — one purchase per turn' },
     { img:'images/riomoringa.png', label:'Moringa Jar', price:1, currency:'ingots', pool:'rio_moringa', repeatable:true, note:'5 available — one purchase per turn' },
   ],
   'London': [
-    { img:'images/telescope.png', label:'Telescope',          price:5, currency:'ingots' },
+    { img:'images/pocketwatch.png', label:'Pocket Watch',      price:5, currency:'ingots' },
     { img:'images/quadrant.png',  label:'Quadrant',           price:3, currency:'ingots' },
   ],
   'Amsterdam': [
     { img:'images/tulipvase.png', label:'Delft Tulip Vase',   price:2, currency:'ingots' },
+    { img:'images/telescope.png', label:'Telescope',          price:5, currency:'ingots' },
     { img:'images/anatomicalmodeltorso.png', label:'Anatomical Ceroplastic Torso', price:15, currency:'ingots',
       reqCard:'images/connection1.jpg', reqItem:'apatite',
       reqItemLabel:'Asparagus Stone (Apatite)', reqItemNote:'A green apatite specimen is required' },
@@ -10468,6 +10476,7 @@ const PORT_ITEMS = {
   ],
   'Batavia': [
     { img:'images/bataviabox.png', label:'Filigree Silver Casket', price:5, currency:'ingots' },
+    { img:'images/nutmeggrater.png', label:'Silver Nutmeg Grater', price:3, currency:'ingots' },
   ],
   // ── Op-card gated items ──
   'Nuremberg': [
@@ -12295,7 +12304,8 @@ const CAB_META = {
   silverewer:  { size:'tall',   name:'Repoussé Silver Ewer',   origin:'Bombay · India',    desc:'Tall silver ewer, dense repoussé chinar leaves and blossom — Bombay Presidency export silver.' },
   inlaidbox:   { size:'large',  name:'Mother-of-Pearl Casket', origin:'Cambay · Gujarat',  desc:'Sandalwood casket inlaid throughout with mother-of-pearl florals — the last Cambay guild master\u2019s final, secret work.' },
   brassjalibox:{ size:'medium', name:'Pierced Brass Casket',   origin:'Madras · India',    desc:'Octagonal brass casket, walls and lid pierced in fine jali latticework.' },
-  telescope:   { size:'slim',   name:'Pocket Telescope',       origin:'London',            desc:'Brass three-draw telescope, shagreen case.' },
+  telescope:   { size:'slim',   name:'Pocket Telescope',       origin:'Amsterdam',         desc:'Brass three-draw telescope, shagreen case.' },
+  pocketwatch: { size:'small',  name:'Pocket Watch',           origin:'London',            desc:'A fine repoussé-cased verge watch, Tho. Tompion, London — the crew still marvel that a machine can hold the hours.' },
   quadrant:    { size:'tall',   name:"Surveyor's Quadrant",    origin:'London',            desc:'Brass quadrant with vernier scale, mahogany case.' },
   protea:      { size:'tall',   name:'Protea under Glass',     origin:'Cape of Good Hope', desc:'King protea beneath a glass cloche on a mahogany stand.' },
   protearaw:   { size:'slim',   name:'King Protea',            origin:'Cape of Good Hope', desc:'Pressed king protea, dried and mounted on ivory card.' },
@@ -12325,13 +12335,14 @@ const CAB_META = {
   seafan:      { size:'large',  name:'Black Sea Fan Coral',       origin:'Abrolhos · Brazil',   desc:'Gorgonian fan coral, dark lattice with pale tracery, on a coral base.' },
   seafanpurple:{ size:'large',  name:'Purple Sea Fan Coral',      origin:'Abrolhos · Brazil',   desc:'Gorgonian fan coral, violet branches in a lace-fine mesh.' },
   seafanred:   { size:'large',  name:'Red Sea Fan Coral',         origin:'Abrolhos · Brazil',   desc:'Gorgonian fan coral, deep red and densely branched.' },
-  redcoral:    { size:'large',  name:'Precious Coral',          origin:'Goto Islands · Japan', desc:'Corallium rubrum — an unbroken branch of precious red coral on its rock.' },
+  redcoral:    { size:'large',  name:'Red Precious Coral',          origin:'Goto Islands · Japan', desc:'Corallium rubrum — an unbroken branch of precious red coral on its rock.' },
   braincoral:  { size:'large',  name:'Brain Coral',               origin:'False Bay · Cape', desc:'A perfect brain coral washed ashore by the storm at False Bay, east of the Cape of Good Hope.' },
   'tree-agate-slice-a': { size:'medium', name:'Tree Agate — West Half', origin:'Dahel Gorge · India', desc:'A polished half-nodule of dendritic agate — a bare winter oak in stone, mirror of its twin.' },
   'tree-agate-slice-b': { size:'medium', name:'Tree Agate — East Half', origin:'Dahel Gorge · India', desc:'The mirrored half — the same winter oak reflected, cleaved from one volcanic nodule.' },
   nagasakivase3:{ size:'small',  name:'Arita Gourd Vase',          origin:'Nagasaki · Japan',  desc:'Double-gourd vase — blue & white above, carved celadon below.' },
   nagasakivasei2:{size:'tall',   name:'Imari Covered Vase',         origin:'Nagasaki · Japan',  desc:'Tall Imari vase and cover, gilt brocade panels with a seated-figure finial.' },
   snail:       { size:'small',  name:'Violet Sea Snail',          origin:'Praia do Guincho · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
+  nutmeggrater:{ size:'small',  name:'Silver Nutmeg Grater',      origin:'Batavia · Java',            desc:'A pocket grater in chased silver — nutmeg was worth more than gold by weight in this era, and only the wealthy grated their own at the table.' },
   'op-violetseasnail':{ size:'small', name:'Violet Sea Snail',        origin:'Praia do Guincho · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
   // Nautilus journey items
   'shell-nautiloushalf':{ size:'large',  name:'Nautilus — Bisected',   origin:'Amsterdam · Lapidary',   desc:'Nautilus pompilius cross-section — golden Fibonacci chambers revealed.' },
@@ -12515,6 +12526,8 @@ const ITEM_SCORES = {
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'oceania'    },
   'telescope':            { w:3,  c:3,  s:1,  a:3,  total:10, label:'Telescope',
     itemType:'instrument',shellFamily:null,    mineralType:null,   region:'europe'  },
+  'pocketwatch':          { w:3,  c:3,  s:2,  a:4,  total:12, label:'Pocket Watch',
+    itemType:'instrument',shellFamily:null,    mineralType:null,   region:'europe'  },
   'cinnabar':             { w:7,  c:4,  s:3,  a:4,  total:18, label:'Cinnabar Box',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
   'op-seafandiver':       { w:8,  c:4,  s:2,  a:4,  total:18, label:'Sea Fan Coral',
@@ -12525,7 +12538,7 @@ const ITEM_SCORES = {
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'americas', coralType:'seafan'},
   'seafan':               { w:8,  c:4,  s:2,  a:4,  total:18, label:'Black Sea Fan Coral',
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'americas', coralType:'seafan'},
-  'redcoral':             { w:12, c:8,  s:4,  a:6,  total:30, label:'Precious Coral',
+  'redcoral':             { w:12, c:8,  s:4,  a:6,  total:30, label:'Red Precious Coral',
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'asia',     coralType:'redcoral'},
   'braincoral':           { w:8,  c:11, s:8,  a:10, total:37, label:'Brain Coral',
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'africa',   coralType:'braincoral'},
@@ -12555,6 +12568,8 @@ const ITEM_SCORES = {
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
   'snail':                { w:4,  c:5,  s:3,  a:1,  total:13, label:'Violet Sea Snail',
     itemType:'shell',     shellFamily:'violet',mineralType:null,   region:'europe'  },
+  'nutmeggrater':         { w:3,  c:4,  s:3,  a:5,  total:15, label:'Silver Nutmeg Grater',
+    itemType:'goods',     shellFamily:null,    mineralType:null,   region:'asia'    },
   'op-violetseasnail':    { w:4,  c:5,  s:3,  a:1,  total:13, label:'Violet Sea Snail',
     itemType:'shell',     shellFamily:'violet',mineralType:null,   region:'europe'  },
   'shopping':             { w:5,  c:3,  s:2,  a:3,  total:13, label:'Blue & White Jar',
@@ -12613,7 +12628,7 @@ const BONUS_DEFS = [
   },
   {
     id: 'mineralogist', name: 'Mineralogist', pts: 25,
-    desc: 'All 8 mineral types',
+    desc: 'All 8 mineral types (Ruby, Apatite, Topaz, Amethyst, Tourmaline, Cobalt, Agate, Moonstone)',
     test(items) {
       const minerals = items.filter(i => i.sc.itemType === 'mineral');
       const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
@@ -12623,7 +12638,7 @@ const BONUS_DEFS = [
   },
   {
     id: 'conchylomania', name: 'Conchylomaniac', pts: 20,
-    desc: 'One of every shell family',
+    desc: 'One of every shell family (Nautilus, Cone, Wentletrap, Conch, Murex, Violet Sea Snail)',
     test(items) {
       const shells = items.filter(i => i.sc.itemType === 'shell');
       const families = new Set(shells.map(i => i.sc.shellFamily).filter(Boolean));
@@ -12645,7 +12660,7 @@ const BONUS_DEFS = [
   },
   {
     id: 'zoophytologist', name: 'Zoophytologist', pts: 10,
-    desc: 'One of every coral',
+    desc: 'One of every coral (Sea Fan, Red Precious Coral, Brain Coral)',
     test(items) {
       const corals = items.filter(i => i.sc.itemType === 'coral');
       const types = new Set(corals.map(i => i.sc.coralType).filter(Boolean));
