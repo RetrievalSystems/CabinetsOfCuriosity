@@ -736,11 +736,37 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 }
 @keyframes peek-bounce {
   0%   { transform: translateX(-50%) translateY(0); }
-  20%  { transform: translateX(-50%) translateY(-10px); }
+  20%  { transform: translateX(-50%) translateY(-15px); }
   40%  { transform: translateX(-50%) translateY(0); }
-  60%  { transform: translateX(-50%) translateY(-10px); }
+  60%  { transform: translateX(-50%) translateY(-15px); }
   80%  { transform: translateX(-50%) translateY(0); }
   100% { transform: translateX(-50%) translateY(0); }
+}
+.deck-peek-base {
+  position: absolute;
+  bottom: calc(96% - 235px); /* peeks down over the deck body — identical to .deck-peek */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 101px;
+  height: 62px;
+  border-radius: 7px 7px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -5px 18px rgba(0,0,0,0.75), 0 -1px 5px rgba(0,0,0,0.45);
+  z-index: 14;              /* just behind .deck-peek (15), so the jumping copy stays on top */
+  pointer-events: none;      /* clicks still go to .deck-peek / the deck itself */
+}
+#peek-land-base { left: calc(50% + 15px); }
+#peek-sea-base  { left: calc(50% - 15px); }
+.deck-peek-base img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.deck-stack.disabled .deck-peek-base,
+.deck-stack.card-drawn .deck-peek-base {
+  opacity: 0;
 }
 .deck-peek {
   position: absolute;
@@ -2202,28 +2228,28 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   color: rgba(212,168,85,0.55); text-transform: uppercase;
 }
 .mode-cards {
-  display: flex; gap: 32px; align-items: stretch;
+  display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap;
+  width: calc(100vw - 60px); max-width: calc(100vw - 60px); justify-content: center;
 }
 .mode-card {
-  width: 220px; padding: 36px 28px 32px;
-  border: 1px solid rgba(212,168,85,0.2);
+  flex: 0 0 auto;
+  padding: 28px 18px 24px;
   background: rgba(255,255,255,0.025);
   display: flex; flex-direction: column; align-items: center; gap: 16px;
-  cursor: pointer; transition: border-color 0.3s, background 0.3s;
+  cursor: pointer; transition: background 0.3s;
   border-radius: 2px;
 }
 .mode-card:hover {
-  border-color: rgba(212,168,85,0.6);
   background: rgba(212,168,85,0.06);
 }
-.mode-card-icon { font-size: 2.8rem; line-height: 1; }
+.mode-card-icon {
+  height: min(200px, 11.7vw); width: auto;
+  object-fit: contain;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
 .mode-card-title {
   font-family: 'Cinzel', serif; font-size: 0.88rem; letter-spacing: 0.18em;
   color: #e8c878; text-align: center;
-}
-.mode-card-desc {
-  font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.1em;
-  color: rgba(212,168,85,0.45); text-align: center; line-height: 1.8;
 }
 
 /* ── Solo-mode: hide all P2 UI ──────────────────────────────────────────── */
@@ -2291,6 +2317,18 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   width: min(500px, 78vw); height: 1px;
   background: linear-gradient(90deg, transparent, rgba(212,168,50,0.6), transparent);
 }
+#intro-loading-text {
+  position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
+  z-index: 5;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.14em;
+  color: rgba(212,168,50,0.55);
+  text-align: center;
+  white-space: nowrap;
+  animation: introLoadingPulse 2.4s ease-in-out infinite;
+}
+@keyframes introLoadingPulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.8; } }
 #intro-black {
   position: absolute; inset: 0; background: #000;
   opacity: 0; transition: opacity 0.8s ease; z-index: 1;
@@ -2302,10 +2340,11 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
    ══════════════════════════════════════════════════════════════════ */
 #tut-dim {
   position: fixed; inset: 0; z-index: 899997;
-  background: rgba(8,5,2,0.55);
+  background: rgba(8,5,2,0.28);
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.4s ease, background 0.4s ease;
 }
+#tut-dim.tut-dim-bright { background: rgba(8,5,2,0.1); }
 #tut-spot {
   position: fixed; z-index: 899998;
   border-radius: 10px;
@@ -2341,7 +2380,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   margin-bottom: 14px;
 }
 #tut-box .tut-controls {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
 }
 #tut-box .tut-progress {
   font-size: 0.8rem;
@@ -2367,6 +2406,20 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   color: rgba(240,223,192,0.6);
   border-color: rgba(200,150,80,0.3);
 }
+#tut-skip-btn {
+  position: fixed; z-index: 899999;
+  bottom: 26px; right: 40px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: 9px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(200,150,80,0.4);
+  background: linear-gradient(160deg,#2a1a08,#160c04);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  color: rgba(240,223,192,0.75);
+}
 /* Callout labels pointing at parts of an enlarged card during the anatomy step */
 .tut-callout {
   position: fixed; z-index: 900000;
@@ -2385,9 +2438,17 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 .tut-callout::after {
   content: '';
   position: absolute;
+  top: -5px; left: 14px;
   width: 9px; height: 9px;
   background: inherit;
+  border-left: 1px solid #c8923a; border-top: 1px solid #c8923a;
+  transform: rotate(45deg);
+}
+.tut-callout.tut-point-down::after {
+  top: auto; bottom: -5px; left: 14px;
+  border-left: none; border-top: none;
   border-right: 1px solid #c8923a; border-bottom: 1px solid #c8923a;
+  transform: rotate(45deg);
 }
 #tut-box.tut-box-center {
   bottom: auto !important;
@@ -2401,6 +2462,16 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   left: auto !important;
   right: 40px !important;
   transform: translateY(-50%) !important;
+}
+#tut-box.tut-box-left {
+  bottom: auto !important;
+  top: 50% !important;
+  left: 40px !important;
+  right: auto !important;
+  transform: translateY(-50%) !important;
+}
+#tut-box.tut-box-nudge-left {
+  left: 35% !important;
 }
 #tut-doors {
   position: fixed; inset: 0; z-index: 900001;
@@ -2447,7 +2518,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div id="map-cover" style="position:absolute;inset:0;background:#0a0603;z-index:9998;pointer-events:none;transition:opacity 0.6s;"></div>
   <div id="map-viewport">
     <img id="map-img" src="images/mapdefaultstorms.jpg" alt="World Map" onload="setTimeout(function(){cacheImgSize();buildSVG();renderShips();requestAnimationFrame(renderPortHotspots);},0)">
-    <div id="map-coords" style="
+    <div id="map-coords-disabled" style="
       display:none; position:absolute; bottom:8px; left:8px; z-index:500;
       font-family:'Courier New',monospace; font-size:0.72rem;
       background:rgba(8,4,2,0.82); color:#e8c860;
@@ -2625,6 +2696,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
     </div>
     <div id="decks-row">
       <div class="deck-stack" id="deck-land" onclick="drawCard('land')">
+        <div class="deck-peek-base" id="peek-land-base"><img src="images/img-card-back.jpg" alt=""></div>
         <div class="deck-peek" id="peek-land"><img src="images/img-card-back.jpg" alt="Draw card"></div>
         <div class="deck-face">
           <div class="deck-face-inner">
@@ -2634,6 +2706,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
       </div>
       <div class="deck-stack disabled" id="deck-sea" onclick="drawCard('sea')">
+        <div class="deck-peek-base" id="peek-sea-base"><img src="images/img-card-back.jpg" alt=""></div>
         <div class="deck-peek" id="peek-sea"><img src="images/img-card-back.jpg" alt="Draw card"></div>
         <div class="deck-face">
           <div class="deck-face-inner">
@@ -2807,6 +2880,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Rainbow Tourmaline</span>
+          <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(240,223,192,0.6);">Requires a Quadrant</span>
           <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots</button>
         </div>
       </div>
@@ -2897,7 +2971,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Horse & cart — shown at London (always available) -->
         <div id="london-cart-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="boardLondonCart()" title="Horse &amp; cart to the Bodleian" data-route-id="london_bodleian">
-            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;">
+            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Horse &amp; Cart<br>→ Bodleian</span>
         </div>
@@ -2905,7 +2979,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <!-- Bodleian return cart — shown at Bodleian Library port -->
         <div id="bodleian-return-area" style="display:none; flex-direction:column; align-items:center; gap:8px;">
           <div class="buy-item-frame" onclick="returnLondonCart()" title="Return to London" data-route-id="london_bodleian_return">
-            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;">
+            <img src="images/horseandcart.png" style="width:100%;height:100%;object-fit:contain;">
           </div>
           <span class="ship-boarding-label">Cart<br>← London</span>
         </div>
@@ -5499,6 +5573,29 @@ function triggerPeekBounce() {
   setStatus('Draw a card first! ⬆');
 }
 
+// Also nudge the peek card after 3 seconds of no activity, on top of the existing
+// "clicked elsewhere but still needs to draw" trigger — some playtesters just sit
+// there unsure what to do next, so this gives an unprompted hint too.
+let _peekIdleTimer = null;
+function _resetPeekIdleTimer() {
+  if (_peekIdleTimer) clearTimeout(_peekIdleTimer);
+  _peekIdleTimer = setTimeout(() => {
+    if (!cp()?.cardDrawn) {
+      const peek = document.querySelector('.deck-stack:not(.disabled) .deck-peek');
+      if (peek) {
+        peek.classList.remove('peek-bounce');
+        void peek.offsetWidth;
+        peek.classList.add('peek-bounce');
+        setTimeout(() => peek.classList.remove('peek-bounce'), 750);
+      }
+    }
+    _resetPeekIdleTimer();   // keep nudging every 3s while still idle and undrawn
+  }, 3000);
+}
+document.addEventListener('click', _resetPeekIdleTimer, true);
+document.addEventListener('keydown', _resetPeekIdleTimer, true);
+_resetPeekIdleTimer();
+
 function updateDeckPeek() {
   const drawn = cp()?.cardDrawn || false;
   document.getElementById('deck-land')?.classList.toggle('card-drawn', drawn);
@@ -5923,6 +6020,7 @@ function buildSVG() {
     });
   }
 }
+let _lastWinW = window.innerWidth, _lastWinH = window.innerHeight;
 window.addEventListener('resize', () => {
   cacheImgSize();
   // currentZoomTx/Ty/Scale were only ever recalculated by an explicit zoom action (arriving
@@ -5930,11 +6028,34 @@ window.addEventListener('resize', () => {
   // on top of the map (port dots, the pawn's click-zone) reads those same three numbers, so a
   // resize with no zoom event in between left them stale: the map image itself re-laid-out
   // correctly, but the dots and pawn still used the OLD window's scale/pan, making them look
-  // like they'd "drifted" — worse the further from the zoom's anchor point. Re-fitting here
-  // keeps everything glued together at any window size, not just the one it happened to be
-  // originally sized for.
-  zoomOut();
+  // like they'd "drifted" — worse the further from the zoom's anchor point.
+  //
+  // IMPORTANT: this must PRESERVE whatever zoom state was already active (almost always
+  // zoomed on the ship, via zoomToNode) rather than force a switch to the full-map zoomOut()
+  // view — calling zoomOut() here was hijacking the current view on every resize, which is
+  // exactly the unwanted "zooming in and out on its own" behaviour. Instead, keep the same
+  // scale and the same underlying map point centred, just re-centred for the new window size.
+  const oldCenterVX = (_lastWinW/2  - currentZoomTx) / currentZoomScale;
+  const oldCenterVY = (_lastWinH/2  - currentZoomTy) / currentZoomScale;
+  currentZoomTx = Math.round(window.innerWidth/2  - oldCenterVX * currentZoomScale);
+  currentZoomTy = Math.round(window.innerHeight/2 - oldCenterVY * currentZoomScale);
+  viewport.style.transform = `translate(${currentZoomTx}px,${currentZoomTy}px) scale(${currentZoomScale})`;
+  _syncPortDots();
+  _lastWinW = window.innerWidth;
+  _lastWinH = window.innerHeight;
   buildSVG(); renderShips(); renderStormTokens(); requestAnimationFrame(renderPortHotspots);
+  // The cabinet has the exact same class of bug, entirely separately — cabSX/cabSY are
+  // calculated once from the cabinet image's actual rendered size and never refreshed on
+  // resize, so items drift out of their bays (worse toward the bottom, furthest from the
+  // scale's origin) the same way the map's ports did. Only refresh if the cabinet has
+  // actually been built at least once.
+  if (typeof cabBuilt !== 'undefined' && cabBuilt) {
+    try {
+      cabCalcScale();
+      CAB_SLOT_DEFS.forEach(def => cabRenderCell(def));
+      cabRefreshInventory(cabActivePIdx);
+    } catch (e) {}
+  }
 });
 
 // ════════════════════════════════════════════════
@@ -6019,7 +6140,10 @@ function _isMainPort(name){
 const USED_AREA = { x0:500, y0:265, x1:1295, y1:635 };
 // Per-port nudges (game units) to seat each dot exactly on its drawn port. Easy to tune.
 const PORT_DOT_NUDGE = {};  // per-port overrides (empty; _routeXY handles alignment)
-const PORT_XY = {   // exact drawn-port coords from the read-out; overrides _routeXY per port
+const PORT_XY = {   // Reverted to original values — the earlier "aspect ratio" correction was
+  // actually chasing a symptom of the resize handler hijacking the zoom state (fixed
+  // separately), not a genuine coordinate error. With that root cause fixed, fresh
+  // measurement confirmed these original values were correct all along.
   'London':            { x:834,  y:276 },
   'Amsterdam':         { x:849,  y:273 },
   'Lisbon':            { x:787,  y:320 },
@@ -6387,6 +6511,19 @@ function renderShips() {
     const off = SHIP_OFFSETS[idx % SHIP_OFFSETS.length];
     img.style.left = (sx + off.x) + 'px';
     img.style.top  = (sy + off.y) + 'px';
+
+    // Face the ship toward its actual direction of travel. The artwork's natural
+    // orientation faces west, so heading east needs a horizontal flip. Compare
+    // against the previous render's position rather than route geometry, since
+    // that's simplest and correctly handles reversed/return legs too. No
+    // horizontal movement (e.g. first render, or a vertical-only leg) keeps
+    // whatever facing was already set, rather than flickering.
+    const prevSx = img.dataset.prevSx !== undefined ? parseFloat(img.dataset.prevSx) : sx;
+    if (sx > prevSx + 0.5) img.dataset.facing = 'east';
+    else if (sx < prevSx - 0.5) img.dataset.facing = 'west';
+    img.dataset.prevSx = sx;
+    const flip = img.dataset.facing === 'east' ? -1 : 1;
+    img.style.transform = `translate(-50%,-50%) scaleX(${flip})`;
   });
 
   // Remove tokens for ships that no longer exist
@@ -6831,8 +6968,6 @@ function openPort(portName, portImg) {
   // ── Shell Cove — rotating shell purchase on left, return proa on right ──
   if (playerIsHere && portName === 'Shell Cove') {
     openShellCove();
-    // Sea shell girl — shown if player holds the op-seashells card
-    if ((p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-seashells'))) openBataviaShells();
     document.getElementById('shellcove-return-area').style.display = 'flex';
   }
   // ── Amsterdam rhine barge — shown with Nuremberg opp card ──
@@ -7002,7 +7137,6 @@ function closePort() {
    'sierras-mule-area','sierras-return-area',
    'minasgerais-mule-area','minasgerais-return-area',
    'ouroupreto-mule-area','ouroupreto-return-area','minas-cont-area',
-   'batavia-shells-area',
    'amsterdam-rhine-area','nuremberg-buy-area','nuremberg-return-area',
    'whitecloudmtn-junk-area','whitecloudmtn-return-area',
    'ancol-proa-area','ancol-return-area',
@@ -7832,15 +7966,19 @@ function buyTourmaline() {
   if (oi < 0) { setStatus('You need a Rainbow Tourmaline op card to purchase here.'); return; }
   if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full.`); return; }
   if (tourmalineStock <= 0) { setStatus('The cluster is already claimed — another merchant got there first.'); return; }
+  // Requires a Quadrant — the miner wants a fine navigational instrument in trade
+  const quadrantIdx = (p.items || []).findIndex(gi => (gi.id||'').toLowerCase().startsWith('quadrant'));
+  if (quadrantIdx < 0) { setStatus('The miner wants a fine Quadrant in trade first — bring him one.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the tourmaline!`); return; }
   tourmalineStock--;
+  const quadrantUsed = p.items.splice(quadrantIdx, 1)[0];
   p.heldCards.splice(oi, 1);  // consume op card
   p.items = p.items || [];
   p.items.push({ id:'tourmaline_'+Date.now(), img:'images/tourmaline.png',
     label:'Rainbow Tourmaline', type:'goods', price:12, priceCurrency:'ingots' });
   document.getElementById('ratnapura-tourmaline-area').style.display = 'none';
   updateInventory(currentPIdx); renderHeldCards(currentPIdx); updateHUD();
-  log(`${p.name} acquires a Rainbow Tourmaline cluster — 10 ingots.`);
+  log(`${p.name} acquires a Rainbow Tourmaline cluster — 10 ingots and a Quadrant.`);
   _sweepDeadSingularCards(c => c.img && c.img.includes('op-tourmaline'), 'Rainbow Tourmaline');
 }
 
@@ -7922,14 +8060,14 @@ function _bodPreviewEl() {
   if (!el) {
     el = document.createElement('div');
     el.id = 'bod-preview';
-    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:flex;opacity:0;align-items:center;'
-      + 'justify-content:center;pointer-events:none;background:rgba(8,5,2,0.80);'
+    el.style.cssText = 'position:fixed;inset:0;z-index:9998;display:block;opacity:0;'
+      + 'pointer-events:none;background:rgba(8,5,2,0.80);'
       + 'transition:opacity 0.2s ease;';
     const img = document.createElement('img');
     img.id = 'bod-preview-img';
-    img.style.cssText = 'max-height:90vh;max-width:74vw;object-fit:contain;border-radius:8px;'
+    img.style.cssText = 'position:fixed;top:50%;left:50%;max-height:90vh;max-width:74vw;object-fit:contain;border-radius:8px;'
       + 'box-shadow:0 14px 54px rgba(0,0,0,0.72);border:1px solid rgba(212,168,85,0.45);'
-      + 'transform:scale(0.82);opacity:0;'
+      + 'transform:translate(-50%,-50%) scale(0.82);opacity:0;'
       + 'transition:transform 0.26s cubic-bezier(0.2,0.8,0.3,1.04),opacity 0.2s ease;';
     el.appendChild(img);
     document.body.appendChild(el);
@@ -7943,26 +8081,28 @@ function _showBodPreview(src, slotEl) {
   if (el.dataset.src !== src) { img.src = src; el.dataset.src = src; }
   if (el.dataset.shown === '1') return;             // already open -> don't restart the grow
 
-  // Grow outward from the hovered card's actual screen position, rather than
-  // jumping straight to a centred zoom — compute how far that slot sits from
-  // the viewport centre and start the transform offset there.
-  let originTransform = 'scale(0.82)';
+  // Stay at the hovered card's own horizontal position when zooming (left stays
+  // left, middle stays middle, right stays right), rather than every card
+  // converging on a shared central spot — growing in place is clearer than a
+  // slide-to-centre that made it hard to tell which card was which.
+  let initScale = 0.82;
   if (slotEl) {
     const r = slotEl.getBoundingClientRect();
-    const dx = (r.left + r.width  / 2) - window.innerWidth  / 2;
-    const dy = (r.top  + r.height / 2) - window.innerHeight / 2;
-    const initScale = Math.max(0.14, Math.min(0.4, r.width / (window.innerWidth * 0.74)));
-    originTransform = `translate(${dx}px, ${dy}px) scale(${initScale})`;
+    const cx = r.left + r.width / 2;
+    const cy = r.top  + r.height / 2;
+    img.style.left = cx + 'px';
+    img.style.top  = cy + 'px';
+    initScale = Math.max(0.14, Math.min(0.4, r.width / (window.innerWidth * 0.74)));
   }
 
   void el.offsetWidth;
   el.style.opacity = '1';
   img.style.transition = 'none';
-  img.style.transform = originTransform;
+  img.style.transform = `translate(-50%,-50%) scale(${initScale})`;
   img.style.opacity = '0';
   void img.offsetWidth;                             // commit the origin state before animating
   img.style.transition = 'transform 0.26s cubic-bezier(0.2,0.8,0.3,1.04), opacity 0.2s ease';
-  img.style.transform = 'translate(0,0) scale(1)';
+  img.style.transform = 'translate(-50%,-50%) scale(1)';
   img.style.opacity = '1';
   el.dataset.shown = '1';
 }
@@ -8239,7 +8379,7 @@ const SHELL_CATALOGUE = [
 //   12 shells total, shuffled at start so the rarities surface in random order.
 const bataviaShellDeck = (function() {
   const byId   = id => SHELL_CATALOGUE.find(s => s.id === id);
-  const counts = { shellglory: 1, Wenteltrap: 2, venuscomb: 5, scorpionconch: 4 }; // = 12
+  const counts = { shellglory: 1, Wenteltrap: 2, venuscomb: 2, scorpionconch: 2 }; // = 7
   const arr = [];
   Object.keys(counts).forEach(id => { for (let n = 0; n < counts[id]; n++) arr.push(byId(id)); });
   for (let i = arr.length - 1; i > 0; i--) {
@@ -8297,26 +8437,12 @@ function openShellCove() {
     return;
   }
 
-  // Per-turn limit: 3 per card held
-  const maxThisTurn = cardCount * 3;
-  const turnBought  = _shellTurnCount();
-  if (turnBought >= maxThisTurn) {
-    const cardWord = cardCount > 1 ? `${maxThisTurn} shells (${cardCount} cards)` : '3 shells';
-    content.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.5);letter-spacing:0.08em;line-height:1.6;">
-      ${cardWord} collected this visit — return next turn for more.</div>`;
-    return;
-  }
-
   const shell     = bataviaShellDeck[bataviaShellIdx];
   const remaining = bataviaShellDeck.length - bataviaShellIdx;
-  const cardUsed  = p.seashellBought || 0;   // shells bought against current card
-  const turnLeft  = maxThisTurn - turnBought;
-  const cardLeft  = 3 - cardUsed;            // remaining on current card
 
   content.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);letter-spacing:0.1em;margin-bottom:8px;">
-      ${remaining} shell${remaining>1?'s':''} in stock
-      · ${cardLeft}/3 left on card · ${turnLeft} more this visit
+      ${remaining} shell${remaining>1?'s':''} in stock · one shell per card held
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" onclick="buyShell()" style="cursor:pointer;">
@@ -8337,13 +8463,8 @@ function buyShell() {
     log(`${p.name}: No more shells available at Shell Cove.`); return;
   }
 
-  const cardCount = (p.heldCards||[]).filter(hc => hc.img && hc.img.includes('seashells')).length;
-  if (!cardCount) { setStatus('You need a Sea Shell Collector card to buy here.'); return; }
-
-  const maxThisTurn = cardCount * 3;
-  if (_shellTurnCount() >= maxThisTurn) {
-    setStatus(`${maxThisTurn} shells this visit — return next turn.`); return;
-  }
+  const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seashells'));
+  if (oi < 0) { setStatus('You need a Sea Shell Collector card to buy here.'); return; }
 
   if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full — sell or cabinet an item before buying more.`); return; }
 
@@ -8355,20 +8476,10 @@ function buyShell() {
                  type:'goods', price:3, size:'medium' });
   bataviaShellIdx++;
 
-  // Per-card total: increment, consume card when 3 reached
-  p.seashellBought = (p.seashellBought || 0) + 1;
-  if (p.seashellBought >= 3) {
-    const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seashells'));
-    if (oi >= 0) p.heldCards.splice(oi, 1);
-    p.seashellBought = 0;
-    renderHeldCards(currentPIdx);
-    log(`${p.name} acquires the ${shell.label} — card spent (3 shells collected).`);
-  } else {
-    log(`${p.name} acquires the ${shell.label} (${p.seashellBought}/3 on this card).`);
-  }
-
-  // Per-turn tracking
-  _shellTurnAdd();
+  // One shell per card — the card is spent immediately
+  p.heldCards.splice(oi, 1);
+  renderHeldCards(currentPIdx);
+  log(`${p.name} acquires the ${shell.label} — card spent.`);
 
   updateInventory(currentPIdx); updateHUD();
   openShellCove();
@@ -8503,7 +8614,7 @@ function openGotoCaves() {
         <img src="images/redcoral.png" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Precious Coral</span>
+        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Red Precious Coral</span>
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
         <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
       </div>
@@ -8519,12 +8630,12 @@ function buyRedCoral() {
   redcoralStock--;
   p.heldCards.splice(cardIdx, 1);
   p.items = p.items || [];
-  p.items.push({ id:'redcoral_'+Date.now(), img:'images/redcoral.png', label:'Precious Coral', type:'goods', price:12 });
+  p.items.push({ id:'redcoral_'+Date.now(), img:'images/redcoral.png', label:'Red Precious Coral', type:'goods', price:12 });
   renderHeldCards(currentPIdx);
   document.getElementById('goto-buy-area').style.display='none';
   updateInventory(currentPIdx); updateHUD();
-  log(`${p.name} acquires the Precious Coral — an unbroken red branch — 12 ingots. The card is spent.`);
-  _sweepDeadSingularCards(c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), 'Precious Coral');
+  log(`${p.name} acquires the Red Precious Coral — an unbroken red branch — 12 ingots. The card is spent.`);
+  _sweepDeadSingularCards(c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), 'Red Precious Coral');
 }
 function returnNagasakiSkiff() {
   const p = cp();
@@ -8677,74 +8788,6 @@ function returnCambayMule() {
   setStatus('End your turn to wind back down to Bombay.');
 }
 
-
-// ════════════════════════════════════════════════
-//  BATAVIA SEA SHELLS — 3 per card, 4 op cards, 12 global total
-// ════════════════════════════════════════════════
-let seashellStock = 12;  // 4 cards × 3 shells each
-
-function openBataviaShells() {
-  const area = document.getElementById('batavia-shells-area');
-  if (area) area.style.display = 'flex';
-  const content = document.getElementById('batavia-shells-content'); if(!content) return;
-  const p = cp();
-  const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('op-seashells'));
-  const bought  = p.seashellBought || 0;
-  const sessionDone = boughtThisTurn.has('seashell_done');
-
-  if (seashellStock <= 0) {
-    content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">All shells have been sold.</div>`; return;
-  }
-  if (cardIdx < 0) {
-    content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">A Sea Shell Collector op card is required.</div>`; return;
-  }
-  if (sessionDone) {
-    content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">3 shells this card — wait a turn for more.</div>`; return;
-  }
-  const remaining = 3 - bought;
-  content.innerHTML=`
-    <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">
-      ${remaining} shell${remaining!==1?'s':''} left this card · ${seashellStock} available in Batavia
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buySeaShell()" style="cursor:pointer;">
-        <img src="images/seashell.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/op-seashells.jpeg'">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Sea Shell</span>
-        <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Beach-gathered — ${bought}/3 this card · 3 silver each</span>
-        <button class="port-action-btn" onclick="buySeaShell()">Buy — 3 silver</button>
-      </div>
-    </div>`;
-}
-
-function buySeaShell() {
-  const p = cp();
-  const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('op-seashells'));
-  if (cardIdx < 0) { setStatus('You need the Sea Shell Collector op card.'); return; }
-  if (boughtThisTurn.has('seashell_done')) { setStatus('3 shells collected this card — wait a turn.'); return; }
-  p.seashellBought = p.seashellBought || 0;
-  if (seashellStock <= 0) { log(`${p.name}: No shells remain.`); return; }
-  if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full — sell or cabinet an item before buying more.`); return; }
-  if (!payPrice(p, 3, 'coins')) { log(`${p.name}: Need 3 silver coins.`); return; }
-
-  const img = 'images/seashell.png';
-  p.items = p.items || [];
-  p.items.push({ id:'seashell_'+Date.now(), img, label:'Sea Shell', type:'goods', price:3 });
-  seashellStock--;
-  p.seashellBought++;
-
-  if (p.seashellBought >= 3) {
-    p.heldCards.splice(cardIdx, 1);
-    p.seashellBought = 0;
-    boughtThisTurn.add('seashell_done');
-    renderHeldCards(currentPIdx);
-    log(`${p.name}: 3 shells collected — card consumed. (${seashellStock} remaining in Batavia)`);
-  } else {
-    log(`${p.name}: Shell ${p.seashellBought}/3 — 3 silver. (${seashellStock} remaining)`);
-  }
-  updateInventory(currentPIdx); updateHUD(); openBataviaShells();
-}
 
 // ════════════════════════════════════════════════
 //  LISBON OPEN ATLANTIC — Violet Sea Snails
@@ -9294,13 +9337,18 @@ function mkCard(img, effect, opts={}) {
 
 const SEA_CARD_TEMPLATES = [
   // ── Omens & flavour ──
-  mkCard('images/dolphins.jpeg',         (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); }),
+  // Dolphins ×4
+  ...Array(4).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
   // ── Seasick deckhand ×4 (pure flavour, no effect) ──
   ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); }),
-  mkCard('images/whale_18_41_05.jpeg',   (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); }),
-  mkCard('images/moonbow.jpeg',          (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); }),
-  mkCard('images/captainstable.jpeg',    (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); }),
+  // St. Elmo's Fire ×4
+  ...Array(4).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
+  // Whale sighting ×4
+  ...Array(4).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
+  // Lunar Rainbow ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); })),
+  // Captain's Table ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/captainstable.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); })),
   // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
   ...Array(12).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
@@ -9610,13 +9658,13 @@ const OPPORTUNITY_CARDS = [
   // ── Silversmith ×2 — Delft, 4 ingots ──
   ...Array(4).fill({ img:'images/op-silvermith.jpeg',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' }),
   // ── Tourmaline ×1 — Ratnapura, 10 ingots ──
-  ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots', note:'The miner also wants a fine Quadrant in trade' }),
   // ── Batavia sea shells ×4 — Batavia, 3 coins each ──
-  ...Array(4).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
+  ...Array(7).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
   ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
-  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
+  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Red Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
   ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
@@ -9625,7 +9673,7 @@ const OPPORTUNITY_CARDS = [
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
   ...Array(3).fill({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
   // ── Violet sea shells ×5 — Praia do Guincho, 5 coins ──
-  ...Array(4).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
+  ...Array(3).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
   // ── Apatite ×3 — Central Sierras (single entry — duplicated above, remove) ──
   // ── Imperial Topaz ×1 — Minas Gerais, 12 ingots ──
   ...Array(2).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
@@ -9644,7 +9692,7 @@ const OPPORTUNITY_CARDS = [
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
   ...Array(4).fill({ img:'images/op-mandrake.jpeg', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' }),
   // ── Brain Coral x1 — False Bay, 3 ingots (a once-in-a-lifetime find) ──
-  ...Array(2).fill({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots', note:'The collector\u2019s agent here also wants a fine pocket watch' }),
 ].map((c, i) => ({ ...c, _id: i }));
 
 let oppDeck      = [];
@@ -9666,10 +9714,10 @@ function buildOppDeck() {
 const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-dragonvaseworkshop'), stock: () => dragonVaseStock, label: 'Dragon Vase', reqItem: 'cobalt' },
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket' },
-  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Precious Coral' },
-  { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline' },
+  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral' },
+  { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
   { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
-  { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral' },
+  { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
 function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
 
@@ -10210,7 +10258,7 @@ const ITEM_POOLS_ALL = {
     'images/polyhedra3.png',   // model III — great stellated dodecahedron
   ],
   // violet shells all share the same image — shuffle is trivial but keeps the pattern consistent
-  violet_shells: Array(4).fill('images/snail.png'),  // snail.png = cabinet item (op-violetseasnail.png = op card)
+  violet_shells: Array(3).fill('images/snail.png'),  // snail.png = cabinet item (op-violetseasnail.png = op card)
   // Bombay hookah — 4 available, repeatable purchase (1 per turn per player)
   bombay_hookah: Array(4).fill('images/brasshookah.png'),
   lisbon_jar: Array(5).fill('images/lisbonjar.png'),
@@ -10260,18 +10308,21 @@ const PORT_ITEMS = {
   ],
   'False Bay': [
     { img:'images/braincoral.png', label:'Brain Coral', price:3, currency:'ingots',
-      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', hardLimit:true, note:'A once-in-a-lifetime find' },
+      reqCard:'images/op-braincoral.jpeg', pool:'falsebay_coral', hardLimit:true,
+      reqItem:'pocketwatch', reqItemLabel:'Pocket Watch',
+      note:'A once-in-a-lifetime find — the collector\u2019s agent here also wants a fine pocket watch' },
   ],
   'Rio': [
     { img:'images/riocup.png', label:'Coconut Cup', price:2, currency:'ingots', pool:'rio_cup', repeatable:true, note:'5 available — one purchase per turn' },
     { img:'images/riomoringa.png', label:'Moringa Jar', price:1, currency:'ingots', pool:'rio_moringa', repeatable:true, note:'5 available — one purchase per turn' },
   ],
   'London': [
-    { img:'images/telescope.png', label:'Telescope',          price:5, currency:'ingots' },
+    { img:'images/pocketwatch.png', label:'Pocket Watch',      price:5, currency:'ingots' },
     { img:'images/quadrant.png',  label:'Quadrant',           price:3, currency:'ingots' },
   ],
   'Amsterdam': [
     { img:'images/tulipvase.png', label:'Delft Tulip Vase',   price:2, currency:'ingots' },
+    { img:'images/telescope.png', label:'Telescope',          price:5, currency:'ingots' },
     { img:'images/anatomicalmodeltorso.png', label:'Anatomical Ceroplastic Torso', price:15, currency:'ingots',
       reqCard:'images/connection1.jpg', reqItem:'apatite',
       reqItemLabel:'Asparagus Stone (Apatite)', reqItemNote:'A green apatite specimen is required' },
@@ -10330,6 +10381,7 @@ const PORT_ITEMS = {
   ],
   'Batavia': [
     { img:'images/bataviabox.png', label:'Filigree Silver Casket', price:5, currency:'ingots' },
+    { img:'images/nutmeggrater.png', label:'Silver Nutmeg Grater', price:3, currency:'ingots' },
   ],
   // ── Op-card gated items ──
   'Nuremberg': [
@@ -10351,7 +10403,7 @@ const PORT_ITEMS = {
   'Praia do Guincho': [
     { img:'images/snail.png', label:'Violet Sea Snail', price:2, currency:'coins',
       reqCard:'images/op-violetseasnail.jpeg', repeatable:true, pool:'violet_shells',
-      note:'5 available in total — one per card held per turn' },
+      note:'3 available in total — one per card held per turn' },
   ],
   'Lapidary Outskirts': [
     { img:'images/lapidarydest.jpg', label:'Nautilus — Bisected', price:3, currency:'ingots',
@@ -12157,7 +12209,8 @@ const CAB_META = {
   silverewer:  { size:'tall',   name:'Repoussé Silver Ewer',   origin:'Bombay · India',    desc:'Tall silver ewer, dense repoussé chinar leaves and blossom — Bombay Presidency export silver.' },
   inlaidbox:   { size:'large',  name:'Mother-of-Pearl Casket', origin:'Cambay · Gujarat',  desc:'Sandalwood casket inlaid throughout with mother-of-pearl florals — the last Cambay guild master\u2019s final, secret work.' },
   brassjalibox:{ size:'medium', name:'Pierced Brass Casket',   origin:'Madras · India',    desc:'Octagonal brass casket, walls and lid pierced in fine jali latticework.' },
-  telescope:   { size:'slim',   name:'Pocket Telescope',       origin:'London',            desc:'Brass three-draw telescope, shagreen case.' },
+  telescope:   { size:'slim',   name:'Pocket Telescope',       origin:'Amsterdam',         desc:'Brass three-draw telescope, shagreen case.' },
+  pocketwatch: { size:'small',  name:'Pocket Watch',           origin:'London',            desc:'A fine repoussé-cased verge watch, Tho. Tompion, London — the crew still marvel that a machine can hold the hours.' },
   quadrant:    { size:'tall',   name:"Surveyor's Quadrant",    origin:'London',            desc:'Brass quadrant with vernier scale, mahogany case.' },
   protea:      { size:'tall',   name:'Protea under Glass',     origin:'Cape of Good Hope', desc:'King protea beneath a glass cloche on a mahogany stand.' },
   protearaw:   { size:'slim',   name:'King Protea',            origin:'Cape of Good Hope', desc:'Pressed king protea, dried and mounted on ivory card.' },
@@ -12187,13 +12240,14 @@ const CAB_META = {
   seafan:      { size:'large',  name:'Black Sea Fan Coral',       origin:'Abrolhos · Brazil',   desc:'Gorgonian fan coral, dark lattice with pale tracery, on a coral base.' },
   seafanpurple:{ size:'large',  name:'Purple Sea Fan Coral',      origin:'Abrolhos · Brazil',   desc:'Gorgonian fan coral, violet branches in a lace-fine mesh.' },
   seafanred:   { size:'large',  name:'Red Sea Fan Coral',         origin:'Abrolhos · Brazil',   desc:'Gorgonian fan coral, deep red and densely branched.' },
-  redcoral:    { size:'large',  name:'Precious Coral',          origin:'Goto Islands · Japan', desc:'Corallium rubrum — an unbroken branch of precious red coral on its rock.' },
+  redcoral:    { size:'large',  name:'Red Precious Coral',          origin:'Goto Islands · Japan', desc:'Corallium rubrum — an unbroken branch of precious red coral on its rock.' },
   braincoral:  { size:'large',  name:'Brain Coral',               origin:'False Bay · Cape', desc:'A perfect brain coral washed ashore by the storm at False Bay, east of the Cape of Good Hope.' },
   'tree-agate-slice-a': { size:'medium', name:'Tree Agate — West Half', origin:'Dahel Gorge · India', desc:'A polished half-nodule of dendritic agate — a bare winter oak in stone, mirror of its twin.' },
   'tree-agate-slice-b': { size:'medium', name:'Tree Agate — East Half', origin:'Dahel Gorge · India', desc:'The mirrored half — the same winter oak reflected, cleaved from one volcanic nodule.' },
   nagasakivase3:{ size:'small',  name:'Arita Gourd Vase',          origin:'Nagasaki · Japan',  desc:'Double-gourd vase — blue & white above, carved celadon below.' },
   nagasakivasei2:{size:'tall',   name:'Imari Covered Vase',         origin:'Nagasaki · Japan',  desc:'Tall Imari vase and cover, gilt brocade panels with a seated-figure finial.' },
   snail:       { size:'small',  name:'Violet Sea Snail',          origin:'Praia do Guincho · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
+  nutmeggrater:{ size:'small',  name:'Silver Nutmeg Grater',      origin:'Batavia · Java',            desc:'A pocket grater in chased silver — nutmeg was worth more than gold by weight in this era, and only the wealthy grated their own at the table.' },
   'op-violetseasnail':{ size:'small', name:'Violet Sea Snail',        origin:'Praia do Guincho · Lisbon', desc:'Janthina janthina — rides the surface on a raft of bubbles.' },
   // Nautilus journey items
   'shell-nautiloushalf':{ size:'large',  name:'Nautilus — Bisected',   origin:'Amsterdam · Lapidary',   desc:'Nautilus pompilius cross-section — golden Fibonacci chambers revealed.' },
@@ -12377,6 +12431,8 @@ const ITEM_SCORES = {
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'oceania'    },
   'telescope':            { w:3,  c:3,  s:1,  a:3,  total:10, label:'Telescope',
     itemType:'instrument',shellFamily:null,    mineralType:null,   region:'europe'  },
+  'pocketwatch':          { w:3,  c:3,  s:2,  a:4,  total:12, label:'Pocket Watch',
+    itemType:'instrument',shellFamily:null,    mineralType:null,   region:'europe'  },
   'cinnabar':             { w:7,  c:4,  s:3,  a:4,  total:18, label:'Cinnabar Box',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
   'op-seafandiver':       { w:8,  c:4,  s:2,  a:4,  total:18, label:'Sea Fan Coral',
@@ -12387,7 +12443,7 @@ const ITEM_SCORES = {
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'americas', coralType:'seafan'},
   'seafan':               { w:8,  c:4,  s:2,  a:4,  total:18, label:'Black Sea Fan Coral',
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'americas', coralType:'seafan'},
-  'redcoral':             { w:12, c:8,  s:4,  a:6,  total:30, label:'Precious Coral',
+  'redcoral':             { w:12, c:8,  s:4,  a:6,  total:30, label:'Red Precious Coral',
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'asia',     coralType:'redcoral'},
   'braincoral':           { w:8,  c:11, s:8,  a:10, total:37, label:'Brain Coral',
     itemType:'coral',     shellFamily:null,    mineralType:null,   region:'africa',   coralType:'braincoral'},
@@ -12417,6 +12473,8 @@ const ITEM_SCORES = {
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
   'snail':                { w:4,  c:5,  s:3,  a:1,  total:13, label:'Violet Sea Snail',
     itemType:'shell',     shellFamily:'violet',mineralType:null,   region:'europe'  },
+  'nutmeggrater':         { w:3,  c:4,  s:3,  a:5,  total:15, label:'Silver Nutmeg Grater',
+    itemType:'goods',     shellFamily:null,    mineralType:null,   region:'asia'    },
   'op-violetseasnail':    { w:4,  c:5,  s:3,  a:1,  total:13, label:'Violet Sea Snail',
     itemType:'shell',     shellFamily:'violet',mineralType:null,   region:'europe'  },
   'shopping':             { w:5,  c:3,  s:2,  a:3,  total:13, label:'Blue & White Jar',
@@ -12443,7 +12501,7 @@ const ITEM_SCORES = {
     itemType:'mineral',   shellFamily:null,    mineralType:'tourmaline',region:'asia'},
   'ruby':                 { w:9,  c:8,  s:8,  a:7,  total:32, label:'Raw Ruby Crystal',
     itemType:'mineral',   shellFamily:null,    mineralType:'ruby',   region:'asia'    },
-  'cobalt':               { w:6,  c:5,  s:7,  a:8,  total:26, label:'Raw Cobalt Sample',
+  'cobalt':               { w:4,  c:3,  s:5,  a:6,  total:18, label:'Raw Cobalt Sample',
     itemType:'mineral',   shellFamily:null, mineralType:'cobalt', region:'europe' },
   'nettiflamelily':       { w:10, c:8,  s:10, a:7,  total:35, label:'Pith Flame Lily',
     itemType:'botanical', shellFamily:null, mineralType:null,      region:'asia' },
@@ -12462,6 +12520,7 @@ const SCORE_CRITERIA = [
 
 // ── Bonus definitions ──────────────────────────────────────────────────────
 // Each bonus has: id, name, pts, desc, and a test(scoredItems) → bool
+// Ordered by score, highest to lowest.
 const BONUS_DEFS = [
   {
     id: 'miscellanea', name: 'Miscellanea', pts: 30,
@@ -12473,8 +12532,18 @@ const BONUS_DEFS = [
     },
   },
   {
+    id: 'mineralogist', name: 'Mineralogist', pts: 25,
+    desc: 'All 8 mineral types (Ruby, Apatite, Topaz, Amethyst, Tourmaline, Cobalt, Agate, Moonstone)',
+    test(items) {
+      const minerals = items.filter(i => i.sc.itemType === 'mineral');
+      const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
+      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','cobalt','agate'];
+      return ALL_MINERALS.every(m => types.has(m));
+    },
+  },
+  {
     id: 'conchylomania', name: 'Conchylomaniac', pts: 20,
-    desc: 'One of every shell family',
+    desc: 'One of every shell family (Nautilus, Cone, Wentletrap, Conch, Murex, Violet Sea Snail)',
     test(items) {
       const shells = items.filter(i => i.sc.itemType === 'shell');
       const families = new Set(shells.map(i => i.sc.shellFamily).filter(Boolean));
@@ -12484,36 +12553,8 @@ const BONUS_DEFS = [
     },
   },
   {
-    id: 'zoophytologist', name: 'Zoophytologist', pts: 10,
-    desc: 'One of every coral',
-    test(items) {
-      const corals = items.filter(i => i.sc.itemType === 'coral');
-      const types = new Set(corals.map(i => i.sc.coralType).filter(Boolean));
-      const ALL_CORALS = ['seafan','redcoral','braincoral'];
-      return ALL_CORALS.every(c => types.has(c));
-    },
-  },
-  {
-    id: 'mineralogist', name: 'Mineralogist', pts: 25,
-    desc: 'All 8 mineral types',
-    test(items) {
-      const minerals = items.filter(i => i.sc.itemType === 'mineral');
-      const types = new Set(minerals.map(i => i.sc.mineralType).filter(Boolean));
-      const ALL_MINERALS = ['topaz','quartz','feldspar','phosphate','tourmaline','ruby','cobalt','agate'];
-      return ALL_MINERALS.every(m => types.has(m));
-    },
-  },
-  {
-    id: 'geometrist', name: 'Geometrist', pts: 10,
-    desc: 'The complete set of Nuremberg models',
-    test(items) {
-      const FULL_SET = 3; // update to 5 when more models added
-      return items.filter(i => i.sc.label.replace(/\s*\d+$/, '').trim() === 'Nuremberg Model').length >= FULL_SET;
-    },
-  },
-  {
     id: 'cosmopolite', name: 'Cosmopolite', pts: 15,
-    desc: 'Items from all 6 world regions',
+    desc: 'Items from all 6 world regions (Africa, Americas, Asia, Europe, Oceania, At Sea)',
     test(items) {
       const regions = new Set(items.map(i => i.sc.region).filter(Boolean));
       const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))];
@@ -12522,7 +12563,50 @@ const BONUS_DEFS = [
       return ALL_REGIONS.every(r => regions.has(r));
     },
   },
+  {
+    id: 'zoophytologist', name: 'Zoophytologist', pts: 10,
+    desc: 'One of every coral (Sea Fan, Red Precious Coral, Brain Coral)',
+    test(items) {
+      const corals = items.filter(i => i.sc.itemType === 'coral');
+      const types = new Set(corals.map(i => i.sc.coralType).filter(Boolean));
+      const ALL_CORALS = ['seafan','redcoral','braincoral'];
+      return ALL_CORALS.every(c => types.has(c));
+    },
+  },
+  {
+    id: 'geometrist', name: 'Geometrist', pts: 10,
+    desc: 'Complete set of 3 polyhedra models',
+    test(items) {
+      const FULL_SET = 3; // update to 5 when more models added
+      return items.filter(i => i.sc.label.replace(/\s*\d+$/, '').trim() === 'Nuremberg Model').length >= FULL_SET;
+    },
+  },
 ];
+
+// Shows/hides the Bonus Groups dropdown, letting players see all six bonus sets
+// (and their point values) at a glance to help plan which items to collect together.
+function toggleBonusGroupsPanel() {
+  const panel = document.getElementById('bonus-groups-panel');
+  if (!panel) return;
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  panel.innerHTML = BONUS_DEFS.map(b => `
+    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+      padding:7px 0; border-bottom:1px solid rgba(212,168,85,0.18);">
+      <div>
+        <div style="color:#e8c860; font-size:0.75rem; letter-spacing:.04em;">${b.name}</div>
+        <div style="color:rgba(240,223,192,0.65); font-size:0.65rem; margin-top:2px;">${b.desc}</div>
+      </div>
+      <div style="color:#d4a832; font-size:0.75rem; white-space:nowrap;">+${b.pts}</div>
+    </div>`).join('');
+  panel.style.display = 'block';
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('bonus-groups-wrap');
+  const panel = document.getElementById('bonus-groups-panel');
+  if (panel && panel.style.display === 'block' && wrap && !wrap.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
 
 // Normalise an item id/img path to a lowercase key for ITEM_SCORES lookup
 // Always prefer img (the actual filename) over id (which may be "amethyst1_card_123456")
@@ -14096,7 +14180,13 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     <div id="cab-title">THE CABINET OF CURIOSITIES</div>
     <span id="cab-player-name"></span>
     <span id="cab-london-badge">🔒 Not in London</span>
-    <button id="cab-score-btn" onclick="promptCabinetFull(cabActivePIdx)" style="background:linear-gradient(135deg,#3a1e08,#1a0e04);color:#d4a832;border:1px solid #6b4416;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.12em;padding:5px 14px;cursor:pointer;border-radius:2px;margin-right:8px;">🏛 SCORE CABINET</button>
+    <div id="bonus-groups-wrap" style="position:relative;display:inline-block;margin-right:8px;">
+      <button id="cab-bonus-btn" onclick="toggleBonusGroupsPanel()" style="background:linear-gradient(135deg,#3a1e08,#1a0e04);color:#d4a832;border:1px solid #6b4416;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.12em;padding:5px 14px;cursor:pointer;border-radius:2px;">🏆 BONUS GROUPS</button>
+      <div id="bonus-groups-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:50;
+        background:linear-gradient(160deg,#241407,#160c04);border:1px solid #6b4416;border-radius:4px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.6);padding:12px 16px;width:340px;font-family:'Cinzel',serif;">
+      </div>
+    </div>
     <button id="cab-close-btn" onclick="closeCabinet()">✕ CLOSE</button>
   </div>
   <div id="cab-body">
@@ -14146,27 +14236,22 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 
 <!-- ══ MODE SELECT (shown after intro video) ════════════════════════════ -->
 <div id="mode-select-overlay">
-  <div class="mode-select-title">Choose your voyage</div>
   <div class="mode-cards">
     <div class="mode-card" onclick="chooseSolo()">
-      <div class="mode-card-icon">🧭</div>
+      <img class="mode-card-icon" src="images/soloicon.jpg" alt="">
       <div class="mode-card-title">Solo Merchant</div>
-      <div class="mode-card-desc">One trader.<br>One voyage.<br>The whole world<br>to explore.</div>
     </div>
     <div class="mode-card" onclick="chooseRival()">
-      <div class="mode-card-icon">⚔</div>
+      <img class="mode-card-icon" src="images/rivalsicon.jpg" alt="">
       <div class="mode-card-title">Rival Merchants</div>
-      <div class="mode-card-desc">Two traders<br>racing the<br>same seas.<br>Only one legend.</div>
     </div>
     <div class="mode-card" onclick="chooseCollab()">
-      <div class="mode-card-icon">🤝</div>
+      <img class="mode-card-icon" src="images/collabicon.jpg" alt="">
       <div class="mode-card-title">Collaborative</div>
-      <div class="mode-card-desc">Two traders,<br>one cabinet.<br>Pool your finds.<br>One legend, shared.</div>
     </div>
     <div class="mode-card" onclick="startTutorial()">
-      <div class="mode-card-icon">📖</div>
+      <img class="mode-card-icon" src="images/howtoplayicon.png" alt="">
       <div class="mode-card-title">How to Play</div>
-      <div class="mode-card-desc">Watch a real<br>turn unfold,<br>narrated<br>step by step.</div>
     </div>
   </div>
 </div>
@@ -14238,6 +14323,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     </div>
     <img id="intro-scroll" src="images/scroll.jpeg" alt="">
     <div id="intro-plaque">
+      <div id="intro-loading-text">Preparing the ships</div>
       <div id="intro-loadbar-track"><div id="intro-loadbar-fill"></div></div>
     </div>
   </div>
@@ -14672,10 +14758,15 @@ function _tutEnsureDOM() {
     <div class="tut-title" id="tut-title"></div>
     <div class="tut-text" id="tut-text"></div>
     <div class="tut-controls">
-      <button class="tut-skip" onclick="_tutSkip()">End tutorial</button>
       <button class="tut-next" id="tut-next-btn" onclick="_tutNext()">Next →</button>
     </div>`;
   document.body.appendChild(box);
+  const skipBtn = document.createElement('button');
+  skipBtn.id = 'tut-skip-btn';
+  skipBtn.className = 'tut-skip';
+  skipBtn.textContent = 'End tutorial';
+  skipBtn.onclick = _tutSkip;
+  document.body.appendChild(skipBtn);
 }
 
 function _tutClearCallouts() {
@@ -14715,16 +14806,19 @@ function _tutRender(step) {
   document.getElementById('tut-text').innerHTML = step.text;
   const nextBtn = document.getElementById('tut-next-btn');
   nextBtn.textContent = (_tutIdx === _tutSteps.length - 1) ? 'Finish ✓' : 'Next →';
+  nextBtn.style.display = '';
 
   _tutRespotlight(step.target);
 
   // Narration box normally sits bottom-centre, clear of the map and card row —
-  // but a step can ask for it centred, or shifted to the right (e.g. alongside a
-  // full-screen card reveal), instead.
+  // but a step can ask for it centred, or shifted to the right or left (e.g.
+  // alongside a full-screen card reveal), instead.
   box.classList.toggle('tut-box-center', step.boxPos === 'center');
   box.classList.toggle('tut-box-right', step.boxPos === 'right');
-  if (!step.boxPos) {
-    box.style.left = '50%';
+  box.classList.toggle('tut-box-left', step.boxPos === 'left');
+  box.classList.toggle('tut-box-nudge-left', step.boxPos === 'nudge-left');
+  if (!step.boxPos || step.boxPos === 'nudge-left') {
+    box.style.left = step.boxPos === 'nudge-left' ? '35%' : '50%';
     box.style.bottom = '26px';
     box.style.top = 'auto';
     box.style.transform = 'translateX(-50%)';
@@ -14738,15 +14832,15 @@ function _tutRender(step) {
 // something that's only just appeared (e.g. once a panel has actually opened), rather
 // than the spotlight being fixed to whatever existed at the very start of the step.
 // Passing null/undefined hides the spotlight (nothing currently worth pointing at).
-function _tutRespotlight(targetFn) {
+function _tutRespotlight(targetFn, offsetX, offsetY) {
   _tutEnsureDOM();
   const spot = document.getElementById('tut-spot');
   const target = targetFn ? targetFn() : null;
   if (target) {
     const r = target.getBoundingClientRect();
     const pad = 10;
-    spot.style.left = (r.left - pad) + 'px';
-    spot.style.top  = (r.top  - pad) + 'px';
+    spot.style.left = (r.left - pad + (offsetX||0)) + 'px';
+    spot.style.top  = (r.top  - pad + (offsetY||0)) + 'px';
     spot.style.width  = (r.width  + pad * 2) + 'px';
     spot.style.height = (r.height + pad * 2) + 'px';
     spot.style.opacity = '1';
@@ -14755,6 +14849,78 @@ function _tutRespotlight(targetFn) {
   }
 }
 function _tutHideSpotlight() { _tutRespotlight(null); }
+
+// ── Real player interaction ──────────────────────────────────────────────
+// A single document-level, capture-phase click guard blocks every click except
+// on the currently-allowed element (and the tutorial's own UI). This works
+// regardless of z-index or stacking contexts — #port-overlay and #cab-overlay
+// each establish their own stacking context far below #tut-dim, so trying to
+// "lift" a nested element's z-index above the dim layer doesn't actually work;
+// intercepting at the document level sidesteps that entirely. #tut-dim's own
+// darkening is purely visual now — this guard does the actual blocking.
+let _tutAllowedEl = null;
+
+document.addEventListener('click', (e) => {
+  if (!_tutActive) return;                                  // tutorial not running — never block
+  if (e.target.closest('#tut-box, #tut-doors, #tut-skip-btn')) return;   // the tutorial's own controls always work
+  if (_tutAllowedEl && (_tutAllowedEl === e.target || _tutAllowedEl.contains(e.target))) return;
+  e.stopPropagation();
+  e.preventDefault();
+}, true);
+
+function _tutAllowInteraction(el) { _tutAllowedEl = el || null; }
+function _tutRevokeInteraction() { _tutAllowedEl = null; }
+
+// Resolves once the player genuinely clicks the target themselves. The real
+// onclick still fires as normal — this just also detects that it happened.
+// Next is hidden for the duration: having it active alongside a live in-game
+// click let the two interfere with each other and break the sequence.
+function _tutWaitForRealClick(targetFn) {
+  return new Promise(resolve => {
+    const el = targetFn();
+    if (!el) { resolve(); return; }
+    _tutAllowInteraction(el);
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (nextBtn) nextBtn.style.display = 'none';
+    const prevFilter = el.style.filter;
+    el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
+    const handler = () => {
+      el.removeEventListener('click', handler, true);
+      el.style.filter = prevFilter;
+      _tutRevokeInteraction();
+      if (nextBtn) nextBtn.style.display = '';
+      resolve();
+    };
+    el.addEventListener('click', handler, true);
+  });
+}
+
+// Resolves once the player genuinely hovers (mouseenter) the target themselves.
+// Leaves the element allowed afterward (doesn't revoke immediately), since the
+// resulting tooltip/hover state should stay live and interactive for a moment.
+function _tutWaitForRealHover(targetFn) {
+  return new Promise(resolve => {
+    const el = targetFn();
+    if (!el) { resolve(); return; }
+    // Deliberately NOT calling _tutAllowInteraction here — mouseenter isn't
+    // blocked by the click-guard at all, so there's no need to exempt this
+    // element from it. Doing so previously left it click-allowed for the whole
+    // hover-wait, which is exactly what let the ship be boarded prematurely,
+    // before the dedicated boarding step. Real clicking is allowed later,
+    // explicitly, when that step actually begins its own wait.
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (nextBtn) nextBtn.style.display = 'none';
+    const prevFilter = el.style.filter;
+    el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
+    const handler = () => {
+      el.removeEventListener('mouseenter', handler);
+      el.style.filter = prevFilter;
+      if (nextBtn) nextBtn.style.display = '';
+      resolve();
+    };
+    el.addEventListener('mouseenter', handler);
+  });
+}
 
 // Lets an action update the narration text/title mid-step, once something new has
 // actually happened on screen (e.g. "so we see Madras is on the inbound journey…"
@@ -14770,7 +14936,7 @@ function _tutSetTitle(text) {
 
 function _tutAddCallout(x, y, text, dir) {
   const el = document.createElement('div');
-  el.className = 'tut-callout';
+  el.className = 'tut-callout' + (dir === 'down' ? ' tut-point-down' : '');
   el.textContent = text;
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
@@ -14789,6 +14955,26 @@ async function _tutAddCalloutsSequential(list, pauseMs) {
     _tutAddCallout(c.x, c.y, c.text);
     await _aiWait(pauseMs || 900);
   }
+}
+
+// Lets an action pause and wait for a deliberate Next click, without actually
+// advancing the step index — for pure narration moments where nothing else asks
+// the player to click, so Next needs to be the explicit, real trigger to continue
+// rather than a timed auto-advance (which reads as the step "whizzing through").
+function _tutWaitForNext() {
+  return new Promise(resolve => {
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (!nextBtn) { resolve(); return; }
+    nextBtn.style.display = '';
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    nextBtn.style.cursor = 'pointer';
+    nextBtn.onclick = () => {
+      nextBtn.onclick = () => _tutNext();   // restore real behaviour
+      nextBtn.style.display = 'none';        // hide again until the action decides otherwise
+      resolve();
+    };
+  });
 }
 
 function _tutNext() {
@@ -14813,13 +14999,10 @@ function _tutFinish() {
   if (box) {
     box.innerHTML = `
       <div class="tut-title">You're ready</div>
-      <div class="tut-text">That's the whole loop — draw, travel, buy, place, repeat, until the cabinet's full and the collector calls for his appraisal. Everything you just watched was a real game, so feel free to keep playing this one, or start fresh.</div>
+      <div class="tut-text">You may now continue with this solo game or start afresh.</div>
       <div class="tut-controls">
-        <span class="tut-progress"></span>
-        <div style="display:flex; gap:8px;">
-          <button class="tut-skip" onclick="location.reload()">Start fresh</button>
-          <button class="tut-next" onclick="_tutDismiss()">Keep playing this game</button>
-        </div>
+        <button class="tut-skip" onclick="location.reload()">Start fresh</button>
+        <button class="tut-next" onclick="_tutDismiss()">Continue this game</button>
       </div>`;
   }
 }
@@ -14828,6 +15011,11 @@ function _tutDismiss() {
   document.getElementById('tut-dim')?.remove();
   document.getElementById('tut-box')?.remove();
   _tutClearCallouts();
+  // The tutorial's last real step zooms in tight on the ship (2.4x) and never
+  // zooms back out — without this, the player resumes normal play with the
+  // map's zoom/pan still stuck at that tutorial-specific state, which is
+  // exactly what would make every port look "drifted" relative to normal view.
+  try { zoomOut(); } catch (e) {}
 }
 
 // Shows a card enlarged, positioned in the UPPER part of the screen so the narration
@@ -14859,36 +15047,36 @@ async function _tutGoToBodleian() {
   _bodleianVisits[0] = { cards: cardData, revealed: false };
   _bodleianPeeked = cardData;
 
-  // Real UI, real mechanics from here — open the London port and highlight the
-  // actual horse & cart button before clicking it.
+  // Real UI, real mechanics from here — open the London port and let the player
+  // click the actual horse & cart button themselves.
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
   await _aiWait(700);
-  const cartArea = document.getElementById('london-cart-area');
-  _tutRespotlight(() => cartArea);
-  await _aiWait(1200);
-  if (cartArea) cartArea.style.filter = 'brightness(1.7) drop-shadow(0 0 16px rgba(232,200,120,0.95))';
-  await _aiWait(500);
-  try { boardLondonCart(); } catch (e) {}   // this also closes the port itself
-  if (cartArea) cartArea.style.filter = '';
-  _tutHideSpotlight();
+  _tutSetText('When you have a card that requires an inland or upriver journey, the travel option will appear to the left of the regular shipping routes in the main port.');
+  await _tutWaitForNext();
+  _tutSetText('The Bodleian is in Oxford, a one turn journey from the London port.');
+  await _tutWaitForNext();
+  _tutSetText('Go ahead and click the horse & carriage.');
+  await _tutWaitForRealClick(() => document.getElementById('london-cart-area'));
   await _aiWait(600);
 
-  // Highlight End Turn, then actually click it — this is what genuinely moves the
+  // Now the player clicks End Turn themselves — this is what genuinely moves the
   // cart one node along its route (London → Bodleian) and triggers the real
   // arrival flow, opening the Bodleian port with three face-down cards.
-  const endBtn = document.getElementById('btn-end');
-  _tutRespotlight(() => endBtn);
-  await _aiWait(1300);
-  if (endBtn) endBtn.style.filter = 'brightness(1.7) drop-shadow(0 0 16px rgba(232,200,120,0.95))';
-  await _aiWait(500);
-  try { endTurn(); } catch (e) {}
-  if (endBtn) endBtn.style.filter = '';
-  _tutHideSpotlight();
-
+  console.log('[TUT-DIAG] setting OUTBOUND "click End Turn" text now, step index:', _tutIdx);
+  _tutSetText('Now click \u2018end turn\u2019 to finish up this round and start your journey.');
+  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  // Next reappears the instant this wait resolves — but there's still real work
+  // left below (letting arrival settle, revealing the narration). Re-hide it so
+  // it doesn't sit there clickable, inviting an early click that skips past all
+  // of that — which is exactly what read as a second, separate "click End Turn"
+  // still needing a Next press right after it.
+  const nextBtn1 = document.getElementById('tut-next-btn');
+  if (nextBtn1) nextBtn1.style.display = 'none';
   await _aiWait(1800);   // let the real arrival sequence (port opens, cards appear face-down) settle
 
   // Hold here on the three face-down cards, and only now reveal the narration text.
-  _tutSetText('The Bodleian invitation gives you a rare chance to have more choice over which item you\u2019d like to pursue, this can be a good start.');
+  _tutSetText('The Bodleian invitation offers more information than the tip offs — here you can choose from the top 3 opportunity cards.');
+  if (nextBtn1) nextBtn1.style.display = '';
 }
 // point the spotlight at them, let the viewer actually see all three for a good
 // while, THEN make the pick.
@@ -14903,17 +15091,12 @@ async function _tutBodleianRevealAndPick() {
   if (slot) { try { slot.onclick && slot.onclick(); } catch (e) {} }
   await _aiWait(1200);                             // let all three flip face-up and sit readable
 
-  // Find the specific Ruby slot (not just "index 0") and show a real highlighted
-  // click on it, the same way the cart/End Turn buttons were highlighted earlier.
+  // Find the specific Ruby slot (not just "index 0") — this time the player clicks
+  // it themselves; everything else stays blocked until they do.
   const rubySlot = [...document.querySelectorAll('#bodleian-select-area .bodleian-card-slot')]
     .find(el => { const img = el.querySelector('.bod-card-face'); return img && img.src && img.src.includes('rubyminer'); });
-  if (rubySlot) {
-    _tutRespotlight(() => rubySlot);
-    await _aiWait(900);
-    rubySlot.style.filter = 'brightness(1.5) drop-shadow(0 0 18px rgba(232,200,120,0.95))';
-    await _aiWait(500);
-  }
-  try { (rubySlot || slot).onclick && (rubySlot || slot).onclick(); } catch (e) {}   // picks the Ruby
+  _tutSetText('Go ahead — click the Ruby.');
+  await _tutWaitForRealClick(() => rubySlot || slot);
   // selectBodleianCard() (the real game function we just triggered) hides the whole
   // area immediately as part of its normal behaviour — genuine native design, not a
   // bug, but too fast for a tutorial moment. Override that hide for a few beats so
@@ -14923,6 +15106,9 @@ async function _tutBodleianRevealAndPick() {
   if (area0) area0.style.display = 'flex';
   if (rubySlot) rubySlot.style.filter = '';
   _tutHideSpotlight();
+  const nextBtn = document.getElementById('tut-next-btn');
+  if (nextBtn) nextBtn.style.display = 'none';   // stays hidden through the lingering pause below —
+                                                   // the caller auto-advances once it's done, no manual Next
   await _aiWait(2600);
   // Deliberately doesn't close the port or hide anything further here — whatever the
   // real game does after a pick just plays out and stays on screen until the player
@@ -14931,37 +15117,91 @@ async function _tutBodleianRevealAndPick() {
 
 // Sequential callouts naming each fact on the enlarged Ruby card as it's mentioned —
 // rough positions/timing to start with; easy to retune once you can see it live.
-async function _tutRubyAnatomyCallouts() {
-  const el = document.getElementById('tut-card-enlarged');
-  const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.4 };
-  await _aiWait(600);
-  _tutAddCallout(r.left + r.width*0.75, r.top + r.height*0.35, '32 points — a high score');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*0.92, 'Located in Kongu Nadu');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.08, r.top + r.height*1.06, 'Nearest port: Madras');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*0.92, '1 turn from Madras');
-  await _aiWait(1400);
-  _tutAddCallout(r.left + r.width*0.55, r.top + r.height*1.06, 'Costs 12 ingots');
-  await _aiWait(1600);
+// Draws the first n of the five Ruby anatomy callouts (fresh each call, since the
+// engine clears all callouts on every step transition anyway) — each tutorial step
+// calls this with one more than the last, so the set visibly builds up click by
+// click rather than on an internal timer.
+function _tutShowAnatomyCallouts(n) {
+  const el = document.getElementById('held-detail-img');
+  const r = el ? el.getBoundingClientRect() : { left: window.innerWidth*0.3, top: window.innerHeight*0.1, width: window.innerWidth*0.4, height: window.innerHeight*0.6 };
+  const defs = [
+    () => _tutAddCallout(window.innerWidth*0.5 - 15, window.innerHeight*0.5 + 205, '32 points — a high score, and 1/8 of a bonus group', 'down'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
+    () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
+    () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
+    () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots — some sellers also request other items alongside the silver'),
+  ];
+  for (let i = 0; i < n && i < defs.length; i++) defs[i]();
 }
 
-// The London ship-boarding demo: spotlight the pawn first, THEN open the port after
+// A restricted version of showPortConnectionsTooltip() for this one tutorial
+// moment — the generic function pulls in EVERY liner route that touches London
+// (there are several), when all we want here is the Beijing Rose's own two legs.
+// Moves a storm in a random direction, repeatedly, spaced out so the movement
+// is actually visible rather than instant — a random direction can occasionally
+// send it off the grid and dissipate it, so this re-spawns (the same real
+// advanceStormToken() auto-spawn behaviour) if that happens, keeping the demo
+// going rather than a storm just vanishing mid-explanation.
+const _STORM_DIR_LIST = ['N','S','E','W','NE','NW','SE','SW'];
+async function _tutJitterStorm(ocean, times, gapMs) {
+  for (let i = 0; i < times; i++) {
+    await _aiWait(gapMs);
+    try {
+      const dir = _STORM_DIR_LIST[Math.floor(Math.random() * _STORM_DIR_LIST.length)];
+      advanceStormToken(ocean, dir);
+      if (!stormState[ocean].active) advanceStormToken(ocean, dir);   // re-spawn if that move dissipated it
+    } catch (e) {}
+  }
+}
+
+function _tutShowBeiTooltip(anchorEl) {
+  const tt = document.getElementById('route-tooltip');
+  if (!tt) return;
+  const outStops = ROUTES['bei'].nodes.filter(n => n.name && n.isPort).map(n => n.name);
+  const inStops  = ROUTES['bei_return'].nodes.filter(n => n.name && n.isPort).map(n => n.name);
+  let html = `<div class="rtt-ship-name">Beijing Rose</div>`;
+  html += `<div class="rtt-leg rtt-outbound"><div class="rtt-leg-title">London — Canton · outbound</div>`;
+  outStops.forEach(s => { html += `<div class="rtt-stop">${s}</div>`; });
+  html += `</div>`;
+  html += `<div class="rtt-leg rtt-return"><div class="rtt-leg-title">Canton — London · inbound</div>`;
+  inStops.forEach(s => { html += `<div class="rtt-stop">${s}</div>`; });
+  html += `</div>`;
+  tt.innerHTML = html;
+  tt.style.display = 'block';
+  tt.style.opacity = '1';
+  const r = anchorEl.getBoundingClientRect();
+  let left = r.right + 12;
+  let top  = r.top  - 10;
+  const ttW = tt.offsetWidth, ttH = tt.offsetHeight;
+  if (left + ttW > window.innerWidth  - 8) left = r.left - ttW - 12;
+  if (top  < 8)                            top  = 8;
+  if (top  + ttH > window.innerHeight - 8) top  = window.innerHeight - ttH - 8;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+}
+
+
 // a beat, THEN show the tooltip with Madras highlighted, update the narration to
 // explain why Canton comes first, then board — and quietly restore the player to
 // standing at London afterward, since the tutorial continues there.
 async function _tutShipHoverBoardDisembark() {
-  await _aiWait(1200);   // let the spotlighted pawn actually be seen before the port covers it
+  await _aiWait(1400);   // let the spotlighted pawn actually be seen before anything else
+  await _aiWait(900);    // a further beat after the token highlight, before the port opens
   const p = players[0];
   if ((p.ingots||0) < 3) p.ingots = (p.ingots||0) + 3;
   try { openPort('London', PORT_IMAGES['London']); } catch (e) {}
-  await _aiWait(500);
+  await _aiWait(700);
+
+  _tutSetText('Let\u2019s find our way to Madras.');
+  await _aiWait(1600);
 
   const shipBox = document.getElementById('port-ship-box');
+  _tutRespotlight(() => shipBox);   // highlight Canton — the ship bound there
+  await _aiWait(1300);
+
   if (shipBox) {
-    try { showPortConnectionsTooltip('Canton', shipBox); } catch (e) {}
-    await _aiWait(300);
+    try { showPortConnectionsTooltip('Canton', shipBox); } catch (e) {}   // show the routes
+    await _aiWait(700);
     const tt = document.getElementById('route-tooltip');
     if (tt) {
       [...tt.querySelectorAll('*')].forEach(el => {
@@ -14973,6 +15213,7 @@ async function _tutShipHoverBoardDisembark() {
       });
     }
   }
+  _tutHideSpotlight();
   _tutSetText('So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.');
   await _aiWait(2200);
   const tt2 = document.getElementById('route-tooltip');
@@ -15014,35 +15255,62 @@ async function _tutPlaceQuadrantDemo() {
   await _aiWait(900);
   const p = players[0];
   const item = (p.items||[]).find(it => it.img && it.img.includes('quadrant'));
+  console.log('[TUT-DIAG] quadrant found in p.items:', !!item);
+  console.log('[TUT-DIAG] cabInLondon:', typeof cabInLondon !== 'undefined' ? cabInLondon : 'undefined');
+  console.log('[TUT-DIAG] playerNode(p).name:', (typeof playerNode==='function' ? playerNode(p)?.name : 'n/a'));
   if (item) {
-    const invEl = [...document.querySelectorAll('#cab-inv-list .cab-inv-item')]
-      .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('quadrant'); });
-    try { cabSelectInv(item, invEl); } catch (e) {}
-    await _aiWait(700);
-    const dz = [...document.querySelectorAll('.cab-dz')]
-      .find(el => !el.classList.contains('filled') && /tall/i.test(el.querySelector('.cab-slot-lbl')?.textContent || ''));
-    if (dz) { try { dz.click(); } catch (e) {} }
-    await _aiWait(700);
+    // One combined instruction upfront, covering the whole action — a strict
+    // click-inventory-THEN-click-bay sequence breaks if the player instead drags
+    // it in one continuous motion (a real drag doesn't cleanly fire as two
+    // separate clicks in order). So instead of waiting for each stage in turn,
+    // the whole cabinet overlay is allowed for the duration, and this just polls
+    // for the real outcome — works the same whether the player clicks twice or
+    // drags it straight in.
+    _tutSetText('Click (or drag) the Quadrant in your inventory on the right, then click (or drop) on an available bay in the cabinet.');
+    _tutAllowInteraction(document.getElementById('cab-overlay'));
+    let waited = 0;
+    while ((p.items||[]).some(it => it.img && it.img.includes('quadrant')) && waited < 15000) {
+      await _aiWait(200);
+      waited += 200;
+    }
+    _tutRevokeInteraction();
+    console.log('[TUT-DIAG] placement confirmed after', waited, 'ms wait');
+    await _aiWait(500);   // let the settle/placement animation finish visually
   }
-  _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again. Then you decide where to travel next.');
+  _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again.');
+  await _aiWait(3200);
+  _tutSetText('When your cabinet is full, you will be asked if you want to have the collector appraise it — this is your final score.');
 }
 
 async function _tutReturnToLondon() {
+  _tutSetText('Go ahead and click the horse & carriage to return to London.');
+  await _tutWaitForRealClick(() => document.querySelector('#bodleian-return-area .buy-item-frame'));
+  await _aiWait(600);
+
+  console.log('[TUT-DIAG] setting RETURN "click End Turn" text now, step index:', _tutIdx);
+  _tutSetText('Now click End Turn.');
+  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  const nextBtn2 = document.getElementById('tut-next-btn');
+  if (nextBtn2) nextBtn2.style.display = 'none';   // same fix as the outbound leg — keep
+                                                     // hidden until the arrival work below
+                                                     // has genuinely finished
+  await _aiWait(2200);   // the pawn's own CSS transition carries it smoothly between the two
+
+  // Genuinely arrive — same state changes the real disembark() makes. Without this,
+  // the player was still nominally "aboard" the return-trip ship afterward, which is
+  // exactly what was silently suppressing the boarding UI at the next port.
+  // Critically, landLocation must be the actual node OBJECT (matching disembark()'s
+  // own `p.landLocation = ROUTES[s.routeId].nodes[s.nodeIndex]`) — the rest of the
+  // game reads `landLocation.name`, and a bare string here silently breaks that check,
+  // which is what was actually causing the boarding UI to never appear.
   const p = players[0];
-  const old = ships.find(sh => sh.routeId === 'london_bodleian');
-  if (old) ships = ships.filter(sh => sh.id !== old.id);
-  let s = { id: nextShipId++, routeId: 'london_bodleian_return', nodeIndex: 0, unmanned: false };
-  ships.push(s);
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(1800);          // let the viewer see the token sitting at the Bodleian first
-
-  s.nodeIndex = 1;               // now actually advance it — London
-  try { renderShips(); buildSVG(); } catch (e) {}
-  await _aiWait(2200);          // the pawn's own CSS transition carries it smoothly between the two
-
-  p.landLocation = 'London';
+  const s = getShip(p.shipId);
+  if (s) { s.unmanned = true; }
+  p.shipId = null;
+  p.disembarked = true;
+  p.landLocation = ROUTES['london_bodleian_return'].nodes[1];
   try { closePort(); } catch (e) {}
+  if (nextBtn2) nextBtn2.style.display = '';
 }
 
 // Anatomy walkthrough on the player's REAL held Ruby card (rather than a floating
@@ -15074,21 +15342,79 @@ function _tutBuildSteps() {
     },
     {
       title: 'Each Turn',
-      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done.',
-      target: () => document.getElementById('decks-centre'),
+      text: 'A turn is simple: draw a card, decide where to travel and what to buy, clicking End Turn when you\u2019re done. Go ahead, click the On Land deck.',
+      target: () => document.getElementById('deck-land'),
       boxPos: 'center',
+      action: async () => {
+        const deckEl = document.getElementById('deck-land');
+        // The click itself is just practice motion — no real draw happens (the
+        // deck is genuinely disabled right now, cardDrawn already true from the
+        // Bodleian invite), so briefly lift that just so the click registers,
+        // neutralising drawCard so nothing real fires. Immediately afterward we
+        // trigger the real showCard() — same native "jump" deal animation as an
+        // actual draw — showing the Captain's Offer card, and just pretend that's
+        // what the player's click turned up.
+        // Two SEPARATE classes independently hide the deck's "peek" card-back
+        // graphic — .disabled (which also blocks clicks) AND .card-drawn (purely
+        // visual, set whenever cardDrawn is already true, which it already is
+        // here from the Bodleian invite). Missing this second one is exactly why
+        // the deck still looked empty even once it became clickable.
+        const wasDisabled = deckEl.classList.contains('disabled');
+        const wasCardDrawn = deckEl.classList.contains('card-drawn');
+        deckEl.classList.remove('disabled', 'card-drawn');
+        const _origDrawCard = window.drawCard;
+        window.drawCard = () => {};
+        await _tutWaitForRealClick(() => deckEl);
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';   // stays hidden a moment longer —
+                                                          // the click's own wait re-shows Next
+                                                          // immediately, before the card below
+                                                          // has actually appeared
+        window.drawCard = _origDrawCard;
+        deckEl.classList.toggle('disabled', wasDisabled);
+        deckEl.classList.toggle('card-drawn', wasCardDrawn);
+        // #card-overlay sits at z-index 70 — far below the tutorial's own dim
+        // layer (899997+), so the real card was rendering underneath it and
+        // getting washed out almost invisible. Hide the dim/spotlight while the
+        // card is actually showing; the next step's own render naturally brings
+        // them back. Also shift the narration box off-centre first, since the
+        // card itself displays centred and the box was sitting right on top of it.
+        const box = document.getElementById('tut-box');
+        if (box) { box.classList.remove('tut-box-center'); box.classList.add('tut-box-right'); }
+        const dim = document.getElementById('tut-dim');
+        if (dim) dim.style.opacity = '0';
+        _tutHideSpotlight();
+        await _aiWait(450);   // let the spotlight/dim fully finish fading before the
+                               // card appears — otherwise its ring briefly ghosts over it
+        try { showCard('images/captainsoffer.jpeg', null, false, false, false, {}); } catch (e) {}
+        _tutSetText('Some cards require immediate action.');
+        if (nextBtn) nextBtn.style.display = '';
+      },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
       title: 'Each Turn',
-      text: 'Some cards require immediate action, some have immediate effects, some are simply part of the story.',
-      target: () => document.getElementById('decks-centre'),
-      boxPos: 'center',
+      text: 'Some have immediate effects.',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/pirates.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
+    },
+    {
+      title: 'Each Turn',
+      text: 'Some are simply part of the story.',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/seagulls.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
       title: 'Each Turn',
       text: 'As you travel you will receive information about specific items in the form of tip offs, these allow you to draw from the Opportunity Card deck (off screen).',
-      target: () => document.getElementById('decks-centre'),
-      boxPos: 'center',
+      target: () => null,
+      boxPos: 'right',
+      action: () => { try { showCard('images/tipoff1.jpeg', null, false, false, false, {}); } catch (e) {} },
+      onLeave: () => { try { dismissCard(); } catch (e) {} },
     },
     {
       title: 'The Bodleian Invitation',
@@ -15099,20 +15425,28 @@ function _tutBuildSteps() {
       onLeave: () => { try { dismissCard(); } catch(e) {} },
     },
     {
-      title: 'A Rare Chance',
+      title: 'The Research Trip',
       text: 'Let\u2019s head to the Bodleian.',
       target: () => null,
       action: async () => { await _tutGoToBodleian(); },
     },
     {
       title: 'The Bodleian',
-      text: 'At the Bodleian you get to select from the top three Opportunity cards — the other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
+      text: 'The other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
-      action: async () => { await _tutBodleianRevealAndPick(); },
+      action: async () => {
+        await _tutBodleianRevealAndPick();
+        // Straight into returning to London — no separate Next click needed here,
+        // since the very next step immediately asks for another real click anyway.
+        setTimeout(() => _tutNext(), 0);
+      },
       onLeave: () => {
         const area = document.getElementById('bodleian-select-area');
         if (area) area.style.display = 'none';
-        try { closePort(); } catch (e) {}
+        // NOT closing the port here — the very next step needs the Bodleian port
+        // panel still open, since the real return-cart button it waits for lives
+        // inside it. Closing prematurely left nothing there to click, which is why
+        // the wait silently skipped straight past with nothing to interact with.
       },
     },
     {
@@ -15122,18 +15456,309 @@ function _tutBuildSteps() {
       action: async () => { await _tutReturnToLondon(); },
     },
     {
+      title: 'The Cards in Your Hand',
+      text: 'The card stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
+      target: () => document.getElementById('held-p1'),
+    },
+    {
+      title: 'The Cards in Your Hand',
+      text: 'You can look at the information on it anytime by clicking it — go ahead and click the card.',
+      target: () => [...document.querySelectorAll('#held-p1 .held-card')]
+        .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('rubyminer'); }),
+      action: async () => {
+        const findCard = () => [...document.querySelectorAll('#held-p1 .held-card')]
+          .find(el => { const img = el.querySelector('img'); return img && img.src && img.src.includes('rubyminer'); });
+        await _tutWaitForRealClick(findCard);
+        setTimeout(() => _tutNext(), 0);
+      },
+    },
+    {
       title: 'Anatomy of an Opportunity Card',
       text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what it\u2019s score is, how much it costs, and how long it takes to reach the destination.',
       target: () => null,
+      boxPos: 'left',
       action: async () => {
         try { closePort(); } catch (e) {}
-        _tutShowCardImage('images/op-rubyminer.jpeg');
-        await _tutRubyAnatomyCallouts();
-        _tutSetText('With the 20 coins, that\u2019s all the money you currently have.');
+        await _aiWait(400);
       },
     },
-    // ── BATCH 3 ends here for now — later batches (port/ship demo, cabinet demo)
-    // get added back once this chunk is confirmed solid. ──
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'So we can see this Ruby is worth 32 points — a high score.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(1); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It is in Kongu Nadu.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(2); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'Its nearest port is Madras.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(3); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It takes 1 turn to get there from Madras.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(4); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(5); },
+      onLeave: () => { try { closeHeldDetail(); } catch (e) {} },
+    },
+    {
+      title: 'Opening a Port',
+      text: 'So let\u2019s see how to get to Madras. Clicking on your merchant token opens their location\u2019s window — go ahead and click it.',
+      target: () => document.getElementById('pawn-hit'),
+      action: async () => {
+        const p = players[0];
+        if ((p.ingots||0) < 3) p.ingots = (p.ingots||0) + 3;
+        await _tutWaitForRealClick(() => document.getElementById('pawn-hit'));
+        await _aiWait(300);
+        await _tutWaitForRealClick(() => document.querySelector('.pawn-popup-btn'));
+      },
+    },
+    {
+      title: 'Every Port Along the Way',
+      text: 'Hover over the ship to see every port on her route — Madras included.',
+      target: () => document.getElementById('port-ship-box'),
+      boxPos: 'nudge-left',
+      action: async () => {
+        document.getElementById('tut-dim')?.classList.add('tut-dim-bright');
+        const shipBox = await (async () => {
+          await _tutWaitForRealHover(() => document.getElementById('port-ship-box'));
+          return document.getElementById('port-ship-box');
+        })();
+        if (shipBox) {
+          try { _tutShowBeiTooltip(shipBox); } catch (e) {}
+          const tt = document.getElementById('route-tooltip');
+          if (tt) {
+            [...tt.querySelectorAll('*')].forEach(el => {
+              if (el.children.length === 0 && /Madras/i.test(el.textContent||'')) {
+                el.style.color = '#e8c878';
+                el.style.fontWeight = '700';
+                el.style.textShadow = '0 0 8px rgba(232,200,120,0.8)';
+              }
+            });
+            // Expand the spotlight to cover both the ship AND the tooltip — the
+            // tooltip was still sitting in the dark otherwise.
+            const r1 = shipBox.getBoundingClientRect();
+            const r2 = tt.getBoundingClientRect();
+            const left   = Math.min(r1.left, r2.left);
+            const top    = Math.min(r1.top, r2.top);
+            const right  = Math.max(r1.right, r2.right);
+            const bottom = Math.max(r1.bottom, r2.bottom);
+            const spot = document.getElementById('tut-spot');
+            if (spot) {
+              const pad = 10;
+              spot.style.left = (left - pad - 120) + 'px';
+              spot.style.top = (top - pad - 35) + 'px';
+              spot.style.width = (right - left + pad*2) + 'px';
+              spot.style.height = (bottom - top + pad*2) + 'px';
+              spot.style.opacity = '1';
+            }
+          }
+        }
+      },
+      onLeave: () => { document.getElementById('tut-dim')?.classList.remove('tut-dim-bright'); },
+    },
+    {
+      title: 'Via Canton',
+      text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.',
+      target: () => null,
+      action: async () => {
+        const tt = document.getElementById('route-tooltip');
+        if (tt) tt.style.opacity = '0';
+        _tutHideSpotlight();
+        await _aiWait(1800);
+        _tutSetText('Ok, let\u2019s arrange your boarding for Canton.');
+        _tutRespotlight(() => document.getElementById('port-ship-box'));
+        // The real boarding handler closes the port itself as part of its normal
+        // behaviour — neutralise that just for this one click so the port stays
+        // open, since the next step needs it open to go shopping.
+        const _origClosePort = window.closePort;
+        window.closePort = () => {};
+        await _tutWaitForRealClick(() => document.getElementById('port-ship-box'));
+        await _aiWait(200);
+        window.closePort = _origClosePort;
+        _tutHideSpotlight();
+        // The click itself is the advance here, rather than a separate Next click.
+        // Deferred to the next tick so THIS step's own cleanup (re-enabling Next)
+        // finishes first — calling _tutNext() synchronously here would let it race
+        // against that cleanup and briefly leave Next wrongly enabled on the new step.
+        setTimeout(() => _tutNext(), 0);
+      },
+    },
+    {
+      title: 'Shopping Locally',
+      text: 'So while still in the London port, you might want to purchase some items — each port has a few lower-tier items readily available. Go ahead and buy the Quadrant.',
+      target: () => [...document.querySelectorAll('#buy-items-area .buy-item-row')]
+        .find(row => { const img = row.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); }),
+      action: async () => {
+        await _aiWait(700);
+        const findRow = () => [...document.querySelectorAll('#buy-items-area .buy-item-row')]
+          .find(r => { const img = r.querySelector('.buy-item-img'); return img && img.src && img.src.includes('quadrant'); });
+        await _tutWaitForRealClick(findRow);
+      },
+    },
+    {
+      title: 'The Cabinet',
+      text: 'Whenever in London you can also access the cabinet.',
+      target: () => document.getElementById('cabinet-btn'),
+      action: async () => {
+        await _tutCabinetIntro();
+        await _tutPlaceQuadrantDemo();
+      },
+    },
+    {
+      title: 'Time to Travel',
+      text: 'The Ruby costs 12 ingots — you now have more than enough to purchase it - once we start the next turn you will be on your way.',
+      target: () => document.getElementById('held-p1'),
+      action: async () => {
+        try { closeCabinet(); } catch(e) {}
+        await _aiWait(300);
+        // Board the Beijing Rose for real this time — the earlier boarding during
+        // "Via Canton" was deliberately quiet/temporary so shopping could continue;
+        // this is the genuine one that actually carries the player onward.
+        const p = players[0];
+        let s = ships.find(sh => sh.routeId === 'bei' && sh.nodeIndex === 0);
+        if (!s) { s = { id: nextShipId++, routeId: 'bei', nodeIndex: 0, unmanned: false }; ships.push(s); }
+        p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+        try { renderShips(); buildSVG(); } catch (e) {}
+      },
+    },
+    {
+      title: 'Setting Sail',
+      text: 'Click End Turn to set sail.',
+      target: () => document.getElementById('btn-end'),
+      action: async () => {
+        await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';
+        await _aiWait(1400);   // let the ship's own departure animation settle
+        setTimeout(() => _tutNext(), 0);
+      },
+    },
+    {
+      title: 'The Astrolabe',
+      text: 'While at sea your astrolabe will monitor ship damage and the level of pirate activity.',
+      target: () => document.getElementById('ast-bay-p0'),
+    },
+    {
+      title: 'Pirate Activity',
+      text: 'With every pirate sighting the meter advances, until it is full whereupon the pirates attempt to board and a battle ensues.',
+      target: () => document.getElementById('ast-bay-p0'),
+      action: async () => {
+        // Full-screen zoom, same as a real encounter — triggered manually here
+        // rather than by the real battle condition, since we're stopping one
+        // sighting short of it deliberately (the actual attack stays a surprise
+        // for real play).
+        try { zoomAstrolabe(0); } catch (e) {}
+        await _aiWait(700);
+        // Re-spotlight now that the zoom has actually happened — the initial
+        // render (before this action ran) measured the astrolabe at its small,
+        // pre-zoom size, so without this the highlight stays sized for the
+        // small version while the astrolabe itself is now full screen.
+        _tutRespotlight(() => document.getElementById('ast-bay-p0'));
+        for (let i = 0; i < PIRATE_BATTLE_STEPS - 1; i++) {
+          await _aiWait(1000);
+          try { advancePirateTracker(0); } catch (e) {}
+        }
+        await _aiWait(2000);   // let the near-full meter actually be seen
+      },
+    },
+    {
+      title: 'Ship Damage',
+      text: 'For every hit the pirates strike, the ship takes one damage.',
+      target: () => document.getElementById('ast-bay-p0'),
+      action: async () => {
+        const p = players[0];
+        const s = getShip(p.shipId);
+        for (let i = 0; i < 3; i++) {
+          await _aiWait(900);
+          if (s) { s.pirateHits = (s.pirateHits || 0) + 1; try { drawShipHP(0); } catch (e) {} }
+        }
+        await _aiWait(1800);
+        // Clean exit — we deliberately never reached the real battle trigger, so
+        // just reset directly (meter and hull both) rather than a full
+        // voyage-end reset, which assumes a battle actually happened.
+        try {
+          if (s) s.pirateHits = 0;
+          drawShipHP(0);
+          if (typeof pirateState !== 'undefined' && pirateState[0]) {
+            pirateState[0].steps = 0;
+            pirateState[0].wheelRot = 0;
+          }
+          renderAstrolabe(0);
+          unzoomAstrolabe(0);
+        } catch (e) {}
+        // Explicitly hide the spotlight now — it was sized for the full-screen
+        // zoomed astrolabe, which just shrank back down, and the next step
+        // isn't about the astrolabe at all.
+        _tutHideSpotlight();
+      },
+    },
+    {
+      title: 'The Storms',
+      text: 'Storm cards move the three storms around the board — they are moved automatically for you.',
+      target: () => null,
+      action: async () => {
+        // advanceStormToken() spawns a storm at its marked point on the first
+        // call (since all three start inactive in a fresh game), then genuinely
+        // moves it on each call after — the exact same function a real storm
+        // card triggers, so this is authentic movement, not a static placement.
+        try {
+          advanceStormToken('whirlpool', 'S');
+          advanceStormToken('indian', 'S');
+          advanceStormToken('atlantic', 'S');
+        } catch (e) {}
+        await _aiWait(500);
+        try { zoomToNode({ x: STORM_SPAWN.atlantic.x, y: STORM_SPAWN.atlantic.y + 100, abs: true }, 2.2); } catch (e) {}
+        await _aiWait(1000);
+        try { advanceStormToken('atlantic', 'S'); } catch (e) {}   // a real move, now that it's spawned
+        await _tutJitterStorm('atlantic', 4, 2000);
+      },
+    },
+    {
+      title: 'Indian Ocean Storm',
+      text: 'Whenever your ship collides with a storm token it will take one damage.',
+      target: () => null,
+      action: async () => {
+        try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y + 100, abs: true }, 2.2); } catch (e) {}
+        await _aiWait(700);
+        try { advanceStormToken('indian', 'S'); } catch (e) {}   // a real move too
+        await _tutJitterStorm('indian', 4, 2000);
+      },
+    },
+    {
+      title: 'Shipwreck',
+      text: 'If your ship reaches maximum damage it will shipwreck and you will start your next turn from the nearest port — you retain your silver but lose all items in inventory.',
+      target: () => null,
+      action: async () => {
+        await _aiWait(1600);
+        try {
+          const p = players[0];
+          const s = getShip(p.shipId);
+          const node = s ? ROUTES[s.routeId].nodes[s.nodeIndex] : null;
+          if (node) zoomToNode(node, 2.4); else zoomOut();
+        } catch (e) { try { zoomOut(); } catch (e2) {} }
+        await _aiWait(700);
+      },
+    },
+    // ── BATCH 4 ends here for now — later batches get added back once this
+    // chunk is confirmed solid. ──
   ];
 }
 /* ── LATER BATCHES — preserved here, re-enabled step by step as each is confirmed ──
