@@ -2880,6 +2880,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Rainbow Tourmaline</span>
+          <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(240,223,192,0.6);">Requires a Quadrant</span>
           <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots</button>
         </div>
       </div>
@@ -6967,8 +6968,6 @@ function openPort(portName, portImg) {
   // ── Shell Cove — rotating shell purchase on left, return proa on right ──
   if (playerIsHere && portName === 'Shell Cove') {
     openShellCove();
-    // Sea shell girl — shown if player holds the op-seashells card
-    if ((p.heldCards||[]).some(hc => hc.img && hc.img.includes('op-seashells'))) openBataviaShells();
     document.getElementById('shellcove-return-area').style.display = 'flex';
   }
   // ── Amsterdam rhine barge — shown with Nuremberg opp card ──
@@ -7138,7 +7137,6 @@ function closePort() {
    'sierras-mule-area','sierras-return-area',
    'minasgerais-mule-area','minasgerais-return-area',
    'ouroupreto-mule-area','ouroupreto-return-area','minas-cont-area',
-   'batavia-shells-area',
    'amsterdam-rhine-area','nuremberg-buy-area','nuremberg-return-area',
    'whitecloudmtn-junk-area','whitecloudmtn-return-area',
    'ancol-proa-area','ancol-return-area',
@@ -7153,6 +7151,23 @@ function closePort() {
   document.getElementById('board-atlantic-area')?.classList.remove('visible');
   const bia = document.getElementById('buy-items-area');
   if (bia) bia.classList.remove('visible');
+}
+
+// Purchase-icon container dimensions, scaled to roughly match each item's
+// actual footprint in the cabinet (large > medium > tall > small > slim in area,
+// slim/tall being narrow-but-tall like a telescope or watch).
+const BUY_FRAME_SIZES = {
+  large:  { w: 108, h: 84 },
+  medium: { w: 90,  h: 70 },
+  tall:   { w: 64,  h: 104 },
+  small:  { w: 54,  h: 54 },
+  slim:   { w: 46,  h: 104 },
+};
+function _buyFrameSize(img) {
+  const key = _normItemId(img);
+  const meta = CAB_META[key];
+  const size = meta && meta.size;
+  return BUY_FRAME_SIZES[size] || { w: 78, h: 78 }; // fallback matches the old uniform size
 }
 
 function populateBuyItems(portName) {
@@ -7199,6 +7214,9 @@ function populateBuyItems(portName) {
     row.className = 'buy-item-row';
     const frame = document.createElement('div');
     frame.className = 'buy-item-frame';
+    const fsz = _buyFrameSize(item.img);
+    frame.style.width = fsz.w + 'px';
+    frame.style.height = fsz.h + 'px';
     frame.addEventListener('click', () => buyPortItem(item));
     const img = document.createElement('img');
     img.src = item.img; img.className = 'buy-item-img';
@@ -7650,9 +7668,10 @@ function openNagasakiWares() {
     else if (bought)  action = `<span style="font-size:0.52rem;color:rgba(212,168,85,0.4);font-style:italic;">Bought this turn — return next turn</span>`;
     else              action = `<button class="port-action-btn" onclick="${fn}()">Buy — ${price} ingots</button>`;
     const live = (stock > 0 && !bought);
+    const fsz = _buyFrameSize(img);
     return `
       <div style="display:flex;align-items:center;gap:12px;">
-        <div class="buy-item-frame" ${live?`onclick="${fn}()" style="cursor:pointer;"`:'style="opacity:0.45;"'}>
+        <div class="buy-item-frame" style="width:${fsz.w}px;height:${fsz.h}px;${live?'cursor:pointer;':'opacity:0.45;'}" ${live?`onclick="${fn}()"`:''}>
           <img src="${img}" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
@@ -7968,15 +7987,19 @@ function buyTourmaline() {
   if (oi < 0) { setStatus('You need a Rainbow Tourmaline op card to purchase here.'); return; }
   if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full.`); return; }
   if (tourmalineStock <= 0) { setStatus('The cluster is already claimed — another merchant got there first.'); return; }
+  // Requires a Quadrant — the miner wants a fine navigational instrument in trade
+  const quadrantIdx = (p.items || []).findIndex(gi => (gi.id||'').toLowerCase().startsWith('quadrant'));
+  if (quadrantIdx < 0) { setStatus('The miner wants a fine Quadrant in trade first — bring him one.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the tourmaline!`); return; }
   tourmalineStock--;
+  const quadrantUsed = p.items.splice(quadrantIdx, 1)[0];
   p.heldCards.splice(oi, 1);  // consume op card
   p.items = p.items || [];
   p.items.push({ id:'tourmaline_'+Date.now(), img:'images/tourmaline.png',
     label:'Rainbow Tourmaline', type:'goods', price:12, priceCurrency:'ingots' });
   document.getElementById('ratnapura-tourmaline-area').style.display = 'none';
   updateInventory(currentPIdx); renderHeldCards(currentPIdx); updateHUD();
-  log(`${p.name} acquires a Rainbow Tourmaline cluster — 10 ingots.`);
+  log(`${p.name} acquires a Rainbow Tourmaline cluster — 10 ingots and a Quadrant.`);
   _sweepDeadSingularCards(c => c.img && c.img.includes('op-tourmaline'), 'Rainbow Tourmaline');
 }
 
@@ -8377,7 +8400,7 @@ const SHELL_CATALOGUE = [
 //   12 shells total, shuffled at start so the rarities surface in random order.
 const bataviaShellDeck = (function() {
   const byId   = id => SHELL_CATALOGUE.find(s => s.id === id);
-  const counts = { shellglory: 1, Wenteltrap: 2, venuscomb: 5, scorpionconch: 4 }; // = 12
+  const counts = { shellglory: 1, Wenteltrap: 2, venuscomb: 2, scorpionconch: 2 }; // = 7
   const arr = [];
   Object.keys(counts).forEach(id => { for (let n = 0; n < counts[id]; n++) arr.push(byId(id)); });
   for (let i = arr.length - 1; i > 0; i--) {
@@ -8435,26 +8458,12 @@ function openShellCove() {
     return;
   }
 
-  // Per-turn limit: 3 per card held
-  const maxThisTurn = cardCount * 3;
-  const turnBought  = _shellTurnCount();
-  if (turnBought >= maxThisTurn) {
-    const cardWord = cardCount > 1 ? `${maxThisTurn} shells (${cardCount} cards)` : '3 shells';
-    content.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.5);letter-spacing:0.08em;line-height:1.6;">
-      ${cardWord} collected this visit — return next turn for more.</div>`;
-    return;
-  }
-
   const shell     = bataviaShellDeck[bataviaShellIdx];
   const remaining = bataviaShellDeck.length - bataviaShellIdx;
-  const cardUsed  = p.seashellBought || 0;   // shells bought against current card
-  const turnLeft  = maxThisTurn - turnBought;
-  const cardLeft  = 3 - cardUsed;            // remaining on current card
 
   content.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);letter-spacing:0.1em;margin-bottom:8px;">
-      ${remaining} shell${remaining>1?'s':''} in stock
-      · ${cardLeft}/3 left on card · ${turnLeft} more this visit
+      ${remaining} shell${remaining>1?'s':''} in stock · one shell per card held
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" onclick="buyShell()" style="cursor:pointer;">
@@ -8475,13 +8484,8 @@ function buyShell() {
     log(`${p.name}: No more shells available at Shell Cove.`); return;
   }
 
-  const cardCount = (p.heldCards||[]).filter(hc => hc.img && hc.img.includes('seashells')).length;
-  if (!cardCount) { setStatus('You need a Sea Shell Collector card to buy here.'); return; }
-
-  const maxThisTurn = cardCount * 3;
-  if (_shellTurnCount() >= maxThisTurn) {
-    setStatus(`${maxThisTurn} shells this visit — return next turn.`); return;
-  }
+  const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seashells'));
+  if (oi < 0) { setStatus('You need a Sea Shell Collector card to buy here.'); return; }
 
   if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full — sell or cabinet an item before buying more.`); return; }
 
@@ -8493,20 +8497,10 @@ function buyShell() {
                  type:'goods', price:3, size:'medium' });
   bataviaShellIdx++;
 
-  // Per-card total: increment, consume card when 3 reached
-  p.seashellBought = (p.seashellBought || 0) + 1;
-  if (p.seashellBought >= 3) {
-    const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seashells'));
-    if (oi >= 0) p.heldCards.splice(oi, 1);
-    p.seashellBought = 0;
-    renderHeldCards(currentPIdx);
-    log(`${p.name} acquires the ${shell.label} — card spent (3 shells collected).`);
-  } else {
-    log(`${p.name} acquires the ${shell.label} (${p.seashellBought}/3 on this card).`);
-  }
-
-  // Per-turn tracking
-  _shellTurnAdd();
+  // One shell per card — the card is spent immediately
+  p.heldCards.splice(oi, 1);
+  renderHeldCards(currentPIdx);
+  log(`${p.name} acquires the ${shell.label} — card spent.`);
 
   updateInventory(currentPIdx); updateHUD();
   openShellCove();
@@ -8815,74 +8809,6 @@ function returnCambayMule() {
   setStatus('End your turn to wind back down to Bombay.');
 }
 
-
-// ════════════════════════════════════════════════
-//  BATAVIA SEA SHELLS — 3 per card, 4 op cards, 12 global total
-// ════════════════════════════════════════════════
-let seashellStock = 12;  // 4 cards × 3 shells each
-
-function openBataviaShells() {
-  const area = document.getElementById('batavia-shells-area');
-  if (area) area.style.display = 'flex';
-  const content = document.getElementById('batavia-shells-content'); if(!content) return;
-  const p = cp();
-  const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('op-seashells'));
-  const bought  = p.seashellBought || 0;
-  const sessionDone = boughtThisTurn.has('seashell_done');
-
-  if (seashellStock <= 0) {
-    content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">All shells have been sold.</div>`; return;
-  }
-  if (cardIdx < 0) {
-    content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">A Sea Shell Collector op card is required.</div>`; return;
-  }
-  if (sessionDone) {
-    content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">3 shells this card — wait a turn for more.</div>`; return;
-  }
-  const remaining = 3 - bought;
-  content.innerHTML=`
-    <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">
-      ${remaining} shell${remaining!==1?'s':''} left this card · ${seashellStock} available in Batavia
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buySeaShell()" style="cursor:pointer;">
-        <img src="images/seashell.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/op-seashells.jpeg'">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Sea Shell</span>
-        <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Beach-gathered — ${bought}/3 this card · 3 silver each</span>
-        <button class="port-action-btn" onclick="buySeaShell()">Buy — 3 silver</button>
-      </div>
-    </div>`;
-}
-
-function buySeaShell() {
-  const p = cp();
-  const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('op-seashells'));
-  if (cardIdx < 0) { setStatus('You need the Sea Shell Collector op card.'); return; }
-  if (boughtThisTurn.has('seashell_done')) { setStatus('3 shells collected this card — wait a turn.'); return; }
-  p.seashellBought = p.seashellBought || 0;
-  if (seashellStock <= 0) { log(`${p.name}: No shells remain.`); return; }
-  if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full — sell or cabinet an item before buying more.`); return; }
-  if (!payPrice(p, 3, 'coins')) { log(`${p.name}: Need 3 silver coins.`); return; }
-
-  const img = 'images/seashell.png';
-  p.items = p.items || [];
-  p.items.push({ id:'seashell_'+Date.now(), img, label:'Sea Shell', type:'goods', price:3 });
-  seashellStock--;
-  p.seashellBought++;
-
-  if (p.seashellBought >= 3) {
-    p.heldCards.splice(cardIdx, 1);
-    p.seashellBought = 0;
-    boughtThisTurn.add('seashell_done');
-    renderHeldCards(currentPIdx);
-    log(`${p.name}: 3 shells collected — card consumed. (${seashellStock} remaining in Batavia)`);
-  } else {
-    log(`${p.name}: Shell ${p.seashellBought}/3 — 3 silver. (${seashellStock} remaining)`);
-  }
-  updateInventory(currentPIdx); updateHUD(); openBataviaShells();
-}
 
 // ════════════════════════════════════════════════
 //  LISBON OPEN ATLANTIC — Violet Sea Snails
@@ -9753,9 +9679,9 @@ const OPPORTUNITY_CARDS = [
   // ── Silversmith ×2 — Delft, 4 ingots ──
   ...Array(4).fill({ img:'images/op-silvermith.jpeg',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' }),
   // ── Tourmaline ×1 — Ratnapura, 10 ingots ──
-  ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots' }),
+  ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots', note:'The miner also wants a fine Quadrant in trade' }),
   // ── Batavia sea shells ×4 — Batavia, 3 coins each ──
-  ...Array(4).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
+  ...Array(7).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
   ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
@@ -9768,7 +9694,7 @@ const OPPORTUNITY_CARDS = [
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
   ...Array(3).fill({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
   // ── Violet sea shells ×5 — Praia do Guincho, 5 coins ──
-  ...Array(4).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
+  ...Array(3).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
   // ── Apatite ×3 — Central Sierras (single entry — duplicated above, remove) ──
   // ── Imperial Topaz ×1 — Minas Gerais, 12 ingots ──
   ...Array(2).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
@@ -9810,7 +9736,7 @@ const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-dragonvaseworkshop'), stock: () => dragonVaseStock, label: 'Dragon Vase', reqItem: 'cobalt' },
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket' },
   { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral' },
-  { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline' },
+  { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
   { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
   { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
@@ -10353,7 +10279,7 @@ const ITEM_POOLS_ALL = {
     'images/polyhedra3.png',   // model III — great stellated dodecahedron
   ],
   // violet shells all share the same image — shuffle is trivial but keeps the pattern consistent
-  violet_shells: Array(4).fill('images/snail.png'),  // snail.png = cabinet item (op-violetseasnail.png = op card)
+  violet_shells: Array(3).fill('images/snail.png'),  // snail.png = cabinet item (op-violetseasnail.png = op card)
   // Bombay hookah — 4 available, repeatable purchase (1 per turn per player)
   bombay_hookah: Array(4).fill('images/brasshookah.png'),
   lisbon_jar: Array(5).fill('images/lisbonjar.png'),
@@ -10498,7 +10424,7 @@ const PORT_ITEMS = {
   'Praia do Guincho': [
     { img:'images/snail.png', label:'Violet Sea Snail', price:2, currency:'coins',
       reqCard:'images/op-violetseasnail.jpeg', repeatable:true, pool:'violet_shells',
-      note:'5 available in total — one per card held per turn' },
+      note:'3 available in total — one per card held per turn' },
   ],
   'Lapidary Outskirts': [
     { img:'images/lapidarydest.jpg', label:'Nautilus — Bisected', price:3, currency:'ingots',
@@ -14277,7 +14203,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     <span id="cab-london-badge">🔒 Not in London</span>
     <div id="bonus-groups-wrap" style="position:relative;display:inline-block;margin-right:8px;">
       <button id="cab-bonus-btn" onclick="toggleBonusGroupsPanel()" style="background:linear-gradient(135deg,#3a1e08,#1a0e04);color:#d4a832;border:1px solid #6b4416;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.12em;padding:5px 14px;cursor:pointer;border-radius:2px;">🏆 BONUS GROUPS</button>
-      <div id="bonus-groups-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+      <div id="bonus-groups-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:50;
         background:linear-gradient(160deg,#241407,#160c04);border:1px solid #6b4416;border-radius:4px;
         box-shadow:0 10px 30px rgba(0,0,0,0.6);padding:12px 16px;width:340px;font-family:'Cinzel',serif;">
       </div>
