@@ -7153,6 +7153,23 @@ function closePort() {
   if (bia) bia.classList.remove('visible');
 }
 
+// Purchase-icon container dimensions, scaled to roughly match each item's
+// actual footprint in the cabinet (large > medium > tall > small > slim in area,
+// slim/tall being narrow-but-tall like a telescope or watch).
+const BUY_FRAME_SIZES = {
+  large:  { w: 108, h: 84 },
+  medium: { w: 90,  h: 70 },
+  tall:   { w: 64,  h: 104 },
+  small:  { w: 54,  h: 54 },
+  slim:   { w: 46,  h: 104 },
+};
+function _buyFrameSize(img) {
+  const key = _normItemId(img);
+  const meta = CAB_META[key];
+  const size = meta && meta.size;
+  return BUY_FRAME_SIZES[size] || { w: 78, h: 78 }; // fallback matches the old uniform size
+}
+
 function populateBuyItems(portName) {
   const area = document.getElementById('buy-items-area');
   if (!area) return;
@@ -7197,6 +7214,9 @@ function populateBuyItems(portName) {
     row.className = 'buy-item-row';
     const frame = document.createElement('div');
     frame.className = 'buy-item-frame';
+    const fsz = _buyFrameSize(item.img);
+    frame.style.width = fsz.w + 'px';
+    frame.style.height = fsz.h + 'px';
     frame.addEventListener('click', () => buyPortItem(item));
     const img = document.createElement('img');
     img.src = item.img; img.className = 'buy-item-img';
@@ -7648,9 +7668,10 @@ function openNagasakiWares() {
     else if (bought)  action = `<span style="font-size:0.52rem;color:rgba(212,168,85,0.4);font-style:italic;">Bought this turn — return next turn</span>`;
     else              action = `<button class="port-action-btn" onclick="${fn}()">Buy — ${price} ingots</button>`;
     const live = (stock > 0 && !bought);
+    const fsz = _buyFrameSize(img);
     return `
       <div style="display:flex;align-items:center;gap:12px;">
-        <div class="buy-item-frame" ${live?`onclick="${fn}()" style="cursor:pointer;"`:'style="opacity:0.45;"'}>
+        <div class="buy-item-frame" style="width:${fsz.w}px;height:${fsz.h}px;${live?'cursor:pointer;':'opacity:0.45;'}" ${live?`onclick="${fn}()"`:''}>
           <img src="${img}" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
