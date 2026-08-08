@@ -7171,6 +7171,12 @@ function _buyFrameSize(img) {
   const size = meta && meta.size;
   return BUY_FRAME_SIZES[size] || { w: 78, h: 78 }; // fallback matches the old uniform size
 }
+function _buyFrameSizeName(img) {
+  const key = _normItemId(img);
+  const meta = CAB_META[key];
+  const size = meta && meta.size;
+  return size ? size.charAt(0).toUpperCase() + size.slice(1) : null;
+}
 
 function populateBuyItems(portName) {
   const area = document.getElementById('buy-items-area');
@@ -7227,13 +7233,17 @@ function populateBuyItems(portName) {
     info.className = 'buy-item-info';
     const lbl = document.createElement('span');
     lbl.className = 'buy-item-label'; lbl.textContent = item.label;
+    const szName = _buyFrameSizeName(item.img);
+    const szLbl = document.createElement('span');
+    szLbl.style.cssText = "font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;";
+    if (szName) szLbl.textContent = szName;
     const btn = document.createElement('button');
     btn.className = 'port-action-btn';
     const _cur = item.currency === 'coins' ? 'coins' : 'ingots';
     btn.textContent = `Buy — ${item.price} ${_cur}${item.note ? ' ★' : ''}`;
     if (item.consumes) btn.title = `Consumes: ${item.consumes.replace(/^.*\//, '').replace(/\.\w+$/, '')} · ${item.note || ''}`;
     btn.addEventListener('click', () => buyPortItem(item));
-    info.appendChild(lbl); info.appendChild(btn);
+    info.appendChild(lbl); if (szName) info.appendChild(szLbl); info.appendChild(btn);
     row.appendChild(frame); row.appendChild(info);
     area.appendChild(row);
   });
@@ -7367,6 +7377,25 @@ window.addEventListener('load', () => {
   document.querySelectorAll('#port-inland-stack [data-route-id]').forEach(frame => {
     frame.addEventListener('mouseenter', () => showRouteTooltip(frame, frame.dataset.routeId));
     frame.addEventListener('mouseleave', hideRouteTooltip);
+  });
+  // Size + label the static side-trek purchase frames (buyMoonstone, buyTourmaline, etc.)
+  // to match the same cabinet-size treatment used by the standard port item list.
+  document.querySelectorAll('.buy-item-frame[onclick^="buy"]').forEach(frame => {
+    const img = frame.querySelector('img');
+    if (!img || !img.getAttribute('src')) return;
+    const fsz = _buyFrameSize(img.getAttribute('src'));
+    frame.style.width = fsz.w + 'px';
+    frame.style.height = fsz.h + 'px';
+    const szName = _buyFrameSizeName(img.getAttribute('src'));
+    if (!szName) return;
+    const info = frame.nextElementSibling;
+    if (!info || info.querySelector('.buy-item-sizelabel')) return;
+    const szLbl = document.createElement('span');
+    szLbl.className = 'buy-item-sizelabel';
+    szLbl.style.cssText = "font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;";
+    szLbl.textContent = szName;
+    const btn = info.querySelector('button, .port-action-btn');
+    if (btn) info.insertBefore(szLbl, btn); else info.appendChild(szLbl);
   });
 });
 
@@ -7671,6 +7700,7 @@ function openNagasakiWares() {
     else              action = `<button class="port-action-btn" onclick="${fn}()">Buy — ${price} ingots</button>`;
     const live = (stock > 0 && !bought);
     const fsz = _buyFrameSize(img);
+    const szName = _buyFrameSizeName(img);
     return `
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="buy-item-frame" style="width:${fsz.w}px;height:${fsz.h}px;${live?'cursor:pointer;':'opacity:0.45;'}" ${live?`onclick="${fn}()"`:''}>
@@ -7678,6 +7708,7 @@ function openNagasakiWares() {
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
           <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">${name}</span>
+          ${szName ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${szName}</span>` : ''}
           <span style="font-size:0.5rem;color:rgba(212,168,85,0.45);">${stock} of 6 remaining</span>
           ${action}
         </div>
@@ -8462,17 +8493,20 @@ function openShellCove() {
 
   const shell     = bataviaShellDeck[bataviaShellIdx];
   const remaining = bataviaShellDeck.length - bataviaShellIdx;
+  const _shFsz = _buyFrameSize(shell.img);
+  const _shSz  = _buyFrameSizeName(shell.img);
 
   content.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);letter-spacing:0.1em;margin-bottom:8px;">
       ${remaining} shell${remaining>1?'s':''} in stock · one shell per card held
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buyShell()" style="cursor:pointer;">
+      <div class="buy-item-frame" onclick="buyShell()" style="width:${_shFsz.w}px;height:${_shFsz.h}px;cursor:pointer;">
         <img src="${shell.img}" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">${shell.label}</span>
+        ${_shSz ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${_shSz}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">${shell.desc}</span>
         <button class="port-action-btn" onclick="buyShell()">Buy — 3 silver coins</button>
       </div>
@@ -8561,14 +8595,17 @@ function openAbrolhosCove() {
     content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">A Sea Fan Diver op card is required.</div>`; return;
   }
   const fan = seafanDeck[seafanIdx];
+  const fsz = _buyFrameSize(fan.img);
+  const szName = _buyFrameSizeName(fan.img);
   content.innerHTML=`
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">${seafanStock} sea fan${seafanStock>1?'s':''} remaining on the reef</div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buySeaFan()" style="cursor:pointer;">
+      <div class="buy-item-frame" onclick="buySeaFan()" style="width:${fsz.w}px;height:${fsz.h}px;cursor:pointer;">
         <img src="${fan.img}" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">${fan.label}</span>
+        ${szName ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${szName}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">${fan.desc} One per card.</span>
         <button class="port-action-btn" onclick="buySeaFan()">Buy — 3 ingots</button>
       </div>
@@ -8630,14 +8667,17 @@ function openGotoCaves() {
   if (cardIdx < 0) {
     content.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.45);">The fisherman is not expecting you.</div>`; return;
   }
+  const _rcFsz = _buyFrameSize('images/redcoral.png');
+  const _rcSz  = _buyFrameSizeName('images/redcoral.png');
   content.innerHTML=`
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">An unbroken branch of precious coral, by lamplight</div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buyRedCoral()" style="cursor:pointer;">
+      <div class="buy-item-frame" onclick="buyRedCoral()" style="width:${_rcFsz.w}px;height:${_rcFsz.h}px;cursor:pointer;">
         <img src="images/redcoral.png" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Red Precious Coral</span>
+        ${_rcSz ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${_rcSz}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
         <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
       </div>
@@ -8733,12 +8773,15 @@ function openDahelGorge() {
     : 'One claim, one half — choose which mirror to take.';
   let html = `<div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.55);margin-bottom:8px;">${intro}</div><div style="display:flex;gap:16px;flex-wrap:wrap;">`;
   available.forEach(h => {
+    const _taFsz = _buyFrameSize(h.img);
+    const _taSz  = _buyFrameSizeName(h.img);
     html += `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;max-width:130px;">
-        <div class="buy-item-frame" onclick="buyTreeAgateHalf('${h.key}')" style="cursor:pointer;">
+        <div class="buy-item-frame" onclick="buyTreeAgateHalf('${h.key}')" style="width:${_taFsz.w}px;height:${_taFsz.h}px;cursor:pointer;">
           <img src="${h.img}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
         </div>
         <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:#e8c878;letter-spacing:0.05em;text-align:center;">${h.name}</span>
+        ${_taSz ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${_taSz}</span>` : ''}
         <button class="port-action-btn" onclick="buyTreeAgateHalf('${h.key}')">Buy — 8 ingots</button>
       </div>`;
   });
@@ -9384,7 +9427,6 @@ const SEA_CARD_TEMPLATES = [
   mkCard('images/sailorshipbottle.jpeg', (p,i)=>{ log(`${p.name}: The bosun offers a ship-in-a-bottle.`); },
     { isBuy:true, oneOff:true, buyImg:'images/shipinbottle.png', buyName:'Ship in a Bottle', buyPrice:5 }),
   // ── Opportunity & social ── (tip-offs are generated below to match the op deck)
-  mkCard('images/pox.jpeg', (p,i)=>{ log(`${p.name}: Inoculation offered!`); }, { isPox:true }),
   mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
   // (pickpocket cards moved to land deck)
   mkCard('images/rats.jpeg',       (p,i)=>{ if(players[i].hasCat){changeRep(i,1);log(`${p.name}: Rats! Your cat earns its keep — +1 reputation.`);}else{log(`${p.name}: Rats! The ship's cat is lazy.`);} }),
@@ -9398,8 +9440,8 @@ const SEA_CARD_TEMPLATES = [
     log(`${p.name}: A ghost ship materialises from the fog!`);
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
-  // ── Pirates ×30 ──
-  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  // ── Pirates ×34 ──
+  ...Array(34).fill(null).map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W (doubled) ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
@@ -9904,11 +9946,6 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
-  // ── Festivals (no trading) — doubled to thin the card flow ──
-  ...Array(2).fill(null).map(()=> ({ img:'images/festcan.jpeg', effect:(p,i)=>{ log(`${p.name}: Lunar New Year — no trading in Canton this turn.`); p.noTrading='Canton'; } })),
-  ...Array(2).fill(null).map(()=> ({ img:'images/festnag.jpeg', effect:(p,i)=>{ log(`${p.name}: Nagasaki Kunchi Festival — no trading in Nagasaki today.`); p.noTrading='Nagasaki'; } })),
-  ...Array(2).fill(null).map(()=> ({ img:'images/festrio.jpeg', effect:(p,i)=>{ log(`${p.name}: Corpus Christi — no trading in Rio this turn.`); p.noTrading='Rio'; } })),
-
   // ── Specialist buyers — Haarlem conchologist (×3) and Leiden mineralogist (×3) ──
   ...Array(3).fill(null).map(()=> ({ img:'images/op-conchologist.jpeg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
@@ -9956,14 +9993,6 @@ const LAND_CARD_TEMPLATES = [
       giveHeldCard(i, _catTmpl);
       log(`${p.name} has a new companion — a street cat follows them aboard!`);
     } },
-
-  // ── Free passage (kept, face down) ──
-  { img:'images/freepassams.jpeg', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'Amsterdam', heldLabel:'Free Passage from Amsterdam',
-    effect:(p,i)=>{ if((players[i].freePass||[]).includes('Amsterdam')){log(`${p.name} already holds free passage from Amsterdam — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('Amsterdam'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepassams.jpeg')); log(`${p.name} has free passage from Amsterdam.`); } },
-  { img:'images/freepasscan.jpeg', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'Canton', heldLabel:'Free Passage from Canton',
-    effect:(p,i)=>{ if((players[i].freePass||[]).includes('Canton')){log(`${p.name} already holds free passage from Canton — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('Canton'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepasscan.jpeg')); log(`${p.name} has free passage from Canton.`); } },
-  { img:'images/freepasslnd.jpeg', isKept:true, alwaysFaceUp:true, heldType:'freepass', dest:'London', heldLabel:'Free Passage from London',
-    effect:(p,i)=>{ if((players[i].freePass||[]).includes('London')){log(`${p.name} already holds free passage from London — card returned to pack.`);return;} players[i].freePass=(players[i].freePass||[]); players[i].freePass.push('London'); giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/freepasslnd.jpeg')); log(`${p.name} has free passage from London.`); } },
 
   // ── Invitations (kept, face down, redeemed at destination) — 2 of 3 types ──
   { img:'images/invitenag.jpeg', isKept:true, heldType:'invite', dest:'Nagasaki', heldLabel:'Nagasaki Bugyō Invitation',
