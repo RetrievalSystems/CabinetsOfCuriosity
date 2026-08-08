@@ -5457,8 +5457,10 @@ function renderPortDepartures(portName) {
 
     const frame = document.createElement('div');
     frame.className = 'buy-item-frame';
-    frame.title = `${route.shipName || routeId} to ${dest}`;
+    frame.dataset.routeId = routeId;
     frame.onclick = () => boardRouteFromNode(routeId, portName);
+    frame.addEventListener('mouseenter', () => showRouteTooltip(frame, routeId));
+    frame.addEventListener('mouseleave', hideRouteTooltip);
     const img = document.createElement('img');
     img.src = route.shipImg || 'images/foshanship.png';
     img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
@@ -7161,7 +7163,7 @@ const BUY_FRAME_SIZES = {
   medium: { w: 90,  h: 70 },
   tall:   { w: 64,  h: 104 },
   small:  { w: 54,  h: 54 },
-  slim:   { w: 46,  h: 104 },
+  slim:   { w: 104, h: 46 },
 };
 function _buyFrameSize(img) {
   const key = _normItemId(img);
@@ -11799,7 +11801,7 @@ function _aiShouldGrind(me) {
 }
 function _aiItemScoreVal(item) {
   if (!item) return 0;
-  const sc = getItemScore(item.gameItemId || item.id || item.img || '');
+  const sc = getItemScore(item.img || item.gameItemId || item.id || '');
   return sc ? (sc.total || 0) : 0;
 }
 function _aiCarryingOnlyGrind(me) {
@@ -12642,7 +12644,7 @@ function _normItemId(itemOrId) {
 
 // Total prestige score for an item (or null if unscored) — used for hover tooltips.
 function itemScoreTotal(item) {
-  const sc = getItemScore((item && (item.gameItemId || item.img || item.id)) || item || '');
+  const sc = getItemScore((item && (item.img || item.gameItemId || item.id)) || item || '');
   return sc ? (sc.total || 0) : null;
 }
 
