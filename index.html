@@ -1264,6 +1264,23 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   font-size: 0.72rem;
   color: #e8c878;
   letter-spacing: 0.08em;
+  background: rgba(20,12,4,0.55);
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
+}
+.buy-item-sizelabel {
+  font-family: 'Cinzel', serif;
+  font-size: 0.5rem;
+  color: rgba(212,168,85,0.8);
+  letter-spacing: 0.08em;
+  font-style: italic;
+  background: rgba(20,12,4,0.55);
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
 }
 
 /* ── Inland vessel frames — slightly larger than port-item frames ── */
@@ -2865,7 +2882,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <img src="images/moonstone.png" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Blue Moonstone</span>
+          <span class="buy-item-label">Blue Moonstone</span>
           <button class="port-action-btn" onclick="buyMoonstone()">Buy — 3 ingots</button>
         </div>
       </div>
@@ -2879,7 +2896,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <img src="images/tourmaline.png" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Rainbow Tourmaline</span>
+          <span class="buy-item-label">Rainbow Tourmaline</span>
           <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(240,223,192,0.6);">Requires a Quadrant</span>
           <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots</button>
         </div>
@@ -2931,7 +2948,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
           <img src="images/dragonvase.png" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Imperial Dragon Vase</span>
+          <span class="buy-item-label">Imperial Dragon Vase</span>
           <button class="port-action-btn" onclick="buyDragonVase()">Buy — 5 ingots</button>
         </div>
       </div>
@@ -7224,6 +7241,8 @@ function populateBuyItems(portName) {
     frame.style.width = fsz.w + 'px';
     frame.style.height = fsz.h + 'px';
     frame.addEventListener('click', () => buyPortItem(item));
+    const _st = itemScoreTotal({ img: item.img });
+    if (_st != null) { frame.dataset.score = _st; frame.dataset.scoreitem = _normItemId(item.img); }
     const img = document.createElement('img');
     img.src = item.img; img.className = 'buy-item-img';
     frame.appendChild(img);
@@ -7233,7 +7252,7 @@ function populateBuyItems(portName) {
     lbl.className = 'buy-item-label'; lbl.textContent = item.label;
     const szName = _buyFrameSizeName(item.img);
     const szLbl = document.createElement('span');
-    szLbl.style.cssText = "font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;";
+    szLbl.className = 'buy-item-sizelabel';
     if (szName) szLbl.textContent = szName;
     const btn = document.createElement('button');
     btn.className = 'port-action-btn';
@@ -7384,13 +7403,14 @@ window.addEventListener('load', () => {
     const fsz = _buyFrameSize(img.getAttribute('src'));
     frame.style.width = fsz.w + 'px';
     frame.style.height = fsz.h + 'px';
+    const _st = itemScoreTotal({ img: img.getAttribute('src') });
+    if (_st != null) { frame.dataset.score = _st; frame.dataset.scoreitem = _normItemId(img.getAttribute('src')); }
     const szName = _buyFrameSizeName(img.getAttribute('src'));
     if (!szName) return;
     const info = frame.nextElementSibling;
     if (!info || info.querySelector('.buy-item-sizelabel')) return;
     const szLbl = document.createElement('span');
     szLbl.className = 'buy-item-sizelabel';
-    szLbl.style.cssText = "font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;";
     szLbl.textContent = szName;
     const btn = info.querySelector('button, .port-action-btn');
     if (btn) info.insertBefore(szLbl, btn); else info.appendChild(szLbl);
@@ -7699,14 +7719,16 @@ function openNagasakiWares() {
     const live = (stock > 0 && !bought);
     const fsz = _buyFrameSize(img);
     const szName = _buyFrameSizeName(img);
+    const _st = itemScoreTotal({ img });
+    const _scoreAttrs = _st != null ? `data-score="${_st}" data-scoreitem="${_normItemId(img)}"` : '';
     return `
       <div style="display:flex;align-items:center;gap:12px;">
-        <div class="buy-item-frame" style="width:${fsz.w}px;height:${fsz.h}px;${live?'cursor:pointer;':'opacity:0.45;'}" ${live?`onclick="${fn}()"`:''}>
+        <div class="buy-item-frame" ${_scoreAttrs} style="width:${fsz.w}px;height:${fsz.h}px;${live?'cursor:pointer;':'opacity:0.45;'}" ${live?`onclick="${fn}()"`:''}>
           <img src="${img}" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">${name}</span>
-          ${szName ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${szName}</span>` : ''}
+          <span class="buy-item-label">${name}</span>
+          ${szName ? `<span class="buy-item-sizelabel">${szName}</span>` : ''}
           <span style="font-size:0.5rem;color:rgba(212,168,85,0.45);">${stock} of 6 remaining</span>
           ${action}
         </div>
@@ -8489,22 +8511,30 @@ function openShellCove() {
     return;
   }
 
+  if (boughtThisTurn.has('shellcove_purchase')) {
+    content.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(212,168,85,0.5);letter-spacing:0.08em;line-height:1.6;">
+      One shell collected this turn — end your turn to buy another.</div>`;
+    return;
+  }
+
   const shell     = bataviaShellDeck[bataviaShellIdx];
   const remaining = bataviaShellDeck.length - bataviaShellIdx;
   const _shFsz = _buyFrameSize(shell.img);
   const _shSz  = _buyFrameSizeName(shell.img);
+  const _shSt  = itemScoreTotal({ img: shell.img });
+  const _shScoreAttrs = _shSt != null ? `data-score="${_shSt}" data-scoreitem="${_normItemId(shell.img)}"` : '';
 
   content.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);letter-spacing:0.1em;margin-bottom:8px;">
-      ${remaining} shell${remaining>1?'s':''} in stock · one shell per card held
+      ${remaining} shell${remaining>1?'s':''} in stock · one purchase per turn
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buyShell()" style="width:${_shFsz.w}px;height:${_shFsz.h}px;cursor:pointer;">
+      <div class="buy-item-frame" ${_shScoreAttrs} onclick="buyShell()" style="width:${_shFsz.w}px;height:${_shFsz.h}px;cursor:pointer;">
         <img src="${shell.img}" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">${shell.label}</span>
-        ${_shSz ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${_shSz}</span>` : ''}
+        <span class="buy-item-label">${shell.label}</span>
+        ${_shSz ? `<span class="buy-item-sizelabel">${_shSz}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">${shell.desc}</span>
         <button class="port-action-btn" onclick="buyShell()">Buy — 3 silver coins</button>
       </div>
@@ -8521,6 +8551,8 @@ function buyShell() {
   const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seashells'));
   if (oi < 0) { setStatus('You need a Sea Shell Collector card to buy here.'); return; }
 
+  if (boughtThisTurn.has('shellcove_purchase')) { setStatus('One shell this turn — end your turn for another.'); return; }
+
   if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full — sell or cabinet an item before buying more.`); return; }
 
   if (!payPrice(p, 3, 'coins')) { log(`${p.name}: Need 3 silver for the shell!`); return; }
@@ -8530,6 +8562,7 @@ function buyShell() {
   p.items.push({ id: shell.id+'_'+Date.now(), img:shell.img, label:shell.label,
                  type:'goods', price:3, size:'medium' });
   bataviaShellIdx++;
+  boughtThisTurn.add('shellcove_purchase');
 
   // One shell per card — the card is spent immediately
   p.heldCards.splice(oi, 1);
@@ -8595,15 +8628,17 @@ function openAbrolhosCove() {
   const fan = seafanDeck[seafanIdx];
   const fsz = _buyFrameSize(fan.img);
   const szName = _buyFrameSizeName(fan.img);
+  const _sfSt = itemScoreTotal({ img: fan.img });
+  const _sfScoreAttrs = _sfSt != null ? `data-score="${_sfSt}" data-scoreitem="${_normItemId(fan.img)}"` : '';
   content.innerHTML=`
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">${seafanStock} sea fan${seafanStock>1?'s':''} remaining on the reef</div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buySeaFan()" style="width:${fsz.w}px;height:${fsz.h}px;cursor:pointer;">
+      <div class="buy-item-frame" ${_sfScoreAttrs} onclick="buySeaFan()" style="width:${fsz.w}px;height:${fsz.h}px;cursor:pointer;">
         <img src="${fan.img}" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">${fan.label}</span>
-        ${szName ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${szName}</span>` : ''}
+        <span class="buy-item-label">${fan.label}</span>
+        ${szName ? `<span class="buy-item-sizelabel">${szName}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">${fan.desc} One per card.</span>
         <button class="port-action-btn" onclick="buySeaFan()">Buy — 3 ingots</button>
       </div>
@@ -8667,15 +8702,17 @@ function openGotoCaves() {
   }
   const _rcFsz = _buyFrameSize('images/redcoral.png');
   const _rcSz  = _buyFrameSizeName('images/redcoral.png');
+  const _rcSt  = itemScoreTotal({ img: 'images/redcoral.png' });
+  const _rcScoreAttrs = _rcSt != null ? `data-score="${_rcSt}" data-scoreitem="${_normItemId('images/redcoral.png')}"` : '';
   content.innerHTML=`
     <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">An unbroken branch of precious coral, by lamplight</div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="buy-item-frame" onclick="buyRedCoral()" style="width:${_rcFsz.w}px;height:${_rcFsz.h}px;cursor:pointer;">
+      <div class="buy-item-frame" ${_rcScoreAttrs} onclick="buyRedCoral()" style="width:${_rcFsz.w}px;height:${_rcFsz.h}px;cursor:pointer;">
         <img src="images/redcoral.png" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Red Precious Coral</span>
-        ${_rcSz ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${_rcSz}</span>` : ''}
+        <span class="buy-item-label">Red Precious Coral</span>
+        ${_rcSz ? `<span class="buy-item-sizelabel">${_rcSz}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
         <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
       </div>
@@ -8773,13 +8810,15 @@ function openDahelGorge() {
   available.forEach(h => {
     const _taFsz = _buyFrameSize(h.img);
     const _taSz  = _buyFrameSizeName(h.img);
+    const _taSt  = itemScoreTotal({ img: h.img });
+    const _taScoreAttrs = _taSt != null ? `data-score="${_taSt}" data-scoreitem="${_normItemId(h.img)}"` : '';
     html += `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;max-width:130px;">
-        <div class="buy-item-frame" onclick="buyTreeAgateHalf('${h.key}')" style="width:${_taFsz.w}px;height:${_taFsz.h}px;cursor:pointer;">
+        <div class="buy-item-frame" ${_taScoreAttrs} onclick="buyTreeAgateHalf('${h.key}')" style="width:${_taFsz.w}px;height:${_taFsz.h}px;cursor:pointer;">
           <img src="${h.img}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
         </div>
         <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:#e8c878;letter-spacing:0.05em;text-align:center;">${h.name}</span>
-        ${_taSz ? `<span style="font-family:'Cinzel',serif;font-size:0.5rem;color:rgba(212,168,85,0.45);letter-spacing:0.08em;font-style:italic;">${_taSz}</span>` : ''}
+        ${_taSz ? `<span class="buy-item-sizelabel">${_taSz}</span>` : ''}
         <button class="port-action-btn" onclick="buyTreeAgateHalf('${h.key}')">Buy — 8 ingots</button>
       </div>`;
   });
@@ -8878,7 +8917,7 @@ function openVioletCove() {
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" onclick="buyVioletSnail()" style="cursor:pointer;"><img src="images/snail.png" style="width:100%;height:100%;object-fit:contain;"></div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Violet Sea Snail</span>
+        <span class="buy-item-label">Violet Sea Snail</span>
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Janthina janthina — rides the surface on a raft of bubbles.</span>
         <button class="port-action-btn" onclick="buyVioletSnail()">Buy — 2 silver coins</button>
       </div>
@@ -9078,7 +9117,7 @@ function openNurembergPort() {
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" onclick="buyPolyhedra()" style="cursor:pointer;"><img src="images/polyhedra1.png" style="width:100%;height:100%;object-fit:contain;"></div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:#e8c878;letter-spacing:0.08em;">Polyhedra Model</span>
+        <span class="buy-item-label">Polyhedra Model</span>
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Walnut rhombicosidodecahedron on a carved stand.</span>
         <button class="port-action-btn" onclick="buyPolyhedra()">Buy — 5 ingots</button>
       </div>
@@ -10488,6 +10527,18 @@ function advanceShip(s) {
       s.nodeIndex = 0;
       const dest  = ROUTES[r.nextRoute].nodes[0];
       if (hasPassenger) log(`${names} depart ${dest.name} on the return voyage!`);
+    } else if (hasPassenger && isInlandRoute(s.routeId)) {
+      // Journey's final leg with nowhere further to chain to — auto-disembark any
+      // passengers here so they aren't stuck "still on the mule/skiff" and blocked
+      // from boarding regular ships at the port they've just arrived at.
+      const finalNode = nodes[nodes.length - 1];
+      players.forEach(pl => {
+        if (pl.shipId !== s.id) return;
+        pl.shipId = null;
+        pl.disembarked = true;
+        pl.landLocation = finalNode;
+      });
+      log(`${names} arrive at ${finalNode.name || 'port'} and disembark.`);
     }
     return;
   }
@@ -11380,7 +11431,7 @@ async function aiTakeTurn() {
     await _aiDrawAndResolve(me);          // draw + handle card dialogs (also collects op cards)
     await _aiResolveCombat(me);           // the card may have started a battle
     await _aiPortActions(me);             // at a port: buy wares, take inland journeys, cabinet at London, board onward
-    await _aiWait(300);
+    await _aiWait(150);
     _aiFinishTurn(me);                    // end turn promptly — no extra pacing
   } catch (e) {
     console.error('AI turn error', e);
@@ -12355,6 +12406,7 @@ const CAB_SLOT_DEFS = [
 const cabAllSlots   = [null, null]; // [p0 slotState, p1 slotState]
 const cabAllPlaced  = [{}, {}];     // [p0 placedMap, p1 placedMap]
 let cabActivePIdx   = 0;            // which player's cabinet is open
+let gameOver         = false;       // true once appraisal has finished — locks the player on the final cabinet
 const cabAllState   = [{storage:[]},{storage:[]}]; // per-player storage (items between slots)
 let cabDragItem = null, cabDragFromCell = null, cabDragRestore = null;
 let cabSelectedItem = null; // { ci, source:'inv'|'cab', cellId, side }
@@ -13189,6 +13241,7 @@ function _appraisePlayer(playerIdx, onComplete) {
 
 // Step 3 — both done: reveal the winner, then offer a new game.
 function _finishAppraisal() {
+  gameOver = true;
   document.getElementById('cab-score-layer')?.remove();
   document.querySelectorAll('.cab-filled.scoring-active').forEach(e => e.classList.remove('scoring-active'));
   const idxs = Object.keys(_appraisalScores).map(Number);
@@ -13228,6 +13281,7 @@ function _finishAppraisal() {
 // Dock the final score as a small plaque in the right panel (in place of the
 // inventory list), with the New Game button beneath it. Click it to enlarge.
 function _dockFinalPlaque(pIdx) {
+  document.getElementById('cab-close-btn')?.style.setProperty('display', 'none');
   const panel = document.getElementById('cab-inv-panel');
   if (!panel) return;
   const grand = _appraisalScores[pIdx] ?? _plaqueGrand[pIdx] ?? 0;
@@ -13390,6 +13444,7 @@ function openCabinet() {
 }
 
 function closeCabinet() {
+  if (gameOver) return;   // final cabinet stays locked open — view score or start a new game
   cabClearSelection();
   document.getElementById('cab-overlay').classList.remove('open');
   document.getElementById('cab-ghost').style.display = 'none';
