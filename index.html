@@ -2897,8 +2897,8 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span class="buy-item-label">Rainbow Tourmaline</span>
-          <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(240,223,192,0.6);">Requires a Quadrant</span>
           <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots</button>
+          <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">+1 Quadrant</span>
         </div>
       </div>
     </div>
@@ -2950,6 +2950,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span class="buy-item-label">Imperial Dragon Vase</span>
           <button class="port-action-btn" onclick="buyDragonVase()">Buy — 5 ingots</button>
+          <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">+1 Raw Cobalt Sample</span>
         </div>
       </div>
     </div>
@@ -7260,7 +7261,13 @@ function populateBuyItems(portName) {
     btn.textContent = `Buy — ${item.price} ${_cur}${item.note ? ' ★' : ''}`;
     if (item.consumes) btn.title = `Consumes: ${item.consumes.replace(/^.*\//, '').replace(/\.\w+$/, '')} · ${item.note || ''}`;
     btn.addEventListener('click', () => buyPortItem(item));
+    const reqLbl = document.createElement('span');
+    if (item.reqItem && item.reqItemLabel) {
+      reqLbl.style.cssText = "font-size:0.5rem;color:rgba(212,168,85,0.55);";
+      reqLbl.textContent = `+1 ${item.reqItemLabel}`;
+    }
     info.appendChild(lbl); if (szName) info.appendChild(szLbl); info.appendChild(btn);
+    if (item.reqItem && item.reqItemLabel) info.appendChild(reqLbl);
     row.appendChild(frame); row.appendChild(info);
     area.appendChild(row);
   });
@@ -8370,9 +8377,20 @@ function selectBodleianCard(idx) {
   });
 
   // Take the chosen card OUT of the deck for good (finite deck — no recycling).
-  // The two unchosen cards simply stay in the deck where they were.
   const _di = oppDeck.indexOf(chosen);
   if (_di >= 0) { oppDeck.splice(_di, 1); if (_di < oppDeckIndex) oppDeckIndex--; }
+
+  // The two unchosen cards go to the back of the pack, so the player (or anyone
+  // else) doesn't just draw them again over the next couple of turns.
+  _cards.forEach(c => {
+    if (!c || c === chosen) return;
+    const ci = oppDeck.indexOf(c);
+    if (ci < 0) return; // already expired/removed this visit
+    oppDeck.splice(ci, 1);
+    if (ci < oppDeckIndex) oppDeckIndex--;
+    oppDeck.push(c);
+  });
+
   oppDeckIndex = oppDeck.length ? (oppDeckIndex % oppDeck.length) : 0;
 
   renderHeldCards(currentPIdx);
@@ -8708,7 +8726,6 @@ function openGotoCaves() {
   const _rcSt  = itemScoreTotal({ img: 'images/redcoral.png' });
   const _rcScoreAttrs = _rcSt != null ? `data-score="${_rcSt}" data-scoreitem="${_normItemId('images/redcoral.png')}"` : '';
   content.innerHTML=`
-    <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">An unbroken branch of precious coral, by lamplight</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" ${_rcScoreAttrs} onclick="buyRedCoral()" style="width:${_rcFsz.w}px;height:${_rcFsz.h}px;cursor:pointer;">
         <img src="images/redcoral.png" style="width:100%;height:100%;object-fit:contain;">
@@ -8716,9 +8733,8 @@ function openGotoCaves() {
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span class="buy-item-label">Red Precious Coral</span>
         ${_rcSz ? `<span class="buy-item-sizelabel">${_rcSz}</span>` : ''}
-        <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
-        <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">Requires a Telescope</span>
         <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
+        <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">+1 Telescope</span>
       </div>
     </div>`;
 }
@@ -9778,7 +9794,7 @@ const OPPORTUNITY_CARDS = [
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
   ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
   // ── Cambay mother-of-pearl casket ×1 — UNIQUE: the guild master's final, secret work ──
-  ...Array(2).fill({ img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. Only one exists.' }),
+  ...Array(2).fill({ img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. He also wants a peeled nautilus. Only one exists.' }),
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
   ...Array(3).fill({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
   // ── Violet sea shells ×5 — Praia do Guincho, 5 coins ──
@@ -9822,7 +9838,7 @@ function buildOppDeck() {
 // ══════════════════════════════════════════════════════════════════
 const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-dragonvaseworkshop'), stock: () => dragonVaseStock, label: 'Dragon Vase', reqItem: 'cobalt' },
-  { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket' },
+  { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket', reqItem: 'shellnautpeeled' },
   { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral', reqItem: 'telescope' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
   { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
@@ -9862,6 +9878,11 @@ function _sweepDeadSingularCards(matchFn, itemLabel) {
 }
 
 function drawOpportunityCard(playerIdx) {
+  // Safety net: this function is the actual ground truth for "a card was drawn this
+  // turn" — a player ending up here (however they got here — a direct draw, or a
+  // tip-off card's effect) has definitely drawn, so the turn-end gate must reflect
+  // that even if some upstream path failed to set it.
+  if (players[playerIdx]) players[playerIdx].cardDrawn = true;
   if (oppDeck.length === 0) {
     log(`${players[playerIdx].name}: the opportunity deck is empty — every card has been claimed.`);
     setStatus('No opportunity cards remain in the deck.');
@@ -10437,7 +10458,8 @@ const PORT_ITEMS = {
   'Cambay': [
     { img:'images/inlaidbox.png', label:'Mother-of-Pearl Casket', price:25, currency:'ingots',
       reqCard:'images/op-motherofpearlcasket.jpeg', pool:'cambay_casket', hardLimit:true,
-      note:'The last of its kind — only one exists' },
+      reqItem:'shellnautpeeled', reqItemLabel:'Nautilus — Peeled',
+      note:'The last of its kind — only one exists. The master also wants a peeled nautilus, its nacre matching his own inlay work.' },
   ],
   'Ouro Preto': [
     { img:'images/imperialtopaz1.png', label:'Imperial Topaz Cluster', price:12, currency:'ingots',
