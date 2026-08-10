@@ -3807,14 +3807,14 @@ const ROUTES = {
     lineColor:'rgba(200,180,100,0.55)', circuit:['lapidary'],
     nodes:[
       {x:849, y:273, name:'Amsterdam',          isPort:true, portImg:'images/portams.jpeg'},           // 0
-      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/lapidarydest.jpg'}, // 1
+      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/lapidary.jpeg'}, // 1
     ],
   },
   lapidary_return: {
     id:'lapidary_return', shipImg:'images/keelboat.png', shipName:'Canal back to Amsterdam',
     lineColor:'rgba(200,180,100,0.55)', circuit:['lapidary_return'],
     nodes:[
-      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/lapidarydest.jpg'}, // 0
+      {x:858,y:272, name:'Lapidary Outskirts', isPort:true, portImg:'images/lapidary.jpeg'}, // 0
       {x:849, y:273, name:'Amsterdam',          isPort:true, portImg:'images/portams.jpeg'},             // 1
     ],
   },
@@ -6653,7 +6653,7 @@ const PORT_IMAGES = {
   'Ratnapura':        'images/ratnapura.jpg',
   'White Cloud Mountain':'images/cloud_mountain.jpeg',
   'Ancol Cove':       'images/batavianuatilusdest.jpeg',
-  'Lapidary Outskirts':'images/lapidarydest.jpg',
+  'Lapidary Outskirts':'images/lapidary.jpeg',
   'Delft':            'images/silversmithstudio.jpg',
   'Shell Cove':       'images/shellcovedestination.jpeg',
   'Nuremberg':        'images/nuremberg.jpeg',
@@ -7852,11 +7852,14 @@ function continueLeidenToDelft() {
 }
 
 // Shell IDs from Shell Cove
-const SHELL_ITEM_PREFIXES = ['shellglory','wenteltrap','scorpionconch','venuscomb','shellmurex','shellscorpion','shell-nautilus','op-nautilusdiver','nautilusdiver'];
+const SHELL_ITEM_PREFIXES = ['shellglory','wenteltrap','scorpionconch','venuscomb','shellmurex','shellscorpion','shellnaut','op-nautilusdiver','nautilusdiver'];
+// Upgraded nautilus variants (peeled/bisected/mounted) — kept out of the conchologist's
+// sale list even though their ids share the 'shellnaut' prefix; only the raw shell sells.
+const SHELL_ITEM_EXCLUDE  = ['shellnautpeeled','shellnautmount'];
 // Mineral/gem item prefixes
 const MINERAL_ITEM_PREFIXES = ['amethyst','imperialtopaz','apatite','op-moonstone','moonstone','tourmaline','rainbowtourmaline','jadeball','ruby','cobalt'];
 
-function _isShell(item)   { const id=(item.id||'').toLowerCase(); return SHELL_ITEM_PREFIXES.some(p=>id.startsWith(p)); }
+function _isShell(item)   { const id=(item.id||'').toLowerCase(); if (SHELL_ITEM_EXCLUDE.some(p=>id.startsWith(p))) return false; return SHELL_ITEM_PREFIXES.some(p=>id.startsWith(p)); }
 function _isMineral(item) { const id=(item.id||'').toLowerCase(); const img=(item.img||'').replace(/^.*\//,'').toLowerCase(); return MINERAL_ITEM_PREFIXES.some(p=>id.startsWith(p)||img.startsWith(p)); }
 
 // Which Haarlem-schuit stops are actually available to a player:
@@ -8714,6 +8717,7 @@ function openGotoCaves() {
         <span class="buy-item-label">Red Precious Coral</span>
         ${_rcSz ? `<span class="buy-item-sizelabel">${_rcSz}</span>` : ''}
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
+        <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">Requires a Telescope</span>
         <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
       </div>
     </div>`;
@@ -8724,15 +8728,18 @@ function buyRedCoral() {
   if (cardIdx < 0) { setStatus('You need the Goto coral op card.'); return; }
   if ((p.items||[]).some(gi => gi.img==='images/redcoral.png')) { setStatus('You already have the coral.'); return; }
   if (redcoralStock <= 0) { setStatus('The branch is already gone — another merchant got there first.'); return; }
+  const telescopeIdx = (p.items || []).findIndex(gi => (gi.id||'').toLowerCase().startsWith('telescope'));
+  if (telescopeIdx < 0) { setStatus('The fisherman also wants a fine Telescope in trade — bring him one.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the coral.`); return; }
   redcoralStock--;
+  const telescopeUsed = p.items.splice(telescopeIdx, 1)[0];
   p.heldCards.splice(cardIdx, 1);
   p.items = p.items || [];
   p.items.push({ id:'redcoral_'+Date.now(), img:'images/redcoral.png', label:'Red Precious Coral', type:'goods', price:12 });
   renderHeldCards(currentPIdx);
   document.getElementById('goto-buy-area').style.display='none';
   updateInventory(currentPIdx); updateHUD();
-  log(`${p.name} acquires the Red Precious Coral — an unbroken red branch — 12 ingots. The card is spent.`);
+  log(`${p.name} acquires the Red Precious Coral — an unbroken red branch — 12 ingots and a Telescope. The card is spent.`);
   _sweepDeadSingularCards(c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), 'Red Precious Coral');
 }
 function returnNagasakiSkiff() {
@@ -9117,7 +9124,7 @@ function openNurembergPort() {
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" onclick="buyPolyhedra()" style="cursor:pointer;"><img src="images/polyhedra1.png" style="width:100%;height:100%;object-fit:contain;"></div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span class="buy-item-label">Polyhedra Model</span>
+        <span class="buy-item-label">Geometric Model</span>
         <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Walnut rhombicosidodecahedron on a carved stand.</span>
         <button class="port-action-btn" onclick="buyPolyhedra()">Buy — 5 ingots</button>
       </div>
@@ -9128,7 +9135,7 @@ function buyPolyhedra() {
   if(polyhedraStock<=0){log(`${p.name}: No more models available.`);return;}
   if(!payPrice(p,5,'ingots')){log(`${p.name}: Need 5 ingots (or 50 silver) for the model!`);return;}
   p.items=p.items||[];
-  p.items.push({id:'polyhedra1_'+Date.now(),img:'images/polyhedra1.png',label:'Polyhedra Model',type:'goods',price:5});
+  p.items.push({id:'polyhedra1_'+Date.now(),img:'images/polyhedra1.png',label:'Geometric Model',type:'goods',price:5});
   polyhedraStock--;
   const oi=(p.heldCards||[]).findIndex(hc=>hc.img&&(hc.img.includes('nuremberg')||hc.dest==='Nuremberg'));
   if(oi>=0){p.heldCards.splice(oi,1);renderHeldCards(currentPIdx);}
@@ -9766,7 +9773,7 @@ const OPPORTUNITY_CARDS = [
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
   ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
-  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Red Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves.' }),
+  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Red Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves — he also wants a fine Telescope in trade.' }),
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
   ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
@@ -9782,7 +9789,7 @@ const OPPORTUNITY_CARDS = [
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
   ...Array(3).fill({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' }),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
-  ...Array(2).fill({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + telescope required' }),
+  ...Array(2).fill({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + Geometric Model required' }),
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
@@ -9816,7 +9823,7 @@ function buildOppDeck() {
 const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-dragonvaseworkshop'), stock: () => dragonVaseStock, label: 'Dragon Vase', reqItem: 'cobalt' },
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket' },
-  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral' },
+  { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral', reqItem: 'telescope' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
   { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
   { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
@@ -10480,7 +10487,7 @@ const PORT_ITEMS = {
   ],
   'White Cloud Mountain': [
     { img:'images/jadeball.png', label:'Jade Puzzle Ball — 8-Layer Serpentine', price:8, currency:'ingots',
-      reqCard:'images/puzzleball.jpeg', reqItem:'images/telescope.png', consumes:'images/telescope.png',
+      reqCard:'images/puzzleball.jpeg', reqItem:'polyhedra', reqItemLabel:'Geometric Model',
       pool:'whitecloud_jadeball', hardLimit:true, note:'Only one carving ever leaves the workshop' },
   ],
   // ── Nautilus journey ports ──
@@ -10495,7 +10502,7 @@ const PORT_ITEMS = {
       note:'3 available in total — one per card held per turn' },
   ],
   'Lapidary Outskirts': [
-    { img:'images/lapidarydest.jpg', label:'Nautilus — Bisected', price:3, currency:'ingots',
+    { img:'images/shell-nautiloushalf.png', label:'Nautilus — Bisected', price:3, currency:'ingots',
       consumes:'images/shellnaut.png', note:'Cross-section reveals golden Fibonacci chambers' },
     { img:'images/shellnautpeeled.png', label:'Nautilus — Peeled', price:1, currency:'ingots',
       consumes:'images/shellnaut.png', note:'Outer whorl removed to show iridescent nacre' },
@@ -12315,10 +12322,10 @@ const CAB_META = {
   quadrant:    { size:'tall',   name:"Surveyor's Quadrant",    origin:'London',            desc:'Brass quadrant with vernier scale, mahogany case.' },
   protea:      { size:'tall',   name:'Protea under Glass',     origin:'Cape of Good Hope', desc:'King protea beneath a glass cloche on a mahogany stand.' },
   protearaw:   { size:'slim',   name:'King Protea',            origin:'Cape of Good Hope', desc:'Pressed king protea, dried and mounted on ivory card.' },
-  polyhedra1:  { size:'tall',   name:'Polyhedra Model I',      origin:'Nuremberg',          desc:'Carved walnut rhombicosidodecahedron on a carved stand — a Nuremberg master\u2019s finest work.' },
-  polyhedra2:  { size:'tall',   name:'Polyhedra Model II',     origin:'Nuremberg',          desc:'Carved walnut icosahedron — twenty equilateral triangular faces on a turned stand.' },
-  polyhedra3:  { size:'tall',   name:'Polyhedra Model III',    origin:'Nuremberg',          desc:'Great stellated dodecahedron — twelve pentagrammic faces, star-like spines, carved walnut.' },
-  'op-NurembergModel': { size:'tall', name:'Polyhedra Model', origin:'Nuremberg',          desc:'Geometric model carved in Nuremberg — a masterwork in walnut.' },
+  polyhedra1:  { size:'tall',   name:'Geometric Model I',      origin:'Nuremberg',          desc:'Carved walnut rhombicosidodecahedron on a carved stand — a Nuremberg master\u2019s finest work.' },
+  polyhedra2:  { size:'tall',   name:'Geometric Model II',     origin:'Nuremberg',          desc:'Carved walnut icosahedron — twenty equilateral triangular faces on a turned stand.' },
+  polyhedra3:  { size:'tall',   name:'Nested Polyhedra III',    origin:'Nuremberg',          desc:'Great stellated dodecahedron — twelve pentagrammic faces, star-like spines, carved walnut.' },
+  'op-NurembergModel': { size:'tall', name:'Geometric Model', origin:'Nuremberg',          desc:'Geometric model carved in Nuremberg — a masterwork in walnut.' },
   ceylonjar:   { size:'tall',   name:'Kandyan Painted Jar',    origin:'Ceylon',            desc:'Hand-painted earthenware, banded with bold geometric ornament.' },
   ceylonwaterpot:{ size:'medium', name:'Engraved Brass Kettle',  origin:'Ceylon',            desc:'Repoussé brass kettle with a swung handle and pierced foot.' },
   bataviabox:  { size:'medium', name:'Filigree Silver Casket', origin:'Batavia · Java',    desc:'Octagonal box worked in fine silver filigree by Batavia smiths.' },
@@ -12497,15 +12504,15 @@ const ITEM_SCORES = {
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'asia'     },
   'shellglory':           { w:6,  c:7,  s:10, a:9,  total:32, label:'Glory of the Sea',
     itemType:'shell',     shellFamily:'cone',  mineralType:null,   region:'asia'     },
-  'nurembergmodel':       { w:7,  c:10, s:7,  a:8,  total:32, label:'Nuremberg Model',
+  'nurembergmodel':       { w:7,  c:10, s:7,  a:8,  total:32, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra1':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nuremberg Model',
+  'polyhedra1':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra2':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nuremberg Model',
+  'polyhedra2':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra3':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nuremberg Model',
+  'polyhedra3':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nested Polyhedra',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'op-nurembergmodel':    { w:7,  c:10, s:7,  a:8,  total:32, label:'Nuremberg Model',
+  'op-nurembergmodel':    { w:7,  c:10, s:7,  a:8,  total:32, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
   'amethyst':             { w:8,  c:7,  s:6,  a:8,  total:29, label:'Amethyst Geode',
     itemType:'mineral',   shellFamily:null,    mineralType:'quartz',  region:'americas' },
@@ -12677,7 +12684,7 @@ const BONUS_DEFS = [
   },
   {
     id: 'geometrist', name: 'Geometrist', pts: 10,
-    desc: 'Complete set of 3 polyhedra models',
+    desc: 'Complete set of 3 Geometric Models',
     test(items) {
       const FULL_SET = 3; // update to 5 when more models added
       return items.filter(i => i.sc.label.replace(/\s*\d+$/, '').trim() === 'Nuremberg Model').length >= FULL_SET;
@@ -14142,7 +14149,7 @@ function cabClearHighlights() {
     // …then every port/destination background, so a port is never blank on arrival.
     var _portRe = /portImg:\s*'(images\/[^']+)'/g, _pm;
     while ((_pm = _portRe.exec(html)) !== null) { if (prioOrder.indexOf(_pm[1]) < 0) prioOrder.push(_pm[1]); }
-    var deferLast = ['images/seafanred.png','images/seafanpurple.png','images/seafan.png','images/amethyst1.png','images/amethyst2.png','images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png','images/inlaidbox.png','images/brassjalibox.png','images/lisbonjar.png','images/ceylonjar.png','images/dragonvase.png','images/silverewer.png','images/cinnabar.png','images/ruby1.png','images/jadeball.png','images/brasshookah.png','images/wenteltrap.png','images/polyhedra1.png','images/shellnautmount.png','images/lapidarydest.jpg','images/imperialtopaz1.png','images/imperialtopaz2.png','images/riocup.png','images/anatomicalmodeltorso.png','images/mandrake.png','images/tree-agate-slice-a.png','images/tree-agate-slice-b.png'];
+    var deferLast = ['images/seafanred.png','images/seafanpurple.png','images/seafan.png','images/amethyst1.png','images/amethyst2.png','images/nettiflamelily.png','images/nettilotus.png','images/nettinightbloomingjasmine.png','images/inlaidbox.png','images/brassjalibox.png','images/lisbonjar.png','images/ceylonjar.png','images/dragonvase.png','images/silverewer.png','images/cinnabar.png','images/ruby1.png','images/jadeball.png','images/brasshookah.png','images/wenteltrap.png','images/polyhedra1.png','images/shellnautmount.png','images/shell-nautiloushalf.png','images/imperialtopaz1.png','images/imperialtopaz2.png','images/riocup.png','images/anatomicalmodeltorso.png','images/mandrake.png','images/tree-agate-slice-a.png','images/tree-agate-slice-b.png'];
     var pri = [], rest = [], defer = [];
     list.forEach(function(u) {
       if (prioOrder.indexOf(u) >= 0) pri.push(u);
