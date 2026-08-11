@@ -15251,7 +15251,7 @@ async function _tutBodleianRevealAndPick() {
 
 // Sequential callouts naming each fact on the enlarged Ruby card as it's mentioned —
 // rough positions/timing to start with; easy to retune once you can see it live.
-// Draws the first n of the five Ruby anatomy callouts (fresh each call, since the
+// Draws the first n of the six Ruby anatomy callouts (fresh each call, since the
 // engine clears all callouts on every step transition anyway) — each tutorial step
 // calls this with one more than the last, so the set visibly builds up click by
 // click rather than on an internal timer.
@@ -15263,6 +15263,7 @@ function _tutShowAnatomyCallouts(n) {
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
+    () => _tutAddCallout(window.innerWidth*0.72, window.innerHeight*0.5 + 205, 'For this item there are 3 available — you may buy one per card', 'down'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots — some sellers also request other items alongside the silver'),
   ];
   for (let i = 0; i < n && i < defs.length; i++) defs[i]();
@@ -15590,6 +15591,11 @@ function _tutBuildSteps() {
       action: async () => { await _tutReturnToLondon(); },
     },
     {
+      title: 'Inland Journeys',
+      text: 'If an inland journey takes two or more turns you do not have to draw a card during these treks, only while \u2018at sea\u2019 or \u2018on land\u2019 at a port or a destination.',
+      target: () => null,
+    },
+    {
       title: 'The Cards in Your Hand',
       text: 'The card stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
       target: () => document.getElementById('held-p1'),
@@ -15618,7 +15624,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'So we can see this Ruby is worth 32 points — a high score.',
+      text: 'So we can see this Ruby is worth 32 points — a high score, and 1/8 of a bonus group (the bonus groups are listed in a dropdown menu at the top of your cabinet).',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(1); },
@@ -15646,10 +15652,17 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'It will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have.',
+      text: 'For this item there are 3 available — you may buy one per card.',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(5); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It will cost 12 ingots (sellers of singular items request another item in trade, not just silver). With the 20 coins, that\u2019s all the money you currently have.',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(6); },
       onLeave: () => { try { closeHeldDetail(); } catch (e) {} },
     },
     {
@@ -15889,6 +15902,69 @@ function _tutBuildSteps() {
           if (node) zoomToNode(node, 2.4); else zoomOut();
         } catch (e) { try { zoomOut(); } catch (e2) {} }
         await _aiWait(700);
+      },
+    },
+    {
+      title: 'A Guest Aboard',
+      text: 'As you are a guest onboard the merchant ships you must travel along their routes.',
+      target: () => null,
+      action: () => {
+        // Engineer the next three sea draws to match the three open-water legs of
+        // the Beijing Rose route before it reaches Cape of Good Hope: Seagulls,
+        // Pirates, then a tip-off that leads straight to the Jade Puzzle Ball.
+        const moveToFront = (predicate) => {
+          const idx = seaDeck.findIndex((c, i) => i >= seaDeckIndex && predicate(c));
+          if (idx < 0) return;
+          const [card] = seaDeck.splice(idx, 1);
+          seaDeck.splice(seaDeckIndex, 0, card);
+        };
+        moveToFront(c => c.isTipoff);
+        moveToFront(c => c.img === 'images/pirates.jpeg');
+        moveToFront(c => c.img === 'images/seagulls.jpeg');
+
+        const pbIdx = oppDeck.findIndex(c => c.img === 'images/puzzleball.jpeg');
+        if (pbIdx >= 0) {
+          const [pb] = oppDeck.splice(pbIdx, 1);
+          oppDeck.splice(oppDeckIndex, 0, pb);
+        }
+      },
+    },
+    {
+      title: 'Draw and Sail',
+      text: 'From here, draw your card, then click End Turn to advance — do this until you reach Cape of Good Hope.',
+      target: () => document.getElementById('deck-sea'),
+      action: async () => {
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';
+        for (let leg = 0; leg < 3; leg++) {
+          await _tutWaitForRealClick(() => document.getElementById('deck-sea'));
+          if (nextBtn) nextBtn.style.display = 'none';
+          await _aiWait(600);
+          await _tutWaitForRealClick(() => document.getElementById('card-dismiss'));
+          if (nextBtn) nextBtn.style.display = 'none';
+          await _aiWait(400);
+          await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+          if (nextBtn) nextBtn.style.display = 'none';
+          await _aiWait(1500);   // let the ship's travel animation settle
+        }
+        if (nextBtn) nextBtn.style.display = '';
+      },
+    },
+    {
+      title: 'Buying Without Disembarking',
+      text: 'You do not need to officially disembark to buy port items, only to travel inland.',
+      target: () => null,
+    },
+    {
+      title: 'Changing Ships',
+      text: 'While you must travel the route listed for your chosen ship, Cape of Good Hope offers the opportunity to change ship for different routes — to backtrack or change destination.',
+      target: () => document.getElementById('btn-end'),
+      action: async () => {
+        await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';
+        await _aiWait(1400);
+        setTimeout(() => _tutNext(), 0);
       },
     },
     // ── BATCH 4 ends here for now — later batches get added back once this
