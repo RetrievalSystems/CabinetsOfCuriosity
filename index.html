@@ -15263,7 +15263,7 @@ function _tutShowAnatomyCallouts(n) {
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
-    () => _tutAddCallout(window.innerWidth*0.72, window.innerHeight*0.5 + 205, 'For this item there are 3 available — you may buy one per card', 'down'),
+    () => _tutAddCallout(window.innerWidth*0.72 - 30, window.innerHeight*0.5 + 225, 'For this item there are 3 available — you may buy one per card', 'down'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots — some sellers also request other items alongside the silver'),
   ];
   for (let i = 0; i < n && i < defs.length; i++) defs[i]();
@@ -15328,7 +15328,7 @@ async function _tutShipHoverBoardDisembark() {
   await _aiWait(700);
 
   _tutSetText('Let\u2019s find our way to Madras.');
-  await _aiWait(1600);
+  await _tutWaitForNext();
 
   const shipBox = document.getElementById('port-ship-box');
   _tutRespotlight(() => shipBox);   // highlight Canton — the ship bound there
@@ -15350,7 +15350,7 @@ async function _tutShipHoverBoardDisembark() {
   }
   _tutHideSpotlight();
   _tutSetText('So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.');
-  await _aiWait(2200);
+  await _tutWaitForNext();
   const tt2 = document.getElementById('route-tooltip');
   if (tt2) tt2.style.opacity = '0';
 
@@ -15592,7 +15592,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Inland Journeys',
-      text: 'If an inland journey takes two or more turns you do not have to draw a card during these treks, only while \u2018at sea\u2019 or \u2018on land\u2019 at a port or a destination.',
+      text: 'So that was your first inland trek. If an inland journey takes two or more turns you do not have to draw a card during these treks, only while \u2018at sea\u2019 or \u2018on land\u2019 at a port or a destination.',
       target: () => null,
     },
     {
@@ -15862,6 +15862,12 @@ function _tutBuildSteps() {
       text: 'Storm cards move the three storms around the board — they are moved automatically for you.',
       target: () => null,
       action: async () => {
+        // Let the player move on after 2 seconds if they want — they don't need
+        // to sit through the full scripted movement to get the idea.
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         // advanceStormToken() spawns a storm at its marked point on the first
         // call (since all three start inactive in a fresh game), then genuinely
         // moves it on each call after — the exact same function a real storm
@@ -15932,21 +15938,22 @@ function _tutBuildSteps() {
     {
       title: 'Draw and Sail',
       text: 'From here, draw your card, then click End Turn to advance — do this until you reach Cape of Good Hope.',
-      target: () => document.getElementById('deck-sea'),
+      target: () => null,
       action: async () => {
         const nextBtn = document.getElementById('tut-next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
-        for (let leg = 0; leg < 3; leg++) {
-          await _tutWaitForRealClick(() => document.getElementById('deck-sea'));
-          if (nextBtn) nextBtn.style.display = 'none';
-          await _aiWait(600);
-          await _tutWaitForRealClick(() => document.getElementById('card-dismiss'));
-          if (nextBtn) nextBtn.style.display = 'none';
-          await _aiWait(400);
-          await _tutWaitForRealClick(() => document.getElementById('btn-end'));
-          if (nextBtn) nextBtn.style.display = 'none';
-          await _aiWait(1500);   // let the ship's travel animation settle
+        // Fully permissive from here — the player can freely draw, dismiss the
+        // card, and end their turn in whatever order the real UI expects,
+        // rather than the tutorial trying to police each individual click.
+        _tutAllowInteraction(document.body);
+        while (true) {
+          const p = players[0];
+          const s = getShip(p.shipId);
+          const node = s ? ROUTES[s.routeId].nodes[s.nodeIndex] : null;
+          if (node && node.name === 'Cape of Good Hope') break;
+          await _aiWait(300);
         }
+        _tutRevokeInteraction();
         if (nextBtn) nextBtn.style.display = '';
       },
     },
