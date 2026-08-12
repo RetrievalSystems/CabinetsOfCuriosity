@@ -15029,6 +15029,28 @@ function _tutWaitForRealClick(targetFn) {
   });
 }
 
+// Same as above, but the Next button is never shown at all during the wait — not
+// even momentarily. For "click End Turn" moments specifically, where the real
+// click itself should be the only thing that advances the tutorial; a separate
+// Next button appearing (even briefly) reads as a confusing second, duplicate
+// prompt asking for the same action twice.
+function _tutWaitForRealClickSilent(targetFn) {
+  return new Promise(resolve => {
+    const el = targetFn();
+    if (!el) { resolve(); return; }
+    _tutAllowInteraction(el);
+    const prevFilter = el.style.filter;
+    el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
+    const handler = () => {
+      el.removeEventListener('click', handler, true);
+      el.style.filter = prevFilter;
+      _tutRevokeInteraction();
+      resolve();
+    };
+    el.addEventListener('click', handler, true);
+  });
+}
+
 // Resolves once the player genuinely hovers (mouseenter) the target themselves.
 // Leaves the element allowed afterward (doesn't revoke immediately), since the
 // resulting tooltip/hover state should stay live and interactive for a moment.
@@ -15198,7 +15220,7 @@ async function _tutGoToBodleian() {
   // arrival flow, opening the Bodleian port with three face-down cards.
   console.log('[TUT-DIAG] setting OUTBOUND "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click \u2018end turn\u2019 to finish up this round and start your journey.');
-  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
   // Next reappears the instant this wait resolves — but there's still real work
   // left below (letting arrival settle, revealing the narration). Re-hide it so
   // it doesn't sit there clickable, inviting an early click that skips past all
@@ -15263,7 +15285,7 @@ function _tutShowAnatomyCallouts(n) {
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
-    () => _tutAddCallout(window.innerWidth*0.72 - 30, window.innerHeight*0.5 + 225, 'For this item there are 3 available — you may buy one per card', 'down'),
+    () => _tutAddCallout(window.innerWidth*0.72 - 50, window.innerHeight*0.5 + 235, 'For this item there are 3 available — you may buy one per card', 'down'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots — some sellers also request other items alongside the silver'),
   ];
   for (let i = 0; i < n && i < defs.length; i++) defs[i]();
@@ -15424,7 +15446,7 @@ async function _tutReturnToLondon() {
 
   console.log('[TUT-DIAG] setting RETURN "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click End Turn.');
-  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
   const nextBtn2 = document.getElementById('tut-next-btn');
   if (nextBtn2) nextBtn2.style.display = 'none';   // same fix as the outbound leg — keep
                                                      // hidden until the arrival work below
@@ -15597,7 +15619,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'The Cards in Your Hand',
-      text: 'The card stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
+      text: 'So the opportunity card you have just acquired stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
       target: () => document.getElementById('held-p1'),
     },
     {
@@ -15659,7 +15681,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'It will cost 12 ingots (sellers of singular items request another item in trade, not just silver). With the 20 coins, that\u2019s all the money you currently have.',
+      text: 'It will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have. (Sellers of singular items request another item in trade, not just silver.)',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(6); },
@@ -15729,7 +15751,7 @@ function _tutBuildSteps() {
         const tt = document.getElementById('route-tooltip');
         if (tt) tt.style.opacity = '0';
         _tutHideSpotlight();
-        await _aiWait(1800);
+        await _tutWaitForNext();
         _tutSetText('Ok, let\u2019s arrange your boarding for Canton.');
         _tutRespotlight(() => document.getElementById('port-ship-box'));
         // The real boarding handler closes the port itself as part of its normal
@@ -15791,7 +15813,7 @@ function _tutBuildSteps() {
       text: 'Click End Turn to set sail.',
       target: () => document.getElementById('btn-end'),
       action: async () => {
-        await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+        await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
         const nextBtn = document.getElementById('tut-next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
         await _aiWait(1400);   // let the ship's own departure animation settle
@@ -15940,11 +15962,18 @@ function _tutBuildSteps() {
       text: 'From here, draw your card, then click End Turn to advance — do this until you reach Cape of Good Hope.',
       target: () => null,
       action: async () => {
+        // Players already know how to draw and end their turn by this point —
+        // the visible box was also sitting over the card decks, so drop it
+        // entirely rather than just its text, and let them play this stretch
+        // solo. Just quietly watch for arrival in the background.
+        const tutBox = document.getElementById('tut-box');
+        const tutDim = document.getElementById('tut-dim');
         const nextBtn = document.getElementById('tut-next-btn');
+        const prevBoxDisplay = tutBox ? tutBox.style.display : '';
+        const prevDimDisplay = tutDim ? tutDim.style.display : '';
+        if (tutBox) tutBox.style.display = 'none';
+        if (tutDim) tutDim.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
-        // Fully permissive from here — the player can freely draw, dismiss the
-        // card, and end their turn in whatever order the real UI expects,
-        // rather than the tutorial trying to police each individual click.
         _tutAllowInteraction(document.body);
         while (true) {
           const p = players[0];
@@ -15954,6 +15983,8 @@ function _tutBuildSteps() {
           await _aiWait(300);
         }
         _tutRevokeInteraction();
+        if (tutBox) tutBox.style.display = prevBoxDisplay;
+        if (tutDim) tutDim.style.display = prevDimDisplay;
         if (nextBtn) nextBtn.style.display = '';
       },
     },
@@ -15967,7 +15998,7 @@ function _tutBuildSteps() {
       text: 'While you must travel the route listed for your chosen ship, Cape of Good Hope offers the opportunity to change ship for different routes — to backtrack or change destination.',
       target: () => document.getElementById('btn-end'),
       action: async () => {
-        await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+        await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
         const nextBtn = document.getElementById('tut-next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
         await _aiWait(1400);
