@@ -2232,7 +2232,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 /* ── Mode select screen ─────────────────────────────────────────────────── */
 #mode-select-overlay {
   position: fixed; inset: 0; z-index: 10001;
-  background: rgba(7,6,10,0.72);
+  background: rgba(7,6,10,0.85);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 40px;
   opacity: 0; transition: opacity 0.9s ease;
@@ -2299,7 +2299,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   z-index: 1;
   width: calc(100vw - 192px); height: auto; max-width: 900px;
   opacity: 0;
-  transition: opacity 0.6s ease, top 72s linear;
+  transition: opacity 0.6s ease, top 83s linear;
   filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
   pointer-events: none;
   will-change: top, opacity;
@@ -14161,10 +14161,16 @@ function cabClearHighlights() {
     if (scroll) scroll.style.transition = 'opacity 0.6s ease';
     if (scroll) scroll.style.opacity = '0';
     if (titleWrap) titleWrap.classList.remove('show');
+    ov.style.pointerEvents = 'none';   // the cabinet backdrop itself is never interactive again from here
     setTimeout(function() {
+      // Fully remove the faded chrome from layout, not just visually — opacity
+      // alone can still sit in front of and catch clicks meant for the mode-select
+      // buttons above it.
+      if (plaque) plaque.style.display = 'none';
+      if (scroll) scroll.style.display = 'none';
+      if (titleWrap) titleWrap.style.display = 'none';
       if (ms) ms.classList.add('visible');
-      ov.style.pointerEvents = 'none';   // let clicks reach the mode-select buttons beneath it
-    }, 500);
+    }, 650);
   }
 
   // Scan the page source once for every image the game references.
