@@ -2232,7 +2232,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 /* ── Mode select screen ─────────────────────────────────────────────────── */
 #mode-select-overlay {
   position: fixed; inset: 0; z-index: 10001;
-  background: rgba(7,6,10,0.85);
+  background: transparent;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 40px;
   opacity: 0; transition: opacity 0.9s ease;
@@ -2299,7 +2299,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   z-index: 1;
   width: calc(100vw - 192px); height: auto; max-width: 900px;
   opacity: 0;
-  transition: opacity 0.6s ease, top 83s linear;
+  transition: opacity 0.6s ease, top 91s linear;
   filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
   pointer-events: none;
   will-change: top, opacity;
@@ -14323,6 +14323,17 @@ function cabClearHighlights() {
 })();
 
 // ── Mode selection ────────────────────────────────────────────────────────
+// The cabinet backdrop (#intro-overlay) was deliberately kept on screen through
+// the mode-select choice itself — but once a mode is actually picked, the real
+// game (or char-select, or the tutorial) is about to take over the screen, so
+// it needs to go now, not linger indefinitely.
+function _retireIntroOverlay() {
+  const ov = document.getElementById('intro-overlay');
+  if (!ov) return;
+  ov.style.transition = 'opacity 0.6s ease';
+  ov.style.opacity = '0';
+  setTimeout(() => { ov.style.display = 'none'; }, 650);
+}
 function _enterCharSelect(nPlayers) {
   initPlayers(nPlayers);           // (re)initialise player array for chosen count
   const ms = document.getElementById('mode-select-overlay');
@@ -14330,6 +14341,7 @@ function _enterCharSelect(nPlayers) {
   if (ms) { ms.style.transition = 'opacity 0.5s ease'; ms.style.opacity = '0';
             setTimeout(() => ms.remove(), 550); }
   if (cs) { setTimeout(() => cs.style.opacity = '1', 100); }
+  _retireIntroOverlay();
 }
 function chooseSolo()   { gameMode = 'solo';   _enterCharSelect(1); }
 function chooseRival()  { gameMode = 'rivals'; _enterCharSelect(2); }
@@ -14628,6 +14640,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   function setupNetworkedCharSelect() {
     const ms = document.getElementById('mode-select-overlay');
     if (ms) ms.remove();
+    _retireIntroOverlay();
     initPlayers(2);
     hideOpponentHand();
     const cs = document.getElementById('char-select-overlay');
@@ -14886,6 +14899,7 @@ function startTutorial() {
   _tutActive = true;
   const ms = document.getElementById('mode-select-overlay');
   if (ms) ms.remove();
+  _retireIntroOverlay();
 
   const doors = document.createElement('div');
   doors.id = 'tut-doors';
