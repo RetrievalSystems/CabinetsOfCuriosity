@@ -2231,8 +2231,8 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 
 /* ── Mode select screen ─────────────────────────────────────────────────── */
 #mode-select-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: #07060a;
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(7,6,10,0.72);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 40px;
   opacity: 0; transition: opacity 0.9s ease;
@@ -2299,7 +2299,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   z-index: 1;
   width: calc(100vw - 192px); height: auto; max-width: 900px;
   opacity: 0;
-  transition: opacity 0.6s ease, top 16s linear;
+  transition: opacity 0.6s ease, top 72s linear;
   filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
   pointer-events: none;
   will-change: top, opacity;
@@ -14149,14 +14149,22 @@ function cabClearHighlights() {
   function bye() {
     var ov = document.getElementById('intro-overlay');
     if (!ov || ov._gone) return; ov._gone = true;
-    var bl = document.getElementById('intro-black');
     var ms = document.getElementById('mode-select-overlay');
-    if (bl) bl.style.opacity = '1';
+    var plaque = document.getElementById('intro-plaque');
+    var scroll = document.getElementById('intro-scroll');
+    var titleWrap = document.getElementById('intro-title-wrap');
+    // The cabinet doors (#intro-anim) stay put — only the now-irrelevant loading
+    // chrome and letter fade away, so the player keeps the same backdrop while
+    // choosing their game type rather than cutting to black in between.
+    if (plaque) plaque.style.transition = 'opacity 0.6s ease';
+    if (plaque) plaque.style.opacity = '0';
+    if (scroll) scroll.style.transition = 'opacity 0.6s ease';
+    if (scroll) scroll.style.opacity = '0';
+    if (titleWrap) titleWrap.classList.remove('show');
     setTimeout(function() {
       if (ms) ms.classList.add('visible');
-      if (ov) { ov.style.transition = 'opacity 0.8s'; ov.style.opacity = '0'; }
-      setTimeout(function() { if (ov) ov.style.display = 'none'; }, 900);
-    }, 700);
+      ov.style.pointerEvents = 'none';   // let clicks reach the mode-select buttons beneath it
+    }, 500);
   }
 
   // Scan the page source once for every image the game references.
