@@ -15269,11 +15269,6 @@ function _tutDismiss() {
   document.getElementById('tut-dim')?.remove();
   document.getElementById('tut-box')?.remove();
   _tutClearCallouts();
-  // The tutorial's last real step zooms in tight on the ship (2.4x) and never
-  // zooms back out — without this, the player resumes normal play with the
-  // map's zoom/pan still stuck at that tutorial-specific state, which is
-  // exactly what would make every port look "drifted" relative to normal view.
-  try { zoomOut(); } catch (e) {}
 }
 
 // Shows a card enlarged, positioned in the UPPER part of the screen so the narration
@@ -15387,7 +15382,7 @@ function _tutShowAnatomyCallouts(n) {
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
-    () => _tutAddCallout(window.innerWidth*0.72 - 50, window.innerHeight*0.5 + 235, 'For this item there are 3 available — you may buy one per card', 'down'),
+    () => _tutAddCallout(window.innerWidth*0.72 - 90, window.innerHeight*0.5 + 235, 'For this item there are 3 available — you may buy one per card', 'down'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots — some sellers also request other items alongside the silver'),
   ];
   for (let i = 0; i < n && i < defs.length; i++) defs[i]();
@@ -15738,7 +15733,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what it\u2019s score is, how much it costs, and how long it takes to reach the destination.',
+      text: 'Each Opportunity card tells you where the item is located, what its score is, how much it costs, and how long it takes to reach the destination.',
       target: () => null,
       boxPos: 'left',
       action: async () => {
@@ -15847,7 +15842,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Via Canton',
-      text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.',
+      text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras on the way back.',
       target: () => null,
       action: async () => {
         const tt = document.getElementById('route-tooltip');
@@ -15932,6 +15927,10 @@ function _tutBuildSteps() {
       text: 'With every pirate sighting the meter advances, until it is full whereupon the pirates attempt to board and a battle ensues.',
       target: () => document.getElementById('ast-bay-p0'),
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         // Full-screen zoom, same as a real encounter — triggered manually here
         // rather than by the real battle condition, since we're stopping one
         // sighting short of it deliberately (the actual attack stays a surprise
@@ -15955,6 +15954,10 @@ function _tutBuildSteps() {
       text: 'For every hit the pirates strike, the ship takes one damage.',
       target: () => document.getElementById('ast-bay-p0'),
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         const p = players[0];
         const s = getShip(p.shipId);
         for (let i = 0; i < 3; i++) {
@@ -16013,6 +16016,10 @@ function _tutBuildSteps() {
       text: 'Whenever your ship collides with a storm token it will take one damage.',
       target: () => null,
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y + 100, abs: true }, 2.2); } catch (e) {}
         await _aiWait(700);
         try { advanceStormToken('indian', 'S'); } catch (e) {}   // a real move too
@@ -16024,6 +16031,10 @@ function _tutBuildSteps() {
       text: 'If your ship reaches maximum damage it will shipwreck and you will start your next turn from the nearest port — you retain your silver but lose all items in inventory.',
       target: () => null,
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         await _aiWait(1600);
         try {
           const p = players[0];
@@ -16036,43 +16047,28 @@ function _tutBuildSteps() {
     },
     {
       title: 'A Guest Aboard',
-      text: 'As you are a guest onboard the merchant ships you must travel along their routes.',
+      text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route. Go ahead and sail onto the Cape of Good Hope.',
       target: () => null,
-      action: () => {
-        // Engineer the next three sea draws to match the three open-water legs of
-        // the Beijing Rose route before it reaches Cape of Good Hope: Seagulls,
-        // Pirates, then a tip-off that leads straight to the Jade Puzzle Ball.
+      action: async () => {
+        await _tutWaitForNext();
+        // Engineer the next two sea draws to match the first two open-water legs
+        // of the Beijing Rose route before it reaches Cape of Good Hope:
+        // Seagulls, then Pirates. The third leg's card is left genuinely random.
         const moveToFront = (predicate) => {
           const idx = seaDeck.findIndex((c, i) => i >= seaDeckIndex && predicate(c));
           if (idx < 0) return;
           const [card] = seaDeck.splice(idx, 1);
           seaDeck.splice(seaDeckIndex, 0, card);
         };
-        moveToFront(c => c.isTipoff);
         moveToFront(c => c.img === 'images/pirates.jpeg');
         moveToFront(c => c.img === 'images/seagulls.jpeg');
 
-        const pbIdx = oppDeck.findIndex(c => c.img === 'images/puzzleball.jpeg');
-        if (pbIdx >= 0) {
-          const [pb] = oppDeck.splice(pbIdx, 1);
-          oppDeck.splice(oppDeckIndex, 0, pb);
-        }
-      },
-    },
-    {
-      title: 'Draw and Sail',
-      text: 'From here, draw your card, then click End Turn to advance — do this until you reach Cape of Good Hope.',
-      target: () => null,
-      action: async () => {
-        // Players already know how to draw and end their turn by this point —
-        // the visible box was also sitting over the card decks, so drop it
-        // entirely rather than just its text, and let them play this stretch
-        // solo. Just quietly watch for arrival in the background.
+        // Players already know how to draw and end their turn by this point — let
+        // them play this stretch solo, with no visible tutorial box in the way of
+        // the card decks, and just quietly watch for arrival in the background.
         const tutBox = document.getElementById('tut-box');
         const tutDim = document.getElementById('tut-dim');
         const nextBtn = document.getElementById('tut-next-btn');
-        const prevBoxDisplay = tutBox ? tutBox.style.display : '';
-        const prevDimDisplay = tutDim ? tutDim.style.display : '';
         if (tutBox) tutBox.style.display = 'none';
         if (tutDim) tutDim.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
@@ -16085,21 +16081,25 @@ function _tutBuildSteps() {
           await _aiWait(300);
         }
         _tutRevokeInteraction();
-        if (tutBox) tutBox.style.display = prevBoxDisplay;
-        if (tutDim) tutDim.style.display = prevDimDisplay;
+        if (tutBox) tutBox.style.display = '';
+        if (tutDim) tutDim.style.display = '';
         if (nextBtn) nextBtn.style.display = '';
+        // The port doesn't open itself just from arriving — open it now so the
+        // next step's explanation has something concrete on screen to point at.
+        try { openPort('Cape of Good Hope'); } catch (e) {}
       },
     },
     {
-      title: 'Buying Without Disembarking',
+      title: 'Buying at Ports',
       text: 'You do not need to officially disembark to buy port items, only to travel inland.',
       target: () => null,
     },
     {
-      title: 'Changing Ships',
-      text: 'While you must travel the route listed for your chosen ship, Cape of Good Hope offers the opportunity to change ship for different routes — to backtrack or change destination.',
+      title: 'The Busiest Port',
+      text: 'The Cape of Good Hope is the crossroads of all ships heading east \u2014 here you may change ship for different routes, or switch direction and backtrack.',
       target: () => document.getElementById('btn-end'),
       action: async () => {
+        await _tutWaitForNext();
         await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
         const nextBtn = document.getElementById('tut-next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
