@@ -2306,6 +2306,15 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 }
 #intro-scroll.show { opacity: 1; }
 #intro-scroll.scrolling { top: -220%; }
+#intro-sound-btn {
+  position: fixed; right: 28px; bottom: 28px; z-index: 10002;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(8,5,2,0.55); border: 1px solid rgba(212,168,85,0.4);
+  color: #e8c878; font-size: 1.2rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.2s ease, transform 0.2s ease;
+}
+#intro-sound-btn:hover { background: rgba(20,12,4,0.75); transform: scale(1.08); }
 /* Plaque — stretched along the bottom, holds the loading bar, sits in front */
 #intro-plaque {
   position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
@@ -14153,6 +14162,8 @@ function cabClearHighlights() {
     var plaque = document.getElementById('intro-plaque');
     var scroll = document.getElementById('intro-scroll');
     var titleWrap = document.getElementById('intro-title-wrap');
+    var voice = document.getElementById('intro-voice');
+    var soundBtn = document.getElementById('intro-sound-btn');
     // The cabinet doors (#intro-anim) stay put — only the now-irrelevant loading
     // chrome and letter fade away, so the player keeps the same backdrop while
     // choosing their game type rather than cutting to black in between.
@@ -14161,6 +14172,17 @@ function cabClearHighlights() {
     if (scroll) scroll.style.transition = 'opacity 0.6s ease';
     if (scroll) scroll.style.opacity = '0';
     if (titleWrap) titleWrap.classList.remove('show');
+    if (soundBtn) soundBtn.style.display = 'none';
+    if (voice && !voice.paused) {
+      // Fade the narration out over half a second rather than cutting it dead,
+      // whether the player skipped early or it's simply wrapping up on its own.
+      var startVol = voice.volume, steps = 10, i = 0;
+      var fadeId = setInterval(function() {
+        i++;
+        voice.volume = Math.max(0, startVol * (1 - i / steps));
+        if (i >= steps) { clearInterval(fadeId); voice.pause(); voice.volume = startVol; }
+      }, 50);
+    }
     ov.style.pointerEvents = 'none';   // the cabinet backdrop itself is never interactive again from here
     setTimeout(function() {
       // Fully remove the faded chrome from layout, not just visually — opacity
@@ -14248,7 +14270,34 @@ function cabClearHighlights() {
 
     var titleWrap = document.getElementById('intro-title-wrap');
     var scroll    = document.getElementById('intro-scroll');
+    var voice     = document.getElementById('intro-voice');
+    var soundBtn  = document.getElementById('intro-sound-btn');
     var fill      = document.getElementById('intro-loadbar-fill');
+    var voiceStarted = false;
+
+    // Autoplay-with-sound is blocked by most browsers until the page has had a
+    // real click — so the button both shows the true state and, on a genuine
+    // click, is exactly the kind of interaction that unlocks playback.
+    function updateSoundBtn() {
+      if (!soundBtn) return;
+      soundBtn.textContent = (voice && !voice.paused && !voice.muted) ? '🔊' : '🔇';
+    }
+    if (soundBtn) {
+      soundBtn.addEventListener('click', function(e) {
+        e.stopPropagation();   // don't let this also trigger the overlay's skip handler
+        if (!voice) return;
+        if (!voiceStarted) {
+          voiceStarted = true;
+          voice.muted = false;
+          voice.play().catch(function() {});
+        } else {
+          voice.muted = !voice.muted;
+        }
+        updateSoundBtn();
+      });
+    }
+    if (voice) voice.addEventListener('pause', updateSoundBtn);
+    if (voice) voice.addEventListener('play', updateSoundBtn);
 
     var urls   = gatherImages();
     var total  = urls.length, done = 0;
@@ -14308,6 +14357,12 @@ function cabClearHighlights() {
         requestAnimationFrame(function() {
           requestAnimationFrame(function() { scroll.classList.add('scrolling'); });   // ...then climbs
         });
+        if (voice) {
+          try {
+            voice.currentTime = 0;
+            voice.play().then(function() { voiceStarted = true; updateSoundBtn(); }).catch(function() { updateSoundBtn(); });
+          } catch (e) {}
+        }
       }, 3900);
     } else {
       setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
@@ -14499,6 +14554,8 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       <div id="intro-rule-bot"></div>
     </div>
     <img id="intro-scroll" src="images/scroll.jpeg" alt="">
+    <audio id="intro-voice" src="audio/patronletter.mp3" preload="auto"></audio>
+    <button id="intro-sound-btn" type="button" aria-label="Toggle narration sound">🔇</button>
     <div id="intro-plaque">
       <div id="intro-loading-text">Preparing the ships</div>
       <div id="intro-loadbar-track"><div id="intro-loadbar-fill"></div></div>
