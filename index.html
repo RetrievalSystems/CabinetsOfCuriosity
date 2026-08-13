@@ -15037,6 +15037,8 @@ function _tutRender(step) {
   const dim  = document.getElementById('tut-dim');
   const box  = document.getElementById('tut-box');
   dim.style.opacity = '1';
+  dim.style.display = '';
+  box.style.display = '';   // a prior step may have hidden this entirely for a "free play" stretch
 
   document.getElementById('tut-title').textContent = step.title;
   document.getElementById('tut-text').innerHTML = step.text;
@@ -15117,14 +15119,14 @@ function _tutWaitForRealClick(targetFn) {
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
     const nextBtn = document.getElementById('tut-next-btn');
-    if (nextBtn) nextBtn.style.display = 'none';
+    if (nextBtn) { nextBtn.style.display = 'none'; nextBtn.disabled = true; }
     const prevFilter = el.style.filter;
     el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
       el.removeEventListener('click', handler, true);
       el.style.filter = prevFilter;
       _tutRevokeInteraction();
-      if (nextBtn) nextBtn.style.display = '';
+      if (nextBtn) { nextBtn.style.display = ''; nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
       resolve();
     };
     el.addEventListener('click', handler, true);
@@ -15141,6 +15143,13 @@ function _tutWaitForRealClickSilent(targetFn) {
     const el = targetFn();
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
+    // Guaranteed hidden and unclickable for the duration, regardless of whatever
+    // state a preceding _tutWaitForNext()/_tutWaitForRealClick() left it in — a
+    // leftover enabled Next button here let a click call _tutNext() directly,
+    // advancing the tutorial while the real click this wait needs never came,
+    // leaving two flows running at once.
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (nextBtn) { nextBtn.disabled = true; nextBtn.style.display = 'none'; }
     const prevFilter = el.style.filter;
     el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
@@ -15230,6 +15239,9 @@ function _tutWaitForNext() {
     nextBtn.onclick = () => {
       nextBtn.onclick = () => _tutNext();   // restore real behaviour
       nextBtn.style.display = 'none';        // hide again until the action decides otherwise
+      nextBtn.disabled = true;               // ...and genuinely unclickable while hidden, not just invisible
+      nextBtn.style.opacity = '0.4';
+      nextBtn.style.cursor = 'default';
       resolve();
     };
   });
@@ -15260,7 +15272,7 @@ function _tutFinish() {
       <div class="tut-text">You may now continue with this solo game or start afresh.</div>
       <div class="tut-controls">
         <button class="tut-skip" onclick="location.reload()">Start fresh</button>
-        <button class="tut-next" onclick="_tutDismiss()">Continue this game</button>
+        <button class="tut-next" onclick="_tutDismiss()">Continue Game</button>
       </div>`;
   }
 }
@@ -15495,11 +15507,12 @@ async function _tutCabinetIntro() {
   await _aiWait(400);
   _tutRespotlight(() => document.getElementById('cabinet-btn'));
   _tutSetText('While in London you can also access the cabinet.');
-  await _aiWait(1400);
+  await _tutWaitForNext();
   try { openCabinet(); } catch (e) {}
   await _aiWait(700);
   _tutRespotlight(() => document.getElementById('cab-overlay'));
   _tutSetText('Here you place and arrange the items you buy, dragging them from your inventory on the right into the specific sized bays.');
+  await _tutWaitForNext();
 }
 
 // Demonstrates placing the Quadrant into the cabinet via the real click-to-place
@@ -15532,7 +15545,7 @@ async function _tutPlaceQuadrantDemo() {
     await _aiWait(500);   // let the settle/placement animation finish visually
   }
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again.');
-  await _aiWait(3200);
+  await _tutWaitForNext();
   _tutSetText('When your cabinet is full, you will be asked if you want to have the collector appraise it — this is your final score.');
 }
 
@@ -16081,9 +16094,9 @@ function _tutBuildSteps() {
           await _aiWait(300);
         }
         _tutRevokeInteraction();
-        if (tutBox) tutBox.style.display = '';
-        if (tutDim) tutDim.style.display = '';
-        if (nextBtn) nextBtn.style.display = '';
+        // Not restoring tutBox/tutDim visibility here — left hidden, so the next
+        // step's own render can bring it back with its own fresh text, rather
+        // than briefly flashing this step's now-stale narration first.
         // The port doesn't open itself just from arriving — open it now so the
         // next step's explanation has something concrete on screen to point at.
         try { openPort('Cape of Good Hope'); } catch (e) {}
@@ -16097,14 +16110,14 @@ function _tutBuildSteps() {
     {
       title: 'The Busiest Port',
       text: 'The Cape of Good Hope is the crossroads of all ships heading east \u2014 here you may change ship for different routes, or switch direction and backtrack.',
-      target: () => document.getElementById('btn-end'),
+      target: () => null,
       action: async () => {
+        // This is the tutorial's last step, so the button already reads "Finish ✓"
+        // rather than "Next →" — clicking it flows straight into _tutFinish()'s
+        // own "Continue this game" screen. No real End Turn click needed here;
+        // waiting on the actual button was fragile with the port window open
+        // over top of it, and could leave the player stuck unable to proceed.
         await _tutWaitForNext();
-        await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
-        const nextBtn = document.getElementById('tut-next-btn');
-        if (nextBtn) nextBtn.style.display = 'none';
-        await _aiWait(1400);
-        setTimeout(() => _tutNext(), 0);
       },
     },
     // ── BATCH 4 ends here for now — later batches get added back once this
