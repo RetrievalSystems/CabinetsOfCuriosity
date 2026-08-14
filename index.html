@@ -16094,12 +16094,13 @@ function _tutBuildSteps() {
           await _aiWait(300);
         }
         _tutRevokeInteraction();
-        // Not restoring tutBox/tutDim visibility here — left hidden, so the next
-        // step's own render can bring it back with its own fresh text, rather
-        // than briefly flashing this step's now-stale narration first.
         // The port doesn't open itself just from arriving — open it now so the
         // next step's explanation has something concrete on screen to point at.
         try { openPort('Cape of Good Hope'); } catch (e) {}
+        // The box was left hidden through the silent wait above, and nothing
+        // else brings it back on its own — advance straight into the next step
+        // now rather than stalling here with an invisible, unclickable box.
+        setTimeout(() => _tutNext(), 0);
       },
     },
     {
