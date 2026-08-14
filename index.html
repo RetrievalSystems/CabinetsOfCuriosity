@@ -15029,7 +15029,7 @@ async function _tutShowStep() {
   if (step.action) {
     try { await step.action(); } catch (e) { console.error('tutorial step action failed', e); }
   }
-  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; nextBtn.style.display = ''; }
 }
 
 function _tutRender(step) {
