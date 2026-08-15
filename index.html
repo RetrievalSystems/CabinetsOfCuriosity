@@ -14268,6 +14268,17 @@ function cabClearHighlights() {
     var ov = document.getElementById('intro-overlay');
     if (!ov) { bye(); return; }
 
+    // A player who chose "Start Fresh" or "End Tutorial" already sat through
+    // this whole sequence once — skip straight to the game-choice screen on
+    // this particular reload rather than making them wait through it again.
+    if (sessionStorage.getItem('coc_skipIntro') === '1') {
+      sessionStorage.removeItem('coc_skipIntro');
+      ov.style.display = 'none';
+      var msSkip = document.getElementById('mode-select-overlay');
+      if (msSkip) msSkip.classList.add('visible');
+      return;
+    }
+
     var titleWrap = document.getElementById('intro-title-wrap');
     var scroll    = document.getElementById('intro-scroll');
     var voice     = document.getElementById('intro-voice');
@@ -15260,18 +15271,20 @@ function _tutSkip() {
   document.getElementById('tut-spot')?.remove();
   document.getElementById('tut-box')?.remove();
   _tutClearCallouts();
+  sessionStorage.setItem('coc_skipIntro', '1');
   location.reload();
 }
 
 function _tutFinish() {
   const box = document.getElementById('tut-box');
   document.getElementById('tut-spot')?.remove();
+  try { closePort(); } catch (e) {}
   if (box) {
     box.innerHTML = `
       <div class="tut-title">You're ready</div>
       <div class="tut-text">You may now continue with this solo game or start afresh.</div>
       <div class="tut-controls">
-        <button class="tut-skip" onclick="location.reload()">Start fresh</button>
+        <button class="tut-skip" onclick="sessionStorage.setItem('coc_skipIntro','1'); location.reload()">Start fresh</button>
         <button class="tut-next" onclick="_tutDismiss()">Continue Game</button>
       </div>`;
   }
