@@ -14257,11 +14257,11 @@ function cabClearHighlights() {
     // A player who chose "Start Fresh" or "End Tutorial" already sat through
     // this whole sequence once — skip straight to the game-choice screen on
     // this particular reload rather than making them wait through it again.
+    // bye() itself keeps the cabinet backdrop visible and hides the rest of the
+    // loading chrome — same as the normal flow, just without sitting through it.
     if (sessionStorage.getItem('coc_skipIntro') === '1') {
       sessionStorage.removeItem('coc_skipIntro');
-      ov.style.display = 'none';
-      var msSkip = document.getElementById('mode-select-overlay');
-      if (msSkip) msSkip.classList.add('visible');
+      bye();
       return;
     }
 
@@ -15668,6 +15668,7 @@ function _tutBuildSteps() {
       text: 'The other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
       action: async () => {
+        await _tutWaitForNext();
         await _tutBodleianRevealAndPick();
         // Straight into returning to London — no separate Next click needed here,
         // since the very next step immediately asks for another real click anyway.
@@ -16029,7 +16030,20 @@ function _tutBuildSteps() {
       text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route. Go ahead and sail onto the Cape of Good Hope.',
       target: () => null,
       action: async () => {
+        // Same full-map overview the spacebar triggers — shown while this text is
+        // being read, so all the routes are visible for what it's describing.
+        const preOverviewPreview = previewRouteId;
+        previewRouteId = OVERVIEW_ROUTES;
+        buildSVG();
+        zoomOut();
+
         await _tutWaitForNext();
+
+        // Back to the regular close-up play view before continuing.
+        previewRouteId = preOverviewPreview;
+        buildSVG();
+        zoomToCurrent();
+
         // Engineer the next two sea draws to match the first two open-water legs
         // of the Beijing Rose route before it reaches Cape of Good Hope:
         // Seagulls, then Pirates. The third leg's card is left genuinely random.
