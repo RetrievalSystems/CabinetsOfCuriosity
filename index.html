@@ -15724,7 +15724,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Inland Journeys',
-      text: 'So that was your first inland trek. If an inland journey takes two or more turns you do not have to draw a card during these treks, only while \u2018at sea\u2019 or \u2018on land\u2019 at a port or a destination.',
+      text: 'That was your first inland journey, it took one turn. If an inland journey takes two or more turns you do not have to draw a card during these treks, only while \u2018at sea\u2019 or \u2018on land\u2019 at a port or a destination.',
       target: () => null,
     },
     {
@@ -16112,12 +16112,15 @@ function _tutBuildSteps() {
       title: 'The Busiest Port',
       text: 'The Cape of Good Hope is the crossroads of all ships heading east \u2014 here you may change ship for different routes, or switch direction and backtrack.',
       target: () => null,
+    },
+    {
+      title: 'Moving On',
+      text: 'If you do not wish to change ship or buy any port items, simply close the port windows and end turn to continue on your chosen route.',
+      target: () => null,
       action: async () => {
-        // This is the tutorial's last step, so the button already reads "Finish ✓"
-        // rather than "Next →" — clicking it flows straight into _tutFinish()'s
-        // own "Continue this game" screen. No real End Turn click needed here;
-        // waiting on the actual button was fragile with the port window open
-        // over top of it, and could leave the player stuck unable to proceed.
+        // This is now the tutorial's genuine last step, so the button already
+        // reads "Finish ✓" rather than "Next →" — clicking it flows straight
+        // into _tutFinish()'s own "Continue this game" screen.
         await _tutWaitForNext();
       },
     },
