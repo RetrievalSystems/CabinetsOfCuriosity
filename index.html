@@ -7757,6 +7757,7 @@ function buyNagasakiVase() {
   const p = cp();
   if (nagasakiVaseStock <= 0) { setStatus('The Arita vases are sold out.'); return; }
   if (boughtThisTurn.has('nagasaki_vase')) { setStatus('One Arita vase per turn — return next turn.'); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 5, 'ingots')) { log(`${p.name}: Need 5 ingots for the vase.`); return; }
   p.items = p.items || [];
   p.items.push({ id:'nagasakivase3_'+Date.now(), img:'images/nagasakivase3.png', label:'Arita Gourd Vase', type:'goods', price:5 });
@@ -7769,6 +7770,7 @@ function buyNagasakiImari() {
   const p = cp();
   if (nagasakiImariStock <= 0) { setStatus('The Imari vases are sold out.'); return; }
   if (boughtThisTurn.has('nagasaki_imari')) { setStatus('One Imari vase per turn — return next turn.'); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 16, 'ingots')) { log(`${p.name}: Need 16 ingots for the Imari vase.`); return; }
   p.items = p.items || [];
   p.items.push({ id:'imari2_'+Date.now(), img:'images/nagasakivasei2.png', label:'Imari Covered Vase', type:'goods', price:16 });
@@ -8085,6 +8087,7 @@ function buyMoonstone() {
   }
   const prio = checkItemPriority('Meetiyagoda');
   if (!prio.canBuy && !prio.bidding) { log(`${p.name}: ${prio.msg}`); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 3, 'ingots')) { log(`${p.name}: Need 3 ingots for the moonstone!`); return; }
 
   // Random variant from the pool — each stone is unique
@@ -8678,6 +8681,7 @@ function buySeaFan() {
   const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seafan'));
   if (cardIdx < 0) { setStatus('You need the Sea Fan Diver op card.'); return; }
   if (seafanStock <= 0 || seafanIdx >= seafanDeck.length) { log(`${p.name}: No sea fans remain.`); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 3, 'ingots')) { log(`${p.name}: Need 3 ingots.`); return; }
   const fan = seafanDeck[seafanIdx];
   p.heldCards.splice(cardIdx, 1);
@@ -8861,6 +8865,7 @@ function buyTreeAgateHalf(key) {
   if (!treeAgateHalves[key]) { setStatus('That half has already been taken.'); return; }
   const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && (hc.img.includes('op-treeagate') || hc.dest === 'Dahel Gorge'));
   if (cardIdx < 0) { setStatus('You need a tree agate op card to claim a half.'); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 8, 'ingots')) { log(`${p.name}: Need 8 ingots for a tree agate half.`); return; }
   p.heldCards.splice(cardIdx, 1);
   treeAgateHalves[key] = false;
@@ -9157,6 +9162,7 @@ function openNurembergPort() {
 function buyPolyhedra() {
   const p=cp();
   if(polyhedraStock<=0){log(`${p.name}: No more models available.`);return;}
+  if((p.items||[]).length >= 6){setStatus('Your hold is full — make room before buying more.');return;}
   if(!payPrice(p,5,'ingots')){log(`${p.name}: Need 5 ingots (or 50 silver) for the model!`);return;}
   p.items=p.items||[];
   p.items.push({id:'polyhedra1_'+Date.now(),img:'images/polyhedra1.png',label:'Geometric Model',type:'goods',price:5});
@@ -9480,7 +9486,15 @@ const SEA_CARD_TEMPLATES = [
   // Whale sighting ×4
   ...Array(4).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
   // Lunar Rainbow ×2
-  ...Array(2).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); })),
+  ...Array(2).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: A Lunar Rainbow — a celestial blessing. +1 reputation.`); })),
+  // Doldrums ×3 — +2 reputation if the player holds the Filigree Cavaquinho (guitar)
+  ...Array(3).fill(null).map(()=> mkCard('images/doldrums.jpg', (p,i)=>{
+    const hasGuitar = (players[i].items||[]).some(it => it.img === 'images/lisbonsmallguitar.png');
+    if (hasGuitar) { changeRep(i,2); log(`${p.name}: The crew are in the doldrums — but your guitar lifts their spirits! +2 reputation.`); }
+    else { log(`${p.name}: The crew are in the doldrums — if only someone had a musical instrument...`); }
+  })),
+  // Slander ×1 (sea) — scandalous words follow you even at sea
+  mkCard('images/slander2.jpg', (p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); }),
   // Captain's Table ×2
   ...Array(2).fill(null).map(()=> mkCard('images/captainstable.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); })),
   // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
@@ -10017,6 +10031,8 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander2.jpg',       effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); } },
+  { img:'images/slander2.jpg',       effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); } },
   { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Specialist buyers — Haarlem conchologist (×3) and Leiden mineralogist (×3) ──
@@ -12536,15 +12552,15 @@ const ITEM_SCORES = {
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'asia'     },
   'shellglory':           { w:6,  c:7,  s:10, a:9,  total:32, label:'Glory of the Sea',
     itemType:'shell',     shellFamily:'cone',  mineralType:null,   region:'asia'     },
-  'nurembergmodel':       { w:7,  c:10, s:7,  a:8,  total:32, label:'Geometric Model',
+  'nurembergmodel':       { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra1':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
+  'polyhedra1':           { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra2':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
+  'polyhedra2':           { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra3':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
+  'polyhedra3':           { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'op-nurembergmodel':    { w:7,  c:10, s:7,  a:8,  total:32, label:'Geometric Model',
+  'op-nurembergmodel':    { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
   'amethyst':             { w:8,  c:7,  s:6,  a:8,  total:29, label:'Amethyst Geode',
     itemType:'mineral',   shellFamily:null,    mineralType:'quartz',  region:'americas' },
