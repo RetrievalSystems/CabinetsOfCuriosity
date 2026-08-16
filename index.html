@@ -4199,14 +4199,14 @@ const ROUTES = {
     lineColor:'rgba(150,120,90,0.45)', smallToken:true, nextRoute:null, circuit:['falsebay'],
     nodes: [
       {x:881, y:605, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
-      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
+      {x:896, y:602, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
     ],
   },
   falsebay_return: {
     id:'falsebay_return', shipImg:'images/mule.png', shipName:'Mule back to the Cape',
     lineColor:'rgba(150,120,90,0.30)', smallToken:true, nextRoute:null, circuit:['falsebay_return'],
     nodes: [
-      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
+      {x:896, y:602, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
       {x:881, y:605, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
     ],
   },
@@ -7225,14 +7225,11 @@ function populateBuyItems(portName) {
         if ((p.items||[]).some(gi => allVers.includes(gi.img))) return false;
       }
     }
-    // Missing a required held item — handles both image-path (telescope) and ID-prefix (apatite) reqItems
-    if (item.reqItem) {
-      const isPath = item.reqItem.startsWith('images/');
-      const hasIt  = isPath
-        ? ownedImgs.has(item.reqItem)
-        : (p.items||[]).some(gi => (gi.id||'').toLowerCase().startsWith(item.reqItem.toLowerCase()));
-      if (!hasIt) return false;
-    }
+    // Note: items requiring a companion item (e.g. telescope for Red Coral) are still
+    // shown here even without it — buyPortItem() itself blocks the actual purchase and
+    // explains what's missing. Hiding the row entirely would also hide the price and the
+    // "+1 X" hint, leaving players with no way to know the item exists until they already
+    // happen to be carrying the companion.
     // Op-card gated: only show if player holds the required card
     if (item.reqCard) {
       if (!(p.heldCards||[]).some(hc => hc.img === item.reqCard)) return false;
