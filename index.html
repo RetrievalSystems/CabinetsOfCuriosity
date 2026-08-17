@@ -498,8 +498,14 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   justify-content: center;
 }
 #held-card-detail.open { display: flex; }
-#held-card-detail img {
-  width: min(500px, 86vw);   /* matches #card-display width exactly */
+#held-detail-wrap {
+  position: relative;
+  width: min(500px, 86vw);
+  max-height: 92vh;
+}
+#held-detail-img {
+  width: 100%;
+  display: block;
   max-height: 92vh;
   object-fit: contain;
   border-radius: 4px;
@@ -859,6 +865,33 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   display: block;
   border-radius: 4px 4px 0 0;
   box-shadow: 0 8px 40px rgba(0,0,0,0.95);
+}
+
+/* Pulsing highlight for singular-masterwork cards that need a companion item —
+   drawn as absolutely-positioned boxes over the baked-in card art itself, since
+   the badge and price band are part of the flat image, not separate elements.
+   Positioned as percentages of the card's own box so it works across both the
+   just-drawn view (#card-display) and the later held-card review (#held-card-detail). */
+.singular-pulse-badge, .singular-pulse-price {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(232,190,110,0.9), 0 0 18px 6px rgba(232,190,110,0.75);
+  animation: singularPulseGlow 1.8s ease-in-out infinite;
+}
+.singular-pulse-badge.show, .singular-pulse-price.show { display: block; }
+.singular-pulse-badge {
+  right: calc(2% - 10px); top: calc(82% + 10px);
+  width: 10%; height: 6.2%;
+}
+.singular-pulse-price {
+  right: 2%; bottom: 1%;
+  width: 200px; height: 20px;
+}
+@keyframes singularPulseGlow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(232,190,110,0.55), 0 0 10px 3px rgba(232,190,110,0.4); }
+  50%      { box-shadow: 0 0 0 3px rgba(232,190,110,1),    0 0 26px 9px rgba(232,190,110,0.9); }
 }
 
 #card-pox-popup {
@@ -2804,13 +2837,19 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <!-- ══ HELD CARD DETAIL — click to expand ══ -->
 <div id="held-card-detail" onclick="closeHeldDetail()">
-  <img id="held-detail-img" src="" alt="Card">
+  <div id="held-detail-wrap">
+    <img id="held-detail-img" src="" alt="Card">
+    <div class="singular-pulse-badge" id="held-pulse-badge"></div>
+    <div class="singular-pulse-price" id="held-pulse-price"></div>
+  </div>
 </div>
 
 <!-- ══ CARD OVERLAY ══ -->
 <div id="card-overlay">
   <div id="card-display">
     <img id="card-img" src="" alt="Card">
+    <div class="singular-pulse-badge" id="card-pulse-badge"></div>
+    <div class="singular-pulse-price" id="card-pulse-price"></div>
     <!-- Pox decision — only shown for pox card -->
     <!-- Ghost ship choice — Board or Pass By -->
     <div id="ghost-ship-popup">
@@ -8052,12 +8091,27 @@ function returnRatnapuraSampan() {
 }
 
 function buyTourmaline() {
+  // Guard against a rapid double-click firing this twice before the first
+  // click's DOM/state updates (and the disabled op-card check) have settled.
+  if (buyTourmaline._busy) return;
+  buyTourmaline._busy = true;
+  try {
+    _buyTourmalineInner();
+  } finally {
+    buyTourmaline._busy = false;
+  }
+}
+function _buyTourmalineInner() {
   const p = cp();
   const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('tourmaline'));
   if (oi < 0) { setStatus('You need a Rainbow Tourmaline op card to purchase here.'); return; }
-  if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full.`); return; }
   if (tourmalineStock <= 0) { setStatus('The cluster is already claimed — another merchant got there first.'); return; }
-  // Requires a Quadrant — the miner wants a fine navigational instrument in trade
+  // Requires a Quadrant — the miner wants a fine navigational instrument in trade.
+  // No separate inventory-full check here: since this purchase always consumes a
+  // Quadrant, it's a net-zero swap — the same reasoning Dragon Vase and Red Coral
+  // already correctly use. The old check here fired before this consumption was
+  // accounted for, wrongly blocking the purchase at a full inventory even when it
+  // wouldn't actually grow the hold at all.
   const quadrantIdx = (p.items || []).findIndex(gi => (gi.id||'').toLowerCase().startsWith('quadrant'));
   if (quadrantIdx < 0) { setStatus('The miner wants a fine Quadrant in trade first — bring him one.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the tourmaline!`); return; }
@@ -9774,6 +9828,9 @@ function renderHeldCards(playerIdx) {
 function showHeldDetail(imgSrc) {
   document.getElementById('held-detail-img').src = imgSrc;
   document.getElementById('held-card-detail').classList.add('open');
+  const isSingularCompanion = !!(_singularInfoFor({ img: imgSrc })?.reqItem);
+  document.getElementById('held-pulse-badge').classList.toggle('show', isSingularCompanion);
+  document.getElementById('held-pulse-price').classList.toggle('show', isSingularCompanion);
 }
 function closeHeldDetail() {
   document.getElementById('held-card-detail').classList.remove('open');
@@ -9860,7 +9917,7 @@ const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket', reqItem: 'shellnautpeeled' },
   { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral', reqItem: 'telescope' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
-  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
+  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball', reqItem: 'polyhedra' },
   { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
 function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
@@ -10283,6 +10340,9 @@ function drawCard(type) {
 function showCard(imgSrc, buyCard, isPox, isGhostShip, isCaptainsOffer, opts) {
   const overlay = document.getElementById('card-overlay');
   document.getElementById('card-img').src = imgSrc;
+  const isSingularCompanion = !!(_singularInfoFor({ img: imgSrc })?.reqItem);
+  document.getElementById('card-pulse-badge').classList.toggle('show', isSingularCompanion);
+  document.getElementById('card-pulse-price').classList.toggle('show', isSingularCompanion);
   document.getElementById('card-buy-popup').classList.remove('visible');
   document.getElementById('card-pox-popup').classList.remove('visible');
   document.getElementById('ghost-ship-popup').classList.remove('visible');
