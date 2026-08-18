@@ -451,10 +451,13 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 
 /* Singular-item cards going dead: three distinct moments, three distinct feels. */
 .card-rise-fade {
-  transition: transform 0.9s ease, opacity 0.9s ease !important;
-  transform: translateY(-90px) rotate(-6deg) !important;
-  opacity: 0 !important;
+  animation: cardRiseFadeHeld 1.4s ease-in forwards !important;
   pointer-events: none;
+}
+@keyframes cardRiseFadeHeld {
+  0%   { transform: translateY(0)       rotate(0deg);   opacity: 1; }
+  20%  { transform: translateY(-16px)   rotate(-1deg);  opacity: 1; }
+  100% { transform: translateY(-190px)  rotate(-6deg);  opacity: 0; }
 }
 .card-whip-down {
   transition: transform 0.5s cubic-bezier(.5,-0.2,.9,.4), opacity 0.5s ease !important;
@@ -463,10 +466,13 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   pointer-events: none;
 }
 .card-fade-cold {
-  transition: opacity 0.9s ease, filter 0.9s ease !important;
-  opacity: 0 !important;
-  filter: grayscale(1) !important;
+  animation: cardRiseFade 1.4s ease-in forwards !important;
   pointer-events: none;
+}
+@keyframes cardRiseFade {
+  0%   { transform: translateY(0);       opacity: 1; filter: grayscale(0); }
+  20%  { transform: translateY(-16px);   opacity: 1; filter: grayscale(0.25); }
+  100% { transform: translateY(-190px);  opacity: 0; filter: grayscale(1); }
 }
 
 .held-card img {
@@ -1187,6 +1193,15 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   transition: background 0.2s, border-color 0.2s;
 }
 .port-action-btn:hover { color: #e8c078; border-color: #c8923a; background: rgba(40,20,5,0.95); }
+.port-action-btn-req {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #e8c878;
+  margin-top: 4px;
+  opacity: 0.9;
+}
 
 #disembark-area {
   display: none;
@@ -1312,6 +1327,19 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   background: rgba(20,12,4,0.55);
   padding: 2px 7px;
   border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
+}
+.buy-item-reqlabel {
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #e8c878;
+  letter-spacing: 0.06em;
+  background: rgba(20,12,4,0.65);
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(232,200,120,0.35);
   display: inline-block;
   width: fit-content;
 }
@@ -2944,8 +2972,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span class="buy-item-label">Rainbow Tourmaline</span>
-          <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots</button>
-          <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">+1 Quadrant</span>
+          <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots<span class="port-action-btn-req">+1 Quadrant</span></button>
         </div>
       </div>
     </div>
@@ -2996,8 +3023,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span class="buy-item-label">Imperial Dragon Vase</span>
-          <button class="port-action-btn" onclick="buyDragonVase()">Buy — 5 ingots</button>
-          <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">+1 Raw Cobalt Sample</span>
+          <button class="port-action-btn" onclick="buyDragonVase()">Buy — 5 ingots<span class="port-action-btn-req">+1 Raw Cobalt Sample</span></button>
         </div>
       </div>
     </div>
@@ -7302,16 +7328,15 @@ function populateBuyItems(portName) {
     const btn = document.createElement('button');
     btn.className = 'port-action-btn';
     const _cur = item.currency === 'coins' ? 'coins' : 'ingots';
-    btn.textContent = `Buy — ${item.price} ${_cur}${item.note ? ' ★' : ''}`;
+    const _priceLine = `Buy — ${item.price} ${_cur}${item.note ? ' ★' : ''}`;
+    if (item.reqItem && item.reqItemLabel) {
+      btn.innerHTML = `${_priceLine}<span class="port-action-btn-req">+1 ${item.reqItemLabel}</span>`;
+    } else {
+      btn.textContent = _priceLine;
+    }
     if (item.consumes) btn.title = `Consumes: ${item.consumes.replace(/^.*\//, '').replace(/\.\w+$/, '')} · ${item.note || ''}`;
     btn.addEventListener('click', () => buyPortItem(item));
-    const reqLbl = document.createElement('span');
-    if (item.reqItem && item.reqItemLabel) {
-      reqLbl.style.cssText = "font-size:0.5rem;color:rgba(212,168,85,0.55);";
-      reqLbl.textContent = `+1 ${item.reqItemLabel}`;
-    }
     info.appendChild(lbl); if (szName) info.appendChild(szLbl); info.appendChild(btn);
-    if (item.reqItem && item.reqItemLabel) info.appendChild(reqLbl);
     row.appendChild(frame); row.appendChild(info);
     area.appendChild(row);
   });
@@ -8796,8 +8821,7 @@ function openGotoCaves() {
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span class="buy-item-label">Red Precious Coral</span>
         ${_rcSz ? `<span class="buy-item-sizelabel">${_rcSz}</span>` : ''}
-        <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
-        <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">+1 Telescope</span>
+        <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots<span class="port-action-btn-req">+1 Telescope</span></button>
       </div>
     </div>`;
 }
@@ -9928,7 +9952,7 @@ function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card))
 function _animateDiscardHeldCard(playerIdx, cardId, animClass, logMsg) {
   const hand = document.getElementById(`held-p${playerIdx + 1}`);
   const el = hand && hand.querySelector(`[data-card-id="${cardId}"]`);
-  const duration = animClass === 'card-whip-down' ? 520 : 950;
+  const duration = animClass === 'card-whip-down' ? 520 : 1400;
   if (el) el.classList.add(animClass);
   if (logMsg) log(logMsg);
   setTimeout(() => {
