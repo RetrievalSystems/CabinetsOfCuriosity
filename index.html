@@ -9583,6 +9583,8 @@ const SEA_CARD_TEMPLATES = [
     { isBuy:true, oneOff:true, buyImg:'images/scrimshaw.png', buyName:'Whale Tooth Scrimshaw', buyPrice:4 }),
   mkCard('images/sailorshipbottle.jpeg', (p,i)=>{ log(`${p.name}: The bosun offers a ship-in-a-bottle.`); },
     { isBuy:true, oneOff:true, buyImg:'images/shipinbottle.png', buyName:'Ship in a Bottle', buyPrice:5 }),
+  mkCard('images/narwhaltusk.jpg', (p,i)=>{ log(`${p.name}: A crewman offers a sea-unicorn's horn — a narwhal tusk cast ashore in the Orkney Isles.`); },
+    { isBuy:true, oneOff:true, buyImg:'images/narwhal.png', buyName:'Narwhal Tusk', buyPrice:20 }),
   // ── Opportunity & social ── (tip-offs are generated below to match the op deck)
   mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
   // (pickpocket cards moved to land deck)
@@ -12466,6 +12468,7 @@ const CAB_META = {
   tulipvase:   { size:'small',  name:'Delft Tulip Vase',       origin:'Amsterdam · Delft', desc:'Blue and white Delft faience multi-stem tulip vase.' },
   ship:        { size:'medium', name:'Ship in a Bottle',       origin:'At Sea',            desc:'Three-masted East Indiaman inside a sealed green glass bottle.' },
   scrimshaw:   { size:'small',  name:'Scrimshaw Whale Tooth',  origin:'At Sea',            desc:'Sperm whale tooth engraved with a ship at sea.' },
+  narwhal:     { size:'slim',   name:'Narwhal Tusk',           origin:'Orkney Isles',      desc:'A spiralled sea-unicorn\u2019s horn — in truth, the tusk of the narwhal, cast ashore whole.' },
   homer:       { size:'tall',   name:'Bust of Homer',          origin:'Grand Tour',        desc:'Marble bust of Homer on a fluted column.' },
   moonstone:   { size:'medium', name:'Blue Moonstone',          origin:'Meetiyagoda · Ceylon', desc:'Raw blue moonstone with adularescence — blue schiller, from the Meetiyagoda gem mines.' },
   moonstone2:  { size:'medium', name:'Blue Moonstone — Rough',    origin:'Meetiyagoda · Ceylon', desc:'Rough moonstone nodule, deep blue adularescence trapped in cream feldspar matrix.' },
@@ -12660,6 +12663,8 @@ const ITEM_SCORES = {
   'shellnaut':            { w:6,  c:8,  s:5,  a:6,  total:25, label:'Raw Nautilus Shell',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'oceania'   },
   'scrimshaw':            { w:4,  c:6,  s:7,  a:5,  total:22, label:'Whale Tooth Scrimshaw',
+    itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'atsea'   },
+  'narwhal':              { w:7,  c:6,  s:7,  a:6,  total:26, label:'Narwhal Tusk',
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'atsea'   },
   'ceylonjar':            { w:5,  c:5,  s:4,  a:4,  total:18, label:'Kandyan Painted Jar',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
