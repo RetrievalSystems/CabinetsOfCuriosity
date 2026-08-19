@@ -9552,18 +9552,18 @@ function mkCard(img, effect, opts={}) {
 
 const SEA_CARD_TEMPLATES = [
   // ── Omens & flavour ──
-  // Dolphins ×4
-  ...Array(4).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
-  // ── Seasick deckhand ×4 (pure flavour, no effect) ──
-  ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  // St. Elmo's Fire ×4
-  ...Array(4).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
-  // Whale sighting ×4
-  ...Array(4).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
-  // Lunar Rainbow ×2
-  ...Array(2).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: A Lunar Rainbow — a celestial blessing. +1 reputation.`); })),
-  // Doldrums ×3 — +2 reputation if the player holds the Filigree Cavaquinho (guitar)
-  ...Array(3).fill(null).map(()=> mkCard('images/doldrums.jpg', (p,i)=>{
+  // Dolphins ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
+  // ── Seasick deckhand ×2 (pure flavour, no effect) ──
+  ...Array(2).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
+  // St. Elmo's Fire ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
+  // Whale sighting ×2
+  ...Array(2).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
+  // Lunar Rainbow ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: A Lunar Rainbow — a celestial blessing. +1 reputation.`); })),
+  // Doldrums ×2 — +2 reputation if the player holds the Filigree Cavaquinho (guitar)
+  ...Array(2).fill(null).map(()=> mkCard('images/doldrums.jpg', (p,i)=>{
     const hasGuitar = (players[i].items||[]).some(it => it.img === 'images/lisbonsmallguitar.png');
     if (hasGuitar) { changeRep(i,2); log(`${p.name}: The crew are in the doldrums — but your guitar lifts their spirits! +2 reputation.`); }
     else { log(`${p.name}: The crew are in the doldrums — if only someone had a musical instrument...`); }
@@ -9572,8 +9572,8 @@ const SEA_CARD_TEMPLATES = [
   mkCard('images/slander2.jpg', (p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); }),
   // Captain's Table ×2
   ...Array(2).fill(null).map(()=> mkCard('images/captainstable.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); })),
-  // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
-  ...Array(12).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
+  // ── Seagulls ×4 ──
+  ...Array(4).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
   // ── Dominoes win ×5, loss ×5 ──
   ...[1,2,3,4,5].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
@@ -9600,7 +9600,7 @@ const SEA_CARD_TEMPLATES = [
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
   // ── Pirates ×34 ──
-  ...Array(34).fill(null).map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  ...Array(40).fill(null).map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W (doubled) ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
@@ -10217,7 +10217,7 @@ const _LAND_TIP_SRC = [
   { img:'images/tipoff6.jpeg', msg:'A bookshop owner may prove fruitful.' },
   { img:'images/tipoff7.jpeg', msg:'A local trader shares a contact.' },
 ];
-const _seaTipCount  = Math.round(TIPOFF_TARGET / 3);
+const _seaTipCount  = Math.round(TIPOFF_TARGET / 6);   // sea share halved — players mostly hear tip-offs in port, not at sea
 const _landTipCount = TIPOFF_TARGET - _seaTipCount;
 for (let k = 0; k < _seaTipCount; k++) {
   const src = _SEA_TIP_SRC[k % _SEA_TIP_SRC.length];
@@ -12797,12 +12797,11 @@ const BONUS_DEFS = [
   },
   {
     id: 'cosmopolite', name: 'Cosmopolite', pts: 15,
-    desc: 'Items from all 6 world regions (Africa, Americas, Asia, Europe, Oceania, At Sea)',
+    desc: 'Items from all 5 world regions (Africa, Americas, Asia, Europe, Oceania)',
     test(items) {
       const regions = new Set(items.map(i => i.sc.region).filter(Boolean));
-      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))];
-      // Allow match with at least 5 of 6 in case oceania items haven't been added yet
-      // Actually strictly require all 6 per spec — designer can add oceania items
+      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))]
+        .filter(r => r !== 'atsea');   // "At Sea" isn't a geographical region
       return ALL_REGIONS.every(r => regions.has(r));
     },
   },
