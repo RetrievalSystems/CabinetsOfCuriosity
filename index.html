@@ -2360,7 +2360,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   z-index: 1;
   width: calc(100vw - 192px); height: auto; max-width: 900px;
   opacity: 0;
-  transition: opacity 0.6s ease, top 91s linear;
+  transition: opacity 0.6s ease, top 100.1s linear;
   filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
   pointer-events: none;
   will-change: top, opacity;
@@ -9552,18 +9552,18 @@ function mkCard(img, effect, opts={}) {
 
 const SEA_CARD_TEMPLATES = [
   // ── Omens & flavour ──
-  // Dolphins ×2
-  ...Array(2).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
-  // ── Seasick deckhand ×2 (pure flavour, no effect) ──
-  ...Array(2).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  // St. Elmo's Fire ×2
-  ...Array(2).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
-  // Whale sighting ×2
-  ...Array(2).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
+  // Dolphins ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
+  // ── Seasick deckhand ×1 (pure flavour, no effect) ──
+  ...Array(1).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
+  // St. Elmo's Fire ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
+  // Whale sighting ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
   // Lunar Rainbow ×1
   ...Array(1).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: A Lunar Rainbow — a celestial blessing. +1 reputation.`); })),
-  // Doldrums ×2 — +2 reputation if the player holds the Filigree Cavaquinho (guitar)
-  ...Array(2).fill(null).map(()=> mkCard('images/doldrums.jpg', (p,i)=>{
+  // Doldrums ×1 — +2 reputation if the player holds the Filigree Cavaquinho (guitar)
+  ...Array(1).fill(null).map(()=> mkCard('images/doldrums.jpg', (p,i)=>{
     const hasGuitar = (players[i].items||[]).some(it => it.img === 'images/lisbonsmallguitar.png');
     if (hasGuitar) { changeRep(i,2); log(`${p.name}: The crew are in the doldrums — but your guitar lifts their spirits! +2 reputation.`); }
     else { log(`${p.name}: The crew are in the doldrums — if only someone had a musical instrument...`); }
@@ -9575,9 +9575,9 @@ const SEA_CARD_TEMPLATES = [
   // ── Seagulls ×4 ──
   ...Array(4).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
-  // ── Dominoes win ×5, loss ×5 ──
-  ...[1,2,3,4,5].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
-  ...[1,2,3,4,5].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
+  // ── Dominoes win ×2, loss ×2 ──
+  ...[1,2].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
+  ...[1,2].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
   // ── Purchasable items (one-offs) ──
   mkCard('images/sailiorscrimshaw.jpeg', (p,i)=>{ log(`${p.name}: A sailor offers fine scrimshaw.`); },
     { isBuy:true, oneOff:true, buyImg:'images/scrimshaw.png', buyName:'Whale Tooth Scrimshaw', buyPrice:4 }),
@@ -9601,38 +9601,23 @@ const SEA_CARD_TEMPLATES = [
   }, { isGhostShip:true }),
   // ── Pirates ×34 ──
   ...Array(40).fill(null).map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
-  // ── Atlantic Waterspout — kept: S, SW, SE, W (doubled) ──
+  // ── Atlantic Waterspout — kept: S, SW, SE, W (halved) ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
-  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
-  mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
   mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
-  mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
-  // ── Atlantic Whirlpool — kept: N, NE, E, W (doubled) ──
-  mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
+  // ── Atlantic Whirlpool — kept: N, NE, E, W (halved) ──
   mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
   mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
-  mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
-  mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
-  mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
-  // ── Indian Ocean storm — cardinals only: S, W (doubled) ──
-  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
-  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
+  // ── Indian Ocean storm — cardinals only: S, W (halved) ──
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
-  mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
   mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
-  mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
-  mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
   mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
 ];
 
@@ -10175,16 +10160,16 @@ const LAND_CARD_TEMPLATES = [
     effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.jpeg',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
 
   // ── Pickpocket cards — happen in busy ports (land deck) ──
-  ...Array(2).fill(null).map(() => mkCard('images/pickpocket.jpeg',  (p,i) => {
+  ...Array(4).fill(null).map(() => mkCard('images/pickpocket.jpeg',  (p,i) => {
     const lost = Math.min(p.silver||0, 2);
     p.silver = (p.silver||0) - lost;
     log(`${p.name}: Pickpocketed! −${lost} silver coins.`); updateHUD();
   })),
-  mkCard('images/pickpocket2.jpeg', (p,i) => {
+  ...Array(2).fill(null).map(() => mkCard('images/pickpocket2.jpeg', (p,i) => {
     const lost = Math.min(p.silver||0, 5);
     p.silver = (p.silver||0) - lost;
     log(`${p.name}: Badly pickpocketed! −${lost} silver coins.`); updateHUD();
-  }),
+  })),
 ];
 
 // ════════════════════════════════════════════════════════════════
