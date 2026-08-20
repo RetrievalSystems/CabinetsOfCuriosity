@@ -963,8 +963,9 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   font-family: 'Cinzel', serif;
   font-size: 0.7rem;
   color: #c8a060;
+  white-space: nowrap;
 }
-#card-buy-btns { display: flex; gap: 8px; }
+#card-buy-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .buy-btn {
   font-family: 'Cinzel', serif;
   font-size: 0.65rem;
@@ -2905,9 +2906,9 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
       </div>
       <div id="card-buy-info">
         <span id="card-buy-name"></span>
-        <span id="card-buy-price"></span>
-        <div id="card-buy-btns">
+        <div id="card-buy-row">
           <button class="buy-btn" id="btn-buy" onclick="purchaseItem()">Buy</button>
+          <span id="card-buy-price"></span>
           <button class="buy-btn pass" id="btn-pass" onclick="passItem()">Pass</button>
         </div>
       </div>
@@ -9584,7 +9585,7 @@ const SEA_CARD_TEMPLATES = [
   mkCard('images/sailorshipbottle.jpeg', (p,i)=>{ log(`${p.name}: The bosun offers a ship-in-a-bottle.`); },
     { isBuy:true, oneOff:true, buyImg:'images/shipinbottle.png', buyName:'Ship in a Bottle', buyPrice:5 }),
   mkCard('images/narwhaltusk.jpg', (p,i)=>{ log(`${p.name}: A crewman offers a sea-unicorn's horn — a narwhal tusk cast ashore in the Orkney Isles.`); },
-    { isBuy:true, oneOff:true, buyImg:'images/narwhal.png', buyName:'Narwhal Tusk', buyPrice:20 }),
+    { isBuy:true, oneOff:true, buyImg:'images/narwhal.png', buyName:'Narwhal Tusk', buyPrice:20, buyCurrency:'ingots' }),
   // ── Opportunity & social ── (tip-offs are generated below to match the op deck)
   mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
   // (pickpocket cards moved to land deck)
@@ -10255,7 +10256,8 @@ function showBuyPopup(card) {
   const popup = document.getElementById('card-buy-popup');
   document.getElementById('card-buy-img').src  = card.buyImg;
   document.getElementById('card-buy-name').textContent  = card.buyName;
-  document.getElementById('card-buy-price').textContent = `${card.buyPrice} silver coins`;
+  const _cur = card.buyCurrency === 'ingots' ? 'ingots' : 'silver coins';
+  document.getElementById('card-buy-price').textContent = `${card.buyPrice} ${_cur}`;
   pendingBuyCard = card;
   popup.classList.add('visible');
 }
@@ -10265,15 +10267,15 @@ function purchaseItem() {
   const i   = currentPIdx;
   const card = pendingBuyCard;
   if (!card) return;
-  if ((p.silver||0) < card.buyPrice) {
-    log(`${p.name}: Not enough silver! (need ${card.buyPrice})`);
+  const usesIngots = card.buyCurrency === 'ingots';
+  if (!payPrice(p, card.buyPrice, usesIngots ? 'ingots' : 'coins')) {
+    log(`${p.name}: Not enough ${usesIngots ? 'ingots' : 'silver'}! (need ${card.buyPrice})`);
     passItem(); return;
   }
-  players[i].silver -= card.buyPrice;
   players[i].items  = players[i].items || [];
   const _base = (card.buyImg||'').replace(/^.*\//,'').replace(/\.\w+$/,''); players[i].items.push({ id: _base+'_card_'+Date.now(), name: card.buyName, label: card.buyName, img: card.buyImg, price: 0, type:'goods' });
   updateInventory(i);
-  log(`${p.name} buys ${card.buyName} for ${card.buyPrice} silver.`);
+  log(`${p.name} buys ${card.buyName} for ${card.buyPrice} ${usesIngots ? 'ingots' : 'silver'}.`);
   passItem();
 }
 
