@@ -14695,6 +14695,13 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         ws.send(JSON.stringify({ type:'join_room', room, role }));
         updateBadge(true);
 
+        // Flush anything queued while the connection was still cold-starting —
+        // e.g. a character-select confirm clicked before the relay woke up.
+        if (_sendQueue.length) {
+          _sendQueue.forEach(msg => ws.send(msg));
+          _sendQueue = [];
+        }
+
         setTimeout(() => {
           if (isHost) {
             setTimeout(() => { if (_voyageReallyStarted) window.syncFullState(); }, 200);
@@ -14744,9 +14751,17 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     b.textContent = (ok ? '🟢 ' : '🔴 ') + (isHost ? 'HOST' : 'GUEST') + ' · room ' + room;
   }
 
+  let _sendQueue = [];
   window.syncAction = function(type, data) {
+    const msg = JSON.stringify({ type, data, room, sender: role });
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type, data, room, sender: role }));
+      ws.send(msg);
+    } else {
+      // Connection not ready yet (e.g. Render's relay still cold-starting) — queue it
+      // rather than silently dropping it. Without this, clicking "Ready" during that
+      // window meant the other browser would never learn you'd chosen at all, and
+      // both sides would wait on each other forever.
+      _sendQueue.push(msg);
     }
   };
 
