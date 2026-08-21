@@ -448,13 +448,23 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   box-shadow: 0 6px 20px rgba(0,0,0,0.95);
   z-index: 50 !important;
 }
+.held-card-peek {
+  filter: brightness(0.75);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+}
+.held-card-peek:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7); /* no hover response — belongs to the front card */
+}
 
 /* Singular-item cards going dead: three distinct moments, three distinct feels. */
 .card-rise-fade {
-  transition: transform 0.9s ease, opacity 0.9s ease !important;
-  transform: translateY(-90px) rotate(-6deg) !important;
-  opacity: 0 !important;
+  animation: cardRiseFadeHeld 1.4s ease-in forwards !important;
   pointer-events: none;
+}
+@keyframes cardRiseFadeHeld {
+  0%   { transform: translateY(0)       rotate(0deg);   opacity: 1; }
+  20%  { transform: translateY(-16px)   rotate(-1deg);  opacity: 1; }
+  100% { transform: translateY(-190px)  rotate(-6deg);  opacity: 0; }
 }
 .card-whip-down {
   transition: transform 0.5s cubic-bezier(.5,-0.2,.9,.4), opacity 0.5s ease !important;
@@ -463,10 +473,13 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   pointer-events: none;
 }
 .card-fade-cold {
-  transition: opacity 0.9s ease, filter 0.9s ease !important;
-  opacity: 0 !important;
-  filter: grayscale(1) !important;
+  animation: cardRiseFade 1.4s ease-in forwards !important;
   pointer-events: none;
+}
+@keyframes cardRiseFade {
+  0%   { transform: translateY(0);       opacity: 1; filter: grayscale(0); }
+  20%  { transform: translateY(-16px);   opacity: 1; filter: grayscale(0.25); }
+  100% { transform: translateY(-190px);  opacity: 0; filter: grayscale(1); }
 }
 
 .held-card img {
@@ -498,8 +511,14 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   justify-content: center;
 }
 #held-card-detail.open { display: flex; }
-#held-card-detail img {
-  width: min(500px, 86vw);   /* matches #card-display width exactly */
+#held-detail-wrap {
+  position: relative;
+  width: min(500px, 86vw);
+  max-height: 92vh;
+}
+#held-detail-img {
+  width: 100%;
+  display: block;
   max-height: 92vh;
   object-fit: contain;
   border-radius: 4px;
@@ -861,6 +880,33 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   box-shadow: 0 8px 40px rgba(0,0,0,0.95);
 }
 
+/* Pulsing highlight for singular-masterwork cards that need a companion item —
+   drawn as absolutely-positioned boxes over the baked-in card art itself, since
+   the badge and price band are part of the flat image, not separate elements.
+   Positioned as percentages of the card's own box so it works across both the
+   just-drawn view (#card-display) and the later held-card review (#held-card-detail). */
+.singular-pulse-badge, .singular-pulse-price {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px rgba(232,190,110,0.9), 0 0 18px 6px rgba(232,190,110,0.75);
+  animation: singularPulseGlow 1.8s ease-in-out infinite;
+}
+.singular-pulse-badge.show, .singular-pulse-price.show { display: block; }
+.singular-pulse-badge {
+  right: calc(2% - 10px); top: calc(82% + 10px);
+  width: 10%; height: 6.2%;
+}
+.singular-pulse-price {
+  right: 2%; bottom: 1%;
+  width: 200px; height: 20px;
+}
+@keyframes singularPulseGlow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(232,190,110,0.55), 0 0 10px 3px rgba(232,190,110,0.4); }
+  50%      { box-shadow: 0 0 0 3px rgba(232,190,110,1),    0 0 26px 9px rgba(232,190,110,0.9); }
+}
+
 #card-pox-popup {
   display: none;
   position: absolute;
@@ -924,8 +970,9 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   font-family: 'Cinzel', serif;
   font-size: 0.7rem;
   color: #c8a060;
+  white-space: nowrap;
 }
-#card-buy-btns { display: flex; gap: 8px; }
+#card-buy-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .buy-btn {
   font-family: 'Cinzel', serif;
   font-size: 0.65rem;
@@ -1154,6 +1201,15 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   transition: background 0.2s, border-color 0.2s;
 }
 .port-action-btn:hover { color: #e8c078; border-color: #c8923a; background: rgba(40,20,5,0.95); }
+.port-action-btn-req {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #e8c878;
+  margin-top: 4px;
+  opacity: 0.9;
+}
 
 #disembark-area {
   display: none;
@@ -1279,6 +1335,19 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   background: rgba(20,12,4,0.55);
   padding: 2px 7px;
   border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
+}
+.buy-item-reqlabel {
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #e8c878;
+  letter-spacing: 0.06em;
+  background: rgba(20,12,4,0.65);
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(232,200,120,0.35);
   display: inline-block;
   width: fit-content;
 }
@@ -2231,8 +2300,8 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 
 /* ── Mode select screen ─────────────────────────────────────────────────── */
 #mode-select-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: #07060a;
+  position: fixed; inset: 0; z-index: 10001;
+  background: transparent;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 40px;
   opacity: 0; transition: opacity 0.9s ease;
@@ -2291,19 +2360,21 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   opacity: 0; transition: opacity 1.3s ease;
 }
 #intro-title-wrap.show { opacity: 1; }
-/* Scroll — the letter; fades in mid-sequence, sits behind the plaque */
+/* Scroll — the letter; fades in mid-sequence, sits behind the plaque.
+   Slides up from below the viewport to fully above it, leaving roughly an
+   inch of the cabinet background visible on either side. */
 #intro-scroll {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
   z-index: 1;
-  height: 100vh; width: auto; max-width: 100vw;
+  width: calc(100vw - 192px); height: auto; max-width: 900px;
   opacity: 0;
-  clip-path: inset(0 0 calc(100% - 20px) 0);          /* start: only the top 20px strip */
-  transition: opacity 0.5s ease, clip-path 1.5s cubic-bezier(0.22,1,0.36,1) 0.45s;
+  transition: opacity 0.6s ease, top 100.1s linear;
   filter: drop-shadow(0 12px 44px rgba(0,0,0,0.7));
   pointer-events: none;
-  will-change: clip-path, opacity;
+  will-change: top, opacity;
 }
-#intro-scroll.show { opacity: 1; clip-path: inset(0 0 0 0); }   /* then unrolls down to full */
+#intro-scroll.show { opacity: 1; }
+#intro-scroll.scrolling { top: -220%; }
 /* Plaque — stretched along the bottom, holds the loading bar, sits in front */
 #intro-plaque {
   position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
@@ -2528,6 +2599,12 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 </style>
 </head>
 <body>
+
+<!-- Guaranteed full-viewport blackout, sitting below the loading/mode-select/char-select
+     overlays but above absolutely everything else (the board, its buttons, any UI that
+     might live outside #map-wrapper) — a safety net so nothing can ever visually leak
+     through during the pre-game sequence, regardless of where it sits in the DOM. -->
+<div id="pregame-blackout" style="position:fixed;inset:0;background:#000;z-index:9998;opacity:1;transition:opacity 0.6s ease;pointer-events:none;"></div>
 
 <!-- ══ MAP (full screen) ══ -->
 <div id="map-wrapper">
@@ -2796,13 +2873,19 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
 
 <!-- ══ HELD CARD DETAIL — click to expand ══ -->
 <div id="held-card-detail" onclick="closeHeldDetail()">
-  <img id="held-detail-img" src="" alt="Card">
+  <div id="held-detail-wrap">
+    <img id="held-detail-img" src="" alt="Card">
+    <div class="singular-pulse-badge" id="held-pulse-badge"></div>
+    <div class="singular-pulse-price" id="held-pulse-price"></div>
+  </div>
 </div>
 
 <!-- ══ CARD OVERLAY ══ -->
 <div id="card-overlay">
   <div id="card-display">
     <img id="card-img" src="" alt="Card">
+    <div class="singular-pulse-badge" id="card-pulse-badge"></div>
+    <div class="singular-pulse-price" id="card-pulse-price"></div>
     <!-- Pox decision — only shown for pox card -->
     <!-- Ghost ship choice — Board or Pass By -->
     <div id="ghost-ship-popup">
@@ -2830,9 +2913,9 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
       </div>
       <div id="card-buy-info">
         <span id="card-buy-name"></span>
-        <span id="card-buy-price"></span>
-        <div id="card-buy-btns">
+        <div id="card-buy-row">
           <button class="buy-btn" id="btn-buy" onclick="purchaseItem()">Buy</button>
+          <span id="card-buy-price"></span>
           <button class="buy-btn pass" id="btn-pass" onclick="passItem()">Pass</button>
         </div>
       </div>
@@ -2897,8 +2980,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span class="buy-item-label">Rainbow Tourmaline</span>
-          <span style="font-family:'Cinzel',serif;font-size:0.6rem;color:rgba(240,223,192,0.6);">Requires a Quadrant</span>
-          <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots</button>
+          <button class="port-action-btn" onclick="buyTourmaline()">Buy — 12 ingots<span class="port-action-btn-req">+1 Quadrant</span></button>
         </div>
       </div>
     </div>
@@ -2949,7 +3031,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span class="buy-item-label">Imperial Dragon Vase</span>
-          <button class="port-action-btn" onclick="buyDragonVase()">Buy — 5 ingots</button>
+          <button class="port-action-btn" onclick="buyDragonVase()">Buy — 5 ingots<span class="port-action-btn-req">+1 Raw Cobalt Sample</span></button>
         </div>
       </div>
     </div>
@@ -4190,14 +4272,14 @@ const ROUTES = {
     lineColor:'rgba(150,120,90,0.45)', smallToken:true, nextRoute:null, circuit:['falsebay'],
     nodes: [
       {x:881, y:605, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
-      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
+      {x:896, y:602, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
     ],
   },
   falsebay_return: {
     id:'falsebay_return', shipImg:'images/mule.png', shipName:'Mule back to the Cape',
     lineColor:'rgba(150,120,90,0.30)', smallToken:true, nextRoute:null, circuit:['falsebay_return'],
     nodes: [
-      {x:885, y:620, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
+      {x:896, y:602, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
       {x:881, y:605, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
     ],
   },
@@ -7216,14 +7298,11 @@ function populateBuyItems(portName) {
         if ((p.items||[]).some(gi => allVers.includes(gi.img))) return false;
       }
     }
-    // Missing a required held item — handles both image-path (telescope) and ID-prefix (apatite) reqItems
-    if (item.reqItem) {
-      const isPath = item.reqItem.startsWith('images/');
-      const hasIt  = isPath
-        ? ownedImgs.has(item.reqItem)
-        : (p.items||[]).some(gi => (gi.id||'').toLowerCase().startsWith(item.reqItem.toLowerCase()));
-      if (!hasIt) return false;
-    }
+    // Note: items requiring a companion item (e.g. telescope for Red Coral) are still
+    // shown here even without it — buyPortItem() itself blocks the actual purchase and
+    // explains what's missing. Hiding the row entirely would also hide the price and the
+    // "+1 X" hint, leaving players with no way to know the item exists until they already
+    // happen to be carrying the companion.
     // Op-card gated: only show if player holds the required card
     if (item.reqCard) {
       if (!(p.heldCards||[]).some(hc => hc.img === item.reqCard)) return false;
@@ -7257,7 +7336,12 @@ function populateBuyItems(portName) {
     const btn = document.createElement('button');
     btn.className = 'port-action-btn';
     const _cur = item.currency === 'coins' ? 'coins' : 'ingots';
-    btn.textContent = `Buy — ${item.price} ${_cur}${item.note ? ' ★' : ''}`;
+    const _priceLine = `Buy — ${item.price} ${_cur}${item.note ? ' ★' : ''}`;
+    if (item.reqItem && item.reqItemLabel) {
+      btn.innerHTML = `${_priceLine}<span class="port-action-btn-req">+1 ${item.reqItemLabel}</span>`;
+    } else {
+      btn.textContent = _priceLine;
+    }
     if (item.consumes) btn.title = `Consumes: ${item.consumes.replace(/^.*\//, '').replace(/\.\w+$/, '')} · ${item.note || ''}`;
     btn.addEventListener('click', () => buyPortItem(item));
     info.appendChild(lbl); if (szName) info.appendChild(szLbl); info.appendChild(btn);
@@ -7742,6 +7826,7 @@ function buyNagasakiVase() {
   const p = cp();
   if (nagasakiVaseStock <= 0) { setStatus('The Arita vases are sold out.'); return; }
   if (boughtThisTurn.has('nagasaki_vase')) { setStatus('One Arita vase per turn — return next turn.'); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 5, 'ingots')) { log(`${p.name}: Need 5 ingots for the vase.`); return; }
   p.items = p.items || [];
   p.items.push({ id:'nagasakivase3_'+Date.now(), img:'images/nagasakivase3.png', label:'Arita Gourd Vase', type:'goods', price:5 });
@@ -7754,6 +7839,7 @@ function buyNagasakiImari() {
   const p = cp();
   if (nagasakiImariStock <= 0) { setStatus('The Imari vases are sold out.'); return; }
   if (boughtThisTurn.has('nagasaki_imari')) { setStatus('One Imari vase per turn — return next turn.'); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 16, 'ingots')) { log(`${p.name}: Need 16 ingots for the Imari vase.`); return; }
   p.items = p.items || [];
   p.items.push({ id:'imari2_'+Date.now(), img:'images/nagasakivasei2.png', label:'Imari Covered Vase', type:'goods', price:16 });
@@ -8038,12 +8124,27 @@ function returnRatnapuraSampan() {
 }
 
 function buyTourmaline() {
+  // Guard against a rapid double-click firing this twice before the first
+  // click's DOM/state updates (and the disabled op-card check) have settled.
+  if (buyTourmaline._busy) return;
+  buyTourmaline._busy = true;
+  try {
+    _buyTourmalineInner();
+  } finally {
+    buyTourmaline._busy = false;
+  }
+}
+function _buyTourmalineInner() {
   const p = cp();
   const oi = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('tourmaline'));
   if (oi < 0) { setStatus('You need a Rainbow Tourmaline op card to purchase here.'); return; }
-  if ((p.items||[]).length >= 6) { setStatus(`${p.name}: Inventory full.`); return; }
   if (tourmalineStock <= 0) { setStatus('The cluster is already claimed — another merchant got there first.'); return; }
-  // Requires a Quadrant — the miner wants a fine navigational instrument in trade
+  // Requires a Quadrant — the miner wants a fine navigational instrument in trade.
+  // No separate inventory-full check here: since this purchase always consumes a
+  // Quadrant, it's a net-zero swap — the same reasoning Dragon Vase and Red Coral
+  // already correctly use. The old check here fired before this consumption was
+  // accounted for, wrongly blocking the purchase at a full inventory even when it
+  // wouldn't actually grow the hold at all.
   const quadrantIdx = (p.items || []).findIndex(gi => (gi.id||'').toLowerCase().startsWith('quadrant'));
   if (quadrantIdx < 0) { setStatus('The miner wants a fine Quadrant in trade first — bring him one.'); return; }
   if (!payPrice(p, 12, 'ingots')) { log(`${p.name}: Need 12 ingots for the tourmaline!`); return; }
@@ -8070,6 +8171,7 @@ function buyMoonstone() {
   }
   const prio = checkItemPriority('Meetiyagoda');
   if (!prio.canBuy && !prio.bidding) { log(`${p.name}: ${prio.msg}`); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 3, 'ingots')) { log(`${p.name}: Need 3 ingots for the moonstone!`); return; }
 
   // Random variant from the pool — each stone is unique
@@ -8370,9 +8472,20 @@ function selectBodleianCard(idx) {
   });
 
   // Take the chosen card OUT of the deck for good (finite deck — no recycling).
-  // The two unchosen cards simply stay in the deck where they were.
   const _di = oppDeck.indexOf(chosen);
   if (_di >= 0) { oppDeck.splice(_di, 1); if (_di < oppDeckIndex) oppDeckIndex--; }
+
+  // The two unchosen cards go to the back of the pack, so the player (or anyone
+  // else) doesn't just draw them again over the next couple of turns.
+  _cards.forEach(c => {
+    if (!c || c === chosen) return;
+    const ci = oppDeck.indexOf(c);
+    if (ci < 0) return; // already expired/removed this visit
+    oppDeck.splice(ci, 1);
+    if (ci < oppDeckIndex) oppDeckIndex--;
+    oppDeck.push(c);
+  });
+
   oppDeckIndex = oppDeck.length ? (oppDeckIndex % oppDeck.length) : 0;
 
   renderHeldCards(currentPIdx);
@@ -8652,6 +8765,7 @@ function buySeaFan() {
   const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && hc.img.includes('seafan'));
   if (cardIdx < 0) { setStatus('You need the Sea Fan Diver op card.'); return; }
   if (seafanStock <= 0 || seafanIdx >= seafanDeck.length) { log(`${p.name}: No sea fans remain.`); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 3, 'ingots')) { log(`${p.name}: Need 3 ingots.`); return; }
   const fan = seafanDeck[seafanIdx];
   p.heldCards.splice(cardIdx, 1);
@@ -8708,7 +8822,6 @@ function openGotoCaves() {
   const _rcSt  = itemScoreTotal({ img: 'images/redcoral.png' });
   const _rcScoreAttrs = _rcSt != null ? `data-score="${_rcSt}" data-scoreitem="${_normItemId('images/redcoral.png')}"` : '';
   content.innerHTML=`
-    <div style="font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,85,0.5);margin-bottom:8px;">An unbroken branch of precious coral, by lamplight</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="buy-item-frame" ${_rcScoreAttrs} onclick="buyRedCoral()" style="width:${_rcFsz.w}px;height:${_rcFsz.h}px;cursor:pointer;">
         <img src="images/redcoral.png" style="width:100%;height:100%;object-fit:contain;">
@@ -8716,9 +8829,7 @@ function openGotoCaves() {
       <div style="display:flex;flex-direction:column;gap:6px;">
         <span class="buy-item-label">Red Precious Coral</span>
         ${_rcSz ? `<span class="buy-item-sizelabel">${_rcSz}</span>` : ''}
-        <span style="font-size:0.55rem;color:rgba(212,168,85,0.5);font-style:italic;">Precious Corallium — a once-in-a-lifetime prize.</span>
-        <span style="font-size:0.5rem;color:rgba(212,168,85,0.55);">Requires a Telescope</span>
-        <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots</button>
+        <button class="port-action-btn" onclick="buyRedCoral()">Buy — 12 ingots<span class="port-action-btn-req">+1 Telescope</span></button>
       </div>
     </div>`;
 }
@@ -8837,6 +8948,7 @@ function buyTreeAgateHalf(key) {
   if (!treeAgateHalves[key]) { setStatus('That half has already been taken.'); return; }
   const cardIdx = (p.heldCards||[]).findIndex(hc => hc.img && (hc.img.includes('op-treeagate') || hc.dest === 'Dahel Gorge'));
   if (cardIdx < 0) { setStatus('You need a tree agate op card to claim a half.'); return; }
+  if ((p.items||[]).length >= 6) { setStatus('Your hold is full — make room before buying more.'); return; }
   if (!payPrice(p, 8, 'ingots')) { log(`${p.name}: Need 8 ingots for a tree agate half.`); return; }
   p.heldCards.splice(cardIdx, 1);
   treeAgateHalves[key] = false;
@@ -9133,6 +9245,7 @@ function openNurembergPort() {
 function buyPolyhedra() {
   const p=cp();
   if(polyhedraStock<=0){log(`${p.name}: No more models available.`);return;}
+  if((p.items||[]).length >= 6){setStatus('Your hold is full — make room before buying more.');return;}
   if(!payPrice(p,5,'ingots')){log(`${p.name}: Need 5 ingots (or 50 silver) for the model!`);return;}
   p.items=p.items||[];
   p.items.push({id:'polyhedra1_'+Date.now(),img:'images/polyhedra1.png',label:'Geometric Model',type:'goods',price:5});
@@ -9447,29 +9560,39 @@ function mkCard(img, effect, opts={}) {
 
 const SEA_CARD_TEMPLATES = [
   // ── Omens & flavour ──
-  // Dolphins ×4
-  ...Array(4).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
-  // ── Seasick deckhand ×4 (pure flavour, no effect) ──
-  ...Array(3).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
-  // St. Elmo's Fire ×4
-  ...Array(4).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
-  // Whale sighting ×4
-  ...Array(4).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
-  // Lunar Rainbow ×2
-  ...Array(2).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ log(`${p.name}: A Lunar Rainbow — a celestial blessing.`); })),
+  // Dolphins ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/dolphins.jpeg', (p,i)=>{ log(`${p.name}: Dolphins — a good omen for safe passage.`); })),
+  // ── Seasick deckhand ×1 (pure flavour, no effect) ──
+  ...Array(1).fill(null).map(()=> mkCard('images/seasick.jpeg', (p,i)=>{ log(`${p.name}: A poor young deckhand still hasn't found his sea legs.`); })),
+  // St. Elmo's Fire ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/stelmo.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: St. Elmo's Fire — the crew delight in the omen.`); })),
+  // Whale sighting ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/whale_18_41_05.jpeg', (p,i)=>{ log(`${p.name}: A whale on the horizon — a prosperous augury!`); })),
+  // Lunar Rainbow ×1
+  ...Array(1).fill(null).map(()=> mkCard('images/moonbow.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: A Lunar Rainbow — a celestial blessing. +1 reputation.`); })),
+  // Doldrums ×1 — +2 reputation if the player holds the Filigree Cavaquinho (guitar)
+  ...Array(1).fill(null).map(()=> mkCard('images/doldrums.jpg', (p,i)=>{
+    const hasGuitar = (players[i].items||[]).some(it => it.img === 'images/lisbonsmallguitar.png');
+    if (hasGuitar) { changeRep(i,2); log(`${p.name}: The crew are in the doldrums — but your guitar lifts their spirits! +2 reputation.`); }
+    else { log(`${p.name}: The crew are in the doldrums — if only someone had a musical instrument...`); }
+  })),
+  // Slander ×1 (sea) — scandalous words follow you even at sea
+  mkCard('images/slander2.jpg', (p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); }),
   // Captain's Table ×2
   ...Array(2).fill(null).map(()=> mkCard('images/captainstable.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: The Captain invites you to his table — +1 reputation.`); })),
-  // ── Seagulls ×12 (doubled to thin the opportunity flow) ──
-  ...Array(12).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
+  // ── Seagulls ×4 ──
+  ...Array(4).fill(null).map(()=> mkCard('images/seagulls.jpeg',  (p,i)=>{ log(`${p.name}: Seagulls on deck — a storm to expect.`); })),
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
-  // ── Dominoes win ×5, loss ×5 ──
-  ...[1,2,3,4,5].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
-  ...[1,2,3,4,5].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
+  // ── Dominoes win ×2, loss ×2 ──
+  ...[1,2].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
+  ...[1,2].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
   // ── Purchasable items (one-offs) ──
   mkCard('images/sailiorscrimshaw.jpeg', (p,i)=>{ log(`${p.name}: A sailor offers fine scrimshaw.`); },
     { isBuy:true, oneOff:true, buyImg:'images/scrimshaw.png', buyName:'Whale Tooth Scrimshaw', buyPrice:4 }),
   mkCard('images/sailorshipbottle.jpeg', (p,i)=>{ log(`${p.name}: The bosun offers a ship-in-a-bottle.`); },
     { isBuy:true, oneOff:true, buyImg:'images/shipinbottle.png', buyName:'Ship in a Bottle', buyPrice:5 }),
+  mkCard('images/narwhaltusk.jpg', (p,i)=>{ log(`${p.name}: A crewman offers a sea-unicorn's horn — a narwhal tusk cast ashore in the Orkney Isles.`); },
+    { isBuy:true, oneOff:true, buyImg:'images/narwhal.png', buyName:'Narwhal Tusk', buyPrice:20, buyCurrency:'ingots' }),
   // ── Opportunity & social ── (tip-offs are generated below to match the op deck)
   mkCard('images/fireondeck.jpeg', (p,i)=>{ changeRep(i,1); log(`${p.name}: Fire on deck! You help quell it — +1 reputation.`); }),
   // (pickpocket cards moved to land deck)
@@ -9485,39 +9608,24 @@ const SEA_CARD_TEMPLATES = [
     // showGhostShipChoice handled by showCard setTimeout — do NOT call here
   }, { isGhostShip:true }),
   // ── Pirates ×34 ──
-  ...Array(34).fill(null).map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
-  // ── Atlantic Waterspout — kept: S, SW, SE, W (doubled) ──
+  ...Array(40).fill(null).map(()=> mkCard('images/pirates.jpeg', (p,i)=>{ log(`${p.name}: Black flags! PIRATE DIAL +1.`); advancePirateDial(); }, { isPirate:true })),
+  // ── Atlantic Waterspout — kept: S, SW, SE, W (halved) ──
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
   mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wss.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves S.`);  advanceStormToken('atlantic','S');  }, { isStorm:true }),
-  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
-  mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wssw.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SW.`); advanceStormToken('atlantic','SW'); }, { isStorm:true }),
   mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
-  mkCard('images/wsse.jpeg', (p,i)=>{ log(`${p.name}: Waterspout moves SE.`); advanceStormToken('atlantic','SE'); }, { isStorm:true }),
   mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
-  mkCard('images/wsw.jpeg',  (p,i)=>{ log(`${p.name}: Waterspout moves W.`);  advanceStormToken('atlantic','W');  }, { isStorm:true }),
-  // ── Atlantic Whirlpool — kept: N, NE, E, W (doubled) ──
-  mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
+  // ── Atlantic Whirlpool — kept: N, NE, E, W (halved) ──
   mkCard('images/whirln.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves N.`);  advanceStormToken('whirlpool','N');  }, { isStorm:true }),
   mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
-  mkCard('images/whirlne.jpeg', (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves NE.`); advanceStormToken('whirlpool','NE'); }, { isStorm:true }),
-  mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirle.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves E.`);  advanceStormToken('whirlpool','E');  }, { isStorm:true }),
   mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
-  mkCard('images/whirlw.jpeg',  (p,i)=>{ log(`${p.name}: Whirlpool stirs — moves W.`);  advanceStormToken('whirlpool','W');  }, { isStorm:true }),
-  // ── Indian Ocean storm — cardinals only: S, W (doubled) ──
-  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
-  mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
+  // ── Indian Ocean storm — cardinals only: S, W (halved) ──
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_s.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves S.`); advanceStormToken('indian','S'); }, { isStorm:true }),
   mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
-  mkCard('images/storm2_w.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves W.`); advanceStormToken('indian','W'); }, { isStorm:true }),
   mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
-  mkCard('images/storm2_n.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves N.`); advanceStormToken('indian','N'); }, { isStorm:true }),
-  mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
   mkCard('images/storm2_e.jpeg', (p,i)=>{ log(`${p.name}: Indian Ocean storm moves E.`); advanceStormToken('indian','E'); }, { isStorm:true }),
 ];
 
@@ -9673,21 +9781,54 @@ function renderHeldCards(playerIdx) {
   // Only non-retained cards go in the fan hand
   const cards  = (players[playerIdx].heldCards || []).filter(hc => !isRetainedCard(hc));
   const isOwner = playerIdx === currentPIdx; // owner sees face up
-  const count  = cards.length;
-  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between cards
+
+  // Group duplicates (same card art) so they share one fan slot — extra copies
+  // stack behind the front card rather than each claiming their own spread
+  // position, which is what made the fan balloon out after a while.
+  const groups = [];
+  const groupByImg = new Map();
+  cards.forEach(hc => {
+    let g = groupByImg.get(hc.img);
+    if (!g) { g = []; groupByImg.set(hc.img, g); groups.push(g); }
+    g.push(hc);
+  });
+
+  const count  = groups.length;
+  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between fan slots
   const totalW = count > 1 ? spread * (count - 1) + 62 : 62;
 
   container.style.width  = totalW + 'px';
   container.style.height = '190px';
 
-  cards.forEach((hc, i) => {
+  groups.forEach((group, i) => {
+    const offset = i * spread;
+    const rot    = count > 1 ? (i - (count-1)/2) * 3 : 0;
+
+    // Extra copies of this same card, stacked just behind the front one —
+    // small peeking offset, lower z-index, not interactive (the front card
+    // represents the whole stack).
+    for (let d = group.length - 1; d >= 1; d--) {
+      const peek = document.createElement('div');
+      peek.className = 'held-card held-card-peek';
+      peek.style.left      = (offset - d * 2) + 'px';
+      peek.style.bottom    = (d * 11) + 'px';
+      peek.style.zIndex    = 10 + i;
+      peek.style.transform = `rotate(${rot}deg)`;
+      peek.style.pointerEvents = 'none';
+      const peekImg = document.createElement('img');
+      const ownerIsAI = (typeof aiPlayers !== 'undefined' && aiPlayers && aiPlayers[playerIdx]);
+      const showFace = (isOwner && !ownerIsAI) || group[d].alwaysFaceUp;
+      peekImg.src = showFace ? group[d].img : 'images/img-card-back.jpg';
+      peek.appendChild(peekImg);
+      container.appendChild(peek);
+    }
+
+    const hc = group[0];
     const el = document.createElement('div');
     el.className = 'held-card';
     el.dataset.cardId = hc.id;
-    const offset = i * spread;
-    const rot    = count > 1 ? (i - (count-1)/2) * 3 : 0;
     el.style.left      = offset + 'px';
-    el.style.zIndex    = 10 + i;
+    el.style.zIndex    = 10 + i + group.length; // stays above its own peeking duplicates
     el.style.transform = `rotate(${rot}deg)`;
     el.style.bottom    = '0';
 
@@ -9739,6 +9880,9 @@ function renderHeldCards(playerIdx) {
 function showHeldDetail(imgSrc) {
   document.getElementById('held-detail-img').src = imgSrc;
   document.getElementById('held-card-detail').classList.add('open');
+  const isSingularCompanion = !!(_singularInfoFor({ img: imgSrc })?.reqItem);
+  document.getElementById('held-pulse-badge').classList.toggle('show', isSingularCompanion);
+  document.getElementById('held-pulse-price').classList.toggle('show', isSingularCompanion);
 }
 function closeHeldDetail() {
   document.getElementById('held-card-detail').classList.remove('open');
@@ -9825,7 +9969,7 @@ const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket', reqItem: 'shellnautpeeled' },
   { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral', reqItem: 'telescope' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
-  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball' },
+  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball', reqItem: 'polyhedra' },
   { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
 function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
@@ -9836,7 +9980,7 @@ function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card))
 function _animateDiscardHeldCard(playerIdx, cardId, animClass, logMsg) {
   const hand = document.getElementById(`held-p${playerIdx + 1}`);
   const el = hand && hand.querySelector(`[data-card-id="${cardId}"]`);
-  const duration = animClass === 'card-whip-down' ? 520 : 950;
+  const duration = animClass === 'card-whip-down' ? 520 : 1400;
   if (el) el.classList.add(animClass);
   if (logMsg) log(logMsg);
   setTimeout(() => {
@@ -9862,6 +10006,11 @@ function _sweepDeadSingularCards(matchFn, itemLabel) {
 }
 
 function drawOpportunityCard(playerIdx) {
+  // Safety net: this function is the actual ground truth for "a card was drawn this
+  // turn" — a player ending up here (however they got here — a direct draw, or a
+  // tip-off card's effect) has definitely drawn, so the turn-end gate must reflect
+  // that even if some upstream path failed to set it.
+  if (players[playerIdx]) players[playerIdx].cardDrawn = true;
   if (oppDeck.length === 0) {
     log(`${players[playerIdx].name}: the opportunity deck is empty — every card has been claimed.`);
     setStatus('No opportunity cards remain in the deck.');
@@ -9988,6 +10137,8 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
   { img:'images/slander1.jpeg',      effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Slander! Your name besmirched — -1 reputation.`); } },
+  { img:'images/slander2.jpg',       effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); } },
+  { img:'images/slander2.jpg',       effect:(p,i)=>{ changeRep(i,-1); log(`${p.name}: Scandalous words in the finest coffee house in London seek to harm your endeavours — -1 reputation.`); } },
   { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Specialist buyers — Haarlem conchologist (×3) and Leiden mineralogist (×3) ──
@@ -10050,16 +10201,16 @@ const LAND_CARD_TEMPLATES = [
     effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.jpeg',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
 
   // ── Pickpocket cards — happen in busy ports (land deck) ──
-  ...Array(2).fill(null).map(() => mkCard('images/pickpocket.jpeg',  (p,i) => {
+  ...Array(4).fill(null).map(() => mkCard('images/pickpocket.jpeg',  (p,i) => {
     const lost = Math.min(p.silver||0, 2);
     p.silver = (p.silver||0) - lost;
     log(`${p.name}: Pickpocketed! −${lost} silver coins.`); updateHUD();
   })),
-  mkCard('images/pickpocket2.jpeg', (p,i) => {
+  ...Array(2).fill(null).map(() => mkCard('images/pickpocket2.jpeg', (p,i) => {
     const lost = Math.min(p.silver||0, 5);
     p.silver = (p.silver||0) - lost;
     log(`${p.name}: Badly pickpocketed! −${lost} silver coins.`); updateHUD();
-  }),
+  })),
 ];
 
 // ════════════════════════════════════════════════════════════════
@@ -10092,7 +10243,7 @@ const _LAND_TIP_SRC = [
   { img:'images/tipoff6.jpeg', msg:'A bookshop owner may prove fruitful.' },
   { img:'images/tipoff7.jpeg', msg:'A local trader shares a contact.' },
 ];
-const _seaTipCount  = Math.round(TIPOFF_TARGET / 3);
+const _seaTipCount  = Math.round(TIPOFF_TARGET / 6);   // sea share halved — players mostly hear tip-offs in port, not at sea
 const _landTipCount = TIPOFF_TARGET - _seaTipCount;
 for (let k = 0; k < _seaTipCount; k++) {
   const src = _SEA_TIP_SRC[k % _SEA_TIP_SRC.length];
@@ -10145,7 +10296,8 @@ function showBuyPopup(card) {
   const popup = document.getElementById('card-buy-popup');
   document.getElementById('card-buy-img').src  = card.buyImg;
   document.getElementById('card-buy-name').textContent  = card.buyName;
-  document.getElementById('card-buy-price').textContent = `${card.buyPrice} silver coins`;
+  const _cur = card.buyCurrency === 'ingots' ? 'ingots' : 'silver coins';
+  document.getElementById('card-buy-price').textContent = `${card.buyPrice} ${_cur}`;
   pendingBuyCard = card;
   popup.classList.add('visible');
 }
@@ -10155,15 +10307,15 @@ function purchaseItem() {
   const i   = currentPIdx;
   const card = pendingBuyCard;
   if (!card) return;
-  if ((p.silver||0) < card.buyPrice) {
-    log(`${p.name}: Not enough silver! (need ${card.buyPrice})`);
+  const usesIngots = card.buyCurrency === 'ingots';
+  if (!payPrice(p, card.buyPrice, usesIngots ? 'ingots' : 'coins')) {
+    log(`${p.name}: Not enough ${usesIngots ? 'ingots' : 'silver'}! (need ${card.buyPrice})`);
     passItem(); return;
   }
-  players[i].silver -= card.buyPrice;
   players[i].items  = players[i].items || [];
   const _base = (card.buyImg||'').replace(/^.*\//,'').replace(/\.\w+$/,''); players[i].items.push({ id: _base+'_card_'+Date.now(), name: card.buyName, label: card.buyName, img: card.buyImg, price: 0, type:'goods' });
   updateInventory(i);
-  log(`${p.name} buys ${card.buyName} for ${card.buyPrice} silver.`);
+  log(`${p.name} buys ${card.buyName} for ${card.buyPrice} ${usesIngots ? 'ingots' : 'silver'}.`);
   passItem();
 }
 
@@ -10241,6 +10393,9 @@ function drawCard(type) {
 function showCard(imgSrc, buyCard, isPox, isGhostShip, isCaptainsOffer, opts) {
   const overlay = document.getElementById('card-overlay');
   document.getElementById('card-img').src = imgSrc;
+  const isSingularCompanion = !!(_singularInfoFor({ img: imgSrc })?.reqItem);
+  document.getElementById('card-pulse-badge').classList.toggle('show', isSingularCompanion);
+  document.getElementById('card-pulse-price').classList.toggle('show', isSingularCompanion);
   document.getElementById('card-buy-popup').classList.remove('visible');
   document.getElementById('card-pox-popup').classList.remove('visible');
   document.getElementById('ghost-ship-popup').classList.remove('visible');
@@ -11312,6 +11467,8 @@ function beginVoyage() {
   // Remove the pre-game black cover now that the game is starting
   const mapCover = document.getElementById('map-cover');
   if (mapCover) { mapCover.style.opacity = '0'; setTimeout(() => mapCover.remove(), 600); }
+  const blackout = document.getElementById('pregame-blackout');
+  if (blackout) { blackout.style.opacity = '0'; setTimeout(() => blackout.remove(), 600); }
 
   try {
     buildSVG(); renderShips();
@@ -12338,6 +12495,7 @@ const CAB_META = {
   tulipvase:   { size:'small',  name:'Delft Tulip Vase',       origin:'Amsterdam · Delft', desc:'Blue and white Delft faience multi-stem tulip vase.' },
   ship:        { size:'medium', name:'Ship in a Bottle',       origin:'At Sea',            desc:'Three-masted East Indiaman inside a sealed green glass bottle.' },
   scrimshaw:   { size:'small',  name:'Scrimshaw Whale Tooth',  origin:'At Sea',            desc:'Sperm whale tooth engraved with a ship at sea.' },
+  narwhal:     { size:'slim',   name:'Narwhal Tusk',           origin:'Orkney Isles',      desc:'A spiralled sea-unicorn\u2019s horn — in truth, the tusk of the narwhal, cast ashore whole.' },
   homer:       { size:'tall',   name:'Bust of Homer',          origin:'Grand Tour',        desc:'Marble bust of Homer on a fluted column.' },
   moonstone:   { size:'medium', name:'Blue Moonstone',          origin:'Meetiyagoda · Ceylon', desc:'Raw blue moonstone with adularescence — blue schiller, from the Meetiyagoda gem mines.' },
   moonstone2:  { size:'medium', name:'Blue Moonstone — Rough',    origin:'Meetiyagoda · Ceylon', desc:'Rough moonstone nodule, deep blue adularescence trapped in cream feldspar matrix.' },
@@ -12505,15 +12663,15 @@ const ITEM_SCORES = {
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'asia'     },
   'shellglory':           { w:6,  c:7,  s:10, a:9,  total:32, label:'Glory of the Sea',
     itemType:'shell',     shellFamily:'cone',  mineralType:null,   region:'asia'     },
-  'nurembergmodel':       { w:7,  c:10, s:7,  a:8,  total:32, label:'Geometric Model',
+  'nurembergmodel':       { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra1':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
+  'polyhedra1':           { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra2':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
+  'polyhedra2':           { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'polyhedra3':           { w:7,  c:9,  s:5,  a:7,  total:28, label:'Geometric Model',
+  'polyhedra3':           { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
-  'op-nurembergmodel':    { w:7,  c:10, s:7,  a:8,  total:32, label:'Geometric Model',
+  'op-nurembergmodel':    { w:6,  c:8,  s:4,  a:7,  total:25, label:'Geometric Model',
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
   'amethyst':             { w:8,  c:7,  s:6,  a:8,  total:29, label:'Amethyst Geode',
     itemType:'mineral',   shellFamily:null,    mineralType:'quartz',  region:'americas' },
@@ -12532,6 +12690,8 @@ const ITEM_SCORES = {
   'shellnaut':            { w:6,  c:8,  s:5,  a:6,  total:25, label:'Raw Nautilus Shell',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'oceania'   },
   'scrimshaw':            { w:4,  c:6,  s:7,  a:5,  total:22, label:'Whale Tooth Scrimshaw',
+    itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'atsea'   },
+  'narwhal':              { w:7,  c:6,  s:7,  a:6,  total:26, label:'Narwhal Tusk',
     itemType:'curiosity', shellFamily:null,    mineralType:null,   region:'atsea'   },
   'ceylonjar':            { w:5,  c:5,  s:4,  a:4,  total:18, label:'Kandyan Painted Jar',
     itemType:'vessel',    shellFamily:null,    mineralType:null,   region:'asia'    },
@@ -12664,12 +12824,11 @@ const BONUS_DEFS = [
   },
   {
     id: 'cosmopolite', name: 'Cosmopolite', pts: 15,
-    desc: 'Items from all 6 world regions (Africa, Americas, Asia, Europe, Oceania, At Sea)',
+    desc: 'Items from all 5 world regions (Africa, Americas, Asia, Europe, Oceania)',
     test(items) {
       const regions = new Set(items.map(i => i.sc.region).filter(Boolean));
-      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))];
-      // Allow match with at least 5 of 6 in case oceania items haven't been added yet
-      // Actually strictly require all 6 per spec — designer can add oceania items
+      const ALL_REGIONS = [...new Set(Object.values(ITEM_SCORES).map(sc => sc.region).filter(Boolean))]
+        .filter(r => r !== 'atsea');   // "At Sea" isn't a geographical region
       return ALL_REGIONS.every(r => regions.has(r));
     },
   },
@@ -14126,14 +14285,28 @@ function cabClearHighlights() {
   function bye() {
     var ov = document.getElementById('intro-overlay');
     if (!ov || ov._gone) return; ov._gone = true;
-    var bl = document.getElementById('intro-black');
     var ms = document.getElementById('mode-select-overlay');
-    if (bl) bl.style.opacity = '1';
+    var plaque = document.getElementById('intro-plaque');
+    var scroll = document.getElementById('intro-scroll');
+    var titleWrap = document.getElementById('intro-title-wrap');
+    // The cabinet doors (#intro-anim) stay put — only the now-irrelevant loading
+    // chrome and letter fade away, so the player keeps the same backdrop while
+    // choosing their game type rather than cutting to black in between.
+    if (plaque) plaque.style.transition = 'opacity 0.6s ease';
+    if (plaque) plaque.style.opacity = '0';
+    if (scroll) scroll.style.transition = 'opacity 0.6s ease';
+    if (scroll) scroll.style.opacity = '0';
+    if (titleWrap) titleWrap.classList.remove('show');
+    ov.style.pointerEvents = 'none';   // the cabinet backdrop itself is never interactive again from here
     setTimeout(function() {
+      // Fully remove the faded chrome from layout, not just visually — opacity
+      // alone can still sit in front of and catch clicks meant for the mode-select
+      // buttons above it.
+      if (plaque) plaque.style.display = 'none';
+      if (scroll) scroll.style.display = 'none';
+      if (titleWrap) titleWrap.style.display = 'none';
       if (ms) ms.classList.add('visible');
-      if (ov) { ov.style.transition = 'opacity 0.8s'; ov.style.opacity = '0'; }
-      setTimeout(function() { if (ov) ov.style.display = 'none'; }, 900);
-    }, 700);
+    }, 650);
   }
 
   // Scan the page source once for every image the game references.
@@ -14209,6 +14382,17 @@ function cabClearHighlights() {
     var ov = document.getElementById('intro-overlay');
     if (!ov) { bye(); return; }
 
+    // A player who chose "Start Fresh" or "End Tutorial" already sat through
+    // this whole sequence once — skip straight to the game-choice screen on
+    // this particular reload rather than making them wait through it again.
+    // bye() itself keeps the cabinet backdrop visible and hides the rest of the
+    // loading chrome — same as the normal flow, just without sitting through it.
+    if (sessionStorage.getItem('coc_skipIntro') === '1') {
+      sessionStorage.removeItem('coc_skipIntro');
+      bye();
+      return;
+    }
+
     var titleWrap = document.getElementById('intro-title-wrap');
     var scroll    = document.getElementById('intro-scroll');
     var fill      = document.getElementById('intro-loadbar-fill');
@@ -14217,7 +14401,7 @@ function cabClearHighlights() {
     var total  = urls.length, done = 0;
     var startT = Date.now();
     var MIN_FILL = 4000;   // floor that smooths the bar fill; real load may take longer
-    var ready = false, scrollArmed = false, dismissing = false;
+    var ready = false, scrollDone = false, dismissing = false;
 
     preload(urls, function(d, t) { done = d; total = t; }, function() {});
 
@@ -14240,22 +14424,37 @@ function cabClearHighlights() {
       setTimeout(finishWhenLoaded, 150);
     }
 
-    // Click anywhere once the scroll is up to dismiss it and enter the game.
+    // Click anywhere to skip straight to the game — but only once loading has
+    // actually finished; before that there's nothing to skip to yet, so the
+    // scroll just keeps making its way up regardless of a click.
     ov.style.cursor = 'pointer';
     ov.addEventListener('click', function() {
-      if (!scrollArmed || dismissing) return;
+      if (!ready || dismissing) return;
       dismissing = true;
-      if (scroll) scroll.classList.remove('show');   // scroll fades out
-      setTimeout(finishWhenLoaded, 600);             // then wait for load -> doors fade -> game
+      bye();
     });
 
-    // Title flourish, then reveal the scroll and leave it up for the reader.
+    // Once the scroll finishes its own journey off the top of the screen,
+    // either the game's already loaded (go straight in) or it isn't yet
+    // (finishWhenLoaded quietly waits, then goes as soon as it is).
+    if (scroll) {
+      scroll.addEventListener('transitionend', function(e) {
+        if (e.propertyName !== 'top' || scrollDone || dismissing) return;
+        scrollDone = true;
+        finishWhenLoaded();
+      });
+    }
+
+    // Title flourish, then the letter fades in and begins its slow climb
+    // off the top of the screen — leaving the cabinet visible either side.
     if (titleWrap) titleWrap.classList.add('show');                                       // title fades in
     setTimeout(function() { if (titleWrap) titleWrap.classList.remove('show'); }, 2600);  // title fades out
     if (scroll) {
       setTimeout(function() {
-        scroll.classList.add('show');                          // scroll fades in...
-        setTimeout(function() { scrollArmed = true; }, 2200);   // ...then becomes dismissable
+        scroll.classList.add('show');                            // scroll fades in...
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() { scroll.classList.add('scrolling'); });   // ...then climbs
+        });
       }, 3900);
     } else {
       setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
@@ -14271,6 +14470,17 @@ function cabClearHighlights() {
 })();
 
 // ── Mode selection ────────────────────────────────────────────────────────
+// The cabinet backdrop (#intro-overlay) was deliberately kept on screen through
+// the mode-select choice itself — but once a mode is actually picked, the real
+// game (or char-select, or the tutorial) is about to take over the screen, so
+// it needs to go now, not linger indefinitely.
+function _retireIntroOverlay() {
+  const ov = document.getElementById('intro-overlay');
+  if (!ov) return;
+  ov.style.transition = 'opacity 0.6s ease';
+  ov.style.opacity = '0';
+  setTimeout(() => { ov.style.display = 'none'; }, 650);
+}
 function _enterCharSelect(nPlayers) {
   initPlayers(nPlayers);           // (re)initialise player array for chosen count
   const ms = document.getElementById('mode-select-overlay');
@@ -14278,6 +14488,7 @@ function _enterCharSelect(nPlayers) {
   if (ms) { ms.style.transition = 'opacity 0.5s ease'; ms.style.opacity = '0';
             setTimeout(() => ms.remove(), 550); }
   if (cs) { setTimeout(() => cs.style.opacity = '1', 100); }
+  _retireIntroOverlay();
 }
 function chooseSolo()   { gameMode = 'solo';   _enterCharSelect(1); }
 function chooseRival()  { gameMode = 'rivals'; _enterCharSelect(2); }
@@ -14576,6 +14787,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   function setupNetworkedCharSelect() {
     const ms = document.getElementById('mode-select-overlay');
     if (ms) ms.remove();
+    _retireIntroOverlay();
     initPlayers(2);
     hideOpponentHand();
     const cs = document.getElementById('char-select-overlay');
@@ -14626,6 +14838,8 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       if (overlay) overlay.remove();
       const mapCover = document.getElementById('map-cover');
       if (mapCover) { mapCover.style.opacity = '0'; setTimeout(() => mapCover.remove(), 600); }
+      const blackout = document.getElementById('pregame-blackout');
+      if (blackout) { blackout.style.opacity = '0'; setTimeout(() => blackout.remove(), 600); }
       try { buildSVG(); requestAnimationFrame(renderPortHotspots); } catch (e) { console.error('guest map init', e); }
       showNetMsg('Waiting for the host to start the voyage…');
       // guest doesn't run beginVoyage's state-mutating init — the first incoming
@@ -14834,6 +15048,7 @@ function startTutorial() {
   _tutActive = true;
   const ms = document.getElementById('mode-select-overlay');
   if (ms) ms.remove();
+  _retireIntroOverlay();
 
   const doors = document.createElement('div');
   doors.id = 'tut-doors';
@@ -14906,7 +15121,7 @@ async function _tutShowStep() {
   if (step.action) {
     try { await step.action(); } catch (e) { console.error('tutorial step action failed', e); }
   }
-  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; nextBtn.style.display = ''; }
 }
 
 function _tutRender(step) {
@@ -14914,6 +15129,8 @@ function _tutRender(step) {
   const dim  = document.getElementById('tut-dim');
   const box  = document.getElementById('tut-box');
   dim.style.opacity = '1';
+  dim.style.display = '';
+  box.style.display = '';   // a prior step may have hidden this entirely for a "free play" stretch
 
   document.getElementById('tut-title').textContent = step.title;
   document.getElementById('tut-text').innerHTML = step.text;
@@ -14994,14 +15211,43 @@ function _tutWaitForRealClick(targetFn) {
     if (!el) { resolve(); return; }
     _tutAllowInteraction(el);
     const nextBtn = document.getElementById('tut-next-btn');
-    if (nextBtn) nextBtn.style.display = 'none';
+    if (nextBtn) { nextBtn.style.display = 'none'; nextBtn.disabled = true; }
     const prevFilter = el.style.filter;
     el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
     const handler = () => {
       el.removeEventListener('click', handler, true);
       el.style.filter = prevFilter;
       _tutRevokeInteraction();
-      if (nextBtn) nextBtn.style.display = '';
+      if (nextBtn) { nextBtn.style.display = ''; nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+      resolve();
+    };
+    el.addEventListener('click', handler, true);
+  });
+}
+
+// Same as above, but the Next button is never shown at all during the wait — not
+// even momentarily. For "click End Turn" moments specifically, where the real
+// click itself should be the only thing that advances the tutorial; a separate
+// Next button appearing (even briefly) reads as a confusing second, duplicate
+// prompt asking for the same action twice.
+function _tutWaitForRealClickSilent(targetFn) {
+  return new Promise(resolve => {
+    const el = targetFn();
+    if (!el) { resolve(); return; }
+    _tutAllowInteraction(el);
+    // Guaranteed hidden and unclickable for the duration, regardless of whatever
+    // state a preceding _tutWaitForNext()/_tutWaitForRealClick() left it in — a
+    // leftover enabled Next button here let a click call _tutNext() directly,
+    // advancing the tutorial while the real click this wait needs never came,
+    // leaving two flows running at once.
+    const nextBtn = document.getElementById('tut-next-btn');
+    if (nextBtn) { nextBtn.disabled = true; nextBtn.style.display = 'none'; }
+    const prevFilter = el.style.filter;
+    el.style.filter = (prevFilter ? prevFilter + ' ' : '') + 'brightness(1.5) drop-shadow(0 0 14px rgba(232,200,120,0.85))';
+    const handler = () => {
+      el.removeEventListener('click', handler, true);
+      el.style.filter = prevFilter;
+      _tutRevokeInteraction();
       resolve();
     };
     el.addEventListener('click', handler, true);
@@ -15085,6 +15331,9 @@ function _tutWaitForNext() {
     nextBtn.onclick = () => {
       nextBtn.onclick = () => _tutNext();   // restore real behaviour
       nextBtn.style.display = 'none';        // hide again until the action decides otherwise
+      nextBtn.disabled = true;               // ...and genuinely unclickable while hidden, not just invisible
+      nextBtn.style.opacity = '0.4';
+      nextBtn.style.cursor = 'default';
       resolve();
     };
   });
@@ -15103,19 +15352,21 @@ function _tutSkip() {
   document.getElementById('tut-spot')?.remove();
   document.getElementById('tut-box')?.remove();
   _tutClearCallouts();
+  sessionStorage.setItem('coc_skipIntro', '1');
   location.reload();
 }
 
 function _tutFinish() {
   const box = document.getElementById('tut-box');
   document.getElementById('tut-spot')?.remove();
+  try { closePort(); } catch (e) {}
   if (box) {
     box.innerHTML = `
       <div class="tut-title">You're ready</div>
       <div class="tut-text">You may now continue with this solo game or start afresh.</div>
       <div class="tut-controls">
-        <button class="tut-skip" onclick="location.reload()">Start fresh</button>
-        <button class="tut-next" onclick="_tutDismiss()">Continue this game</button>
+        <button class="tut-skip" onclick="sessionStorage.setItem('coc_skipIntro','1'); location.reload()">Start fresh</button>
+        <button class="tut-next" onclick="_tutDismiss()">Continue Game</button>
       </div>`;
   }
 }
@@ -15124,11 +15375,6 @@ function _tutDismiss() {
   document.getElementById('tut-dim')?.remove();
   document.getElementById('tut-box')?.remove();
   _tutClearCallouts();
-  // The tutorial's last real step zooms in tight on the ship (2.4x) and never
-  // zooms back out — without this, the player resumes normal play with the
-  // map's zoom/pan still stuck at that tutorial-specific state, which is
-  // exactly what would make every port look "drifted" relative to normal view.
-  try { zoomOut(); } catch (e) {}
 }
 
 // Shows a card enlarged, positioned in the UPPER part of the screen so the narration
@@ -15177,7 +15423,7 @@ async function _tutGoToBodleian() {
   // arrival flow, opening the Bodleian port with three face-down cards.
   console.log('[TUT-DIAG] setting OUTBOUND "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click \u2018end turn\u2019 to finish up this round and start your journey.');
-  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
   // Next reappears the instant this wait resolves — but there's still real work
   // left below (letting arrival settle, revealing the narration). Re-hide it so
   // it doesn't sit there clickable, inviting an early click that skips past all
@@ -15230,7 +15476,7 @@ async function _tutBodleianRevealAndPick() {
 
 // Sequential callouts naming each fact on the enlarged Ruby card as it's mentioned —
 // rough positions/timing to start with; easy to retune once you can see it live.
-// Draws the first n of the five Ruby anatomy callouts (fresh each call, since the
+// Draws the first n of the six Ruby anatomy callouts (fresh each call, since the
 // engine clears all callouts on every step transition anyway) — each tutorial step
 // calls this with one more than the last, so the set visibly builds up click by
 // click rather than on an internal timer.
@@ -15242,6 +15488,7 @@ function _tutShowAnatomyCallouts(n) {
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*1.06 - 45, 'Located in Kongu Nadu'),
     () => _tutAddCallout(r.left + r.width*0.08 - 50, r.top + r.height*0.92 - 20, 'Nearest port: Madras'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*0.92 - 20, '1 turn from Madras'),
+    () => _tutAddCallout(window.innerWidth*0.72 - 90, window.innerHeight*0.5 + 235, 'For this item there are 3 available — you may buy one per card', 'down'),
     () => _tutAddCallout(r.left + r.width*0.55 + 50, r.top + r.height*1.06 - 45, 'Costs 12 ingots — some sellers also request other items alongside the silver'),
   ];
   for (let i = 0; i < n && i < defs.length; i++) defs[i]();
@@ -15306,7 +15553,7 @@ async function _tutShipHoverBoardDisembark() {
   await _aiWait(700);
 
   _tutSetText('Let\u2019s find our way to Madras.');
-  await _aiWait(1600);
+  await _tutWaitForNext();
 
   const shipBox = document.getElementById('port-ship-box');
   _tutRespotlight(() => shipBox);   // highlight Canton — the ship bound there
@@ -15328,7 +15575,7 @@ async function _tutShipHoverBoardDisembark() {
   }
   _tutHideSpotlight();
   _tutSetText('So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.');
-  await _aiWait(2200);
+  await _tutWaitForNext();
   const tt2 = document.getElementById('route-tooltip');
   if (tt2) tt2.style.opacity = '0';
 
@@ -15354,11 +15601,12 @@ async function _tutCabinetIntro() {
   await _aiWait(400);
   _tutRespotlight(() => document.getElementById('cabinet-btn'));
   _tutSetText('While in London you can also access the cabinet.');
-  await _aiWait(1400);
+  await _tutWaitForNext();
   try { openCabinet(); } catch (e) {}
   await _aiWait(700);
   _tutRespotlight(() => document.getElementById('cab-overlay'));
   _tutSetText('Here you place and arrange the items you buy, dragging them from your inventory on the right into the specific sized bays.');
+  await _tutWaitForNext();
 }
 
 // Demonstrates placing the Quadrant into the cabinet via the real click-to-place
@@ -15391,7 +15639,7 @@ async function _tutPlaceQuadrantDemo() {
     await _aiWait(500);   // let the settle/placement animation finish visually
   }
   _tutSetText('The collector refunds your outlay and pays half again, so placing items generates more funds as you go — though naturally, if you ever take something back out, that money is deducted again.');
-  await _aiWait(3200);
+  await _tutWaitForNext();
   _tutSetText('When your cabinet is full, you will be asked if you want to have the collector appraise it — this is your final score.');
 }
 
@@ -15402,7 +15650,7 @@ async function _tutReturnToLondon() {
 
   console.log('[TUT-DIAG] setting RETURN "click End Turn" text now, step index:', _tutIdx);
   _tutSetText('Now click End Turn.');
-  await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+  await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
   const nextBtn2 = document.getElementById('tut-next-btn');
   if (nextBtn2) nextBtn2.style.display = 'none';   // same fix as the outbound leg — keep
                                                      // hidden until the arrival work below
@@ -15548,6 +15796,7 @@ function _tutBuildSteps() {
       text: 'The other two go back to the bottom of the deck. Let\u2019s say we choose the Ruby.',
       target: () => document.getElementById('bodleian-select-area'),
       action: async () => {
+        await _tutWaitForNext();
         await _tutBodleianRevealAndPick();
         // Straight into returning to London — no separate Next click needed here,
         // since the very next step immediately asks for another real click anyway.
@@ -15569,8 +15818,13 @@ function _tutBuildSteps() {
       action: async () => { await _tutReturnToLondon(); },
     },
     {
+      title: 'Inland Journeys',
+      text: 'That was your first inland journey, it took one turn. If an inland journey takes two or more turns you do not have to draw a card during these treks, only while \u2018at sea\u2019 or \u2018on land\u2019 at a port or a destination.',
+      target: () => null,
+    },
+    {
       title: 'The Cards in Your Hand',
-      text: 'The card stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
+      text: 'So the opportunity card you have just acquired stays in your hand until you collect the item — or, if it\u2019s a singular masterwork, until another player does.',
       target: () => document.getElementById('held-p1'),
     },
     {
@@ -15587,7 +15841,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'Now let\u2019s close the port and look at the Opportunity card: where the item is located, what it\u2019s score is, how much it costs, and how long it takes to reach the destination.',
+      text: 'Each Opportunity card tells you where the item is located, what its score is, how much it costs, and how long it takes to reach the destination.',
       target: () => null,
       boxPos: 'left',
       action: async () => {
@@ -15597,7 +15851,7 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'So we can see this Ruby is worth 32 points — a high score.',
+      text: 'So we can see this Ruby is worth 32 points — a high score, and 1/8 of a bonus group (the bonus groups are listed in a dropdown menu at the top of your cabinet).',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(1); },
@@ -15625,10 +15879,17 @@ function _tutBuildSteps() {
     },
     {
       title: 'Anatomy of an Opportunity Card',
-      text: 'It will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have.',
+      text: 'For this item there are 3 available — you may buy one per card.',
       target: () => null,
       boxPos: 'left',
       action: () => { _tutShowAnatomyCallouts(5); },
+    },
+    {
+      title: 'Anatomy of an Opportunity Card',
+      text: 'It will cost 12 ingots. With the 20 coins, that\u2019s all the money you currently have. (Sellers of singular items request another item in trade, not just silver.)',
+      target: () => null,
+      boxPos: 'left',
+      action: () => { _tutShowAnatomyCallouts(6); },
       onLeave: () => { try { closeHeldDetail(); } catch (e) {} },
     },
     {
@@ -15689,13 +15950,13 @@ function _tutBuildSteps() {
     },
     {
       title: 'Via Canton',
-      text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras to get the Ruby.',
+      text: 'So we see that Madras is on the inbound journey, so we have to go to Canton first, then disembark at Madras on the way back.',
       target: () => null,
       action: async () => {
         const tt = document.getElementById('route-tooltip');
         if (tt) tt.style.opacity = '0';
         _tutHideSpotlight();
-        await _aiWait(1800);
+        await _tutWaitForNext();
         _tutSetText('Ok, let\u2019s arrange your boarding for Canton.');
         _tutRespotlight(() => document.getElementById('port-ship-box'));
         // The real boarding handler closes the port itself as part of its normal
@@ -15757,7 +16018,7 @@ function _tutBuildSteps() {
       text: 'Click End Turn to set sail.',
       target: () => document.getElementById('btn-end'),
       action: async () => {
-        await _tutWaitForRealClick(() => document.getElementById('btn-end'));
+        await _tutWaitForRealClickSilent(() => document.getElementById('btn-end'));
         const nextBtn = document.getElementById('tut-next-btn');
         if (nextBtn) nextBtn.style.display = 'none';
         await _aiWait(1400);   // let the ship's own departure animation settle
@@ -15774,6 +16035,10 @@ function _tutBuildSteps() {
       text: 'With every pirate sighting the meter advances, until it is full whereupon the pirates attempt to board and a battle ensues.',
       target: () => document.getElementById('ast-bay-p0'),
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         // Full-screen zoom, same as a real encounter — triggered manually here
         // rather than by the real battle condition, since we're stopping one
         // sighting short of it deliberately (the actual attack stays a surprise
@@ -15797,6 +16062,10 @@ function _tutBuildSteps() {
       text: 'For every hit the pirates strike, the ship takes one damage.',
       target: () => document.getElementById('ast-bay-p0'),
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         const p = players[0];
         const s = getShip(p.shipId);
         for (let i = 0; i < 3; i++) {
@@ -15828,6 +16097,12 @@ function _tutBuildSteps() {
       text: 'Storm cards move the three storms around the board — they are moved automatically for you.',
       target: () => null,
       action: async () => {
+        // Let the player move on after 2 seconds if they want — they don't need
+        // to sit through the full scripted movement to get the idea.
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         // advanceStormToken() spawns a storm at its marked point on the first
         // call (since all three start inactive in a fresh game), then genuinely
         // moves it on each call after — the exact same function a real storm
@@ -15849,6 +16124,10 @@ function _tutBuildSteps() {
       text: 'Whenever your ship collides with a storm token it will take one damage.',
       target: () => null,
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         try { zoomToNode({ x: STORM_SPAWN.indian.x, y: STORM_SPAWN.indian.y + 100, abs: true }, 2.2); } catch (e) {}
         await _aiWait(700);
         try { advanceStormToken('indian', 'S'); } catch (e) {}   // a real move too
@@ -15860,6 +16139,10 @@ function _tutBuildSteps() {
       text: 'If your ship reaches maximum damage it will shipwreck and you will start your next turn from the nearest port — you retain your silver but lose all items in inventory.',
       target: () => null,
       action: async () => {
+        setTimeout(() => {
+          const nextBtn = document.getElementById('tut-next-btn');
+          if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer'; }
+        }, 2000);
         await _aiWait(1600);
         try {
           const p = players[0];
@@ -15868,6 +16151,85 @@ function _tutBuildSteps() {
           if (node) zoomToNode(node, 2.4); else zoomOut();
         } catch (e) { try { zoomOut(); } catch (e2) {} }
         await _aiWait(700);
+      },
+    },
+    {
+      title: 'A Guest Aboard',
+      text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route. Go ahead and sail onto the Cape of Good Hope.',
+      target: () => null,
+      action: async () => {
+        // Same full-map overview the spacebar triggers — shown while this text is
+        // being read, so all the routes are visible for what it's describing.
+        const preOverviewPreview = previewRouteId;
+        previewRouteId = OVERVIEW_ROUTES;
+        buildSVG();
+        zoomOut();
+
+        await _tutWaitForNext();
+
+        // Back to the regular close-up play view before continuing.
+        previewRouteId = preOverviewPreview;
+        buildSVG();
+        zoomToCurrent();
+
+        // Engineer the next two sea draws to match the first two open-water legs
+        // of the Beijing Rose route before it reaches Cape of Good Hope:
+        // Seagulls, then Pirates. The third leg's card is left genuinely random.
+        const moveToFront = (predicate) => {
+          const idx = seaDeck.findIndex((c, i) => i >= seaDeckIndex && predicate(c));
+          if (idx < 0) return;
+          const [card] = seaDeck.splice(idx, 1);
+          seaDeck.splice(seaDeckIndex, 0, card);
+        };
+        moveToFront(c => c.img === 'images/pirates.jpeg');
+        moveToFront(c => c.img === 'images/seagulls.jpeg');
+
+        // Players already know how to draw and end their turn by this point — let
+        // them play this stretch solo, with no visible tutorial box in the way of
+        // the card decks, and just quietly watch for arrival in the background.
+        const tutBox = document.getElementById('tut-box');
+        const tutDim = document.getElementById('tut-dim');
+        const nextBtn = document.getElementById('tut-next-btn');
+        if (tutBox) tutBox.style.display = 'none';
+        if (tutDim) tutDim.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        _tutAllowInteraction(document.body);
+        while (true) {
+          const p = players[0];
+          const s = getShip(p.shipId);
+          const node = s ? ROUTES[s.routeId].nodes[s.nodeIndex] : null;
+          if (node && node.name === 'Cape of Good Hope') break;
+          await _aiWait(300);
+        }
+        _tutRevokeInteraction();
+        // The port doesn't open itself just from arriving — open it now so the
+        // next step's explanation has something concrete on screen to point at.
+        try { openPort('Cape of Good Hope'); } catch (e) {}
+        // The box was left hidden through the silent wait above, and nothing
+        // else brings it back on its own — advance straight into the next step
+        // now rather than stalling here with an invisible, unclickable box.
+        setTimeout(() => _tutNext(), 0);
+      },
+    },
+    {
+      title: 'Buying at Ports',
+      text: 'You do not need to officially disembark to buy port items, only to travel inland.',
+      target: () => null,
+    },
+    {
+      title: 'The Busiest Port',
+      text: 'The Cape of Good Hope is the crossroads of all ships heading east \u2014 here you may change ship for different routes, or switch direction and backtrack.',
+      target: () => null,
+    },
+    {
+      title: 'Moving On',
+      text: 'If you do not wish to change ship or buy any port items, simply close the port windows and end turn to continue on your chosen route.',
+      target: () => null,
+      action: async () => {
+        // This is now the tutorial's genuine last step, so the button already
+        // reads "Finish ✓" rather than "Next →" — clicking it flows straight
+        // into _tutFinish()'s own "Continue this game" screen.
+        await _tutWaitForNext();
       },
     },
     // ── BATCH 4 ends here for now — later batches get added back once this
