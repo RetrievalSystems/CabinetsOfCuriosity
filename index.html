@@ -448,6 +448,13 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   box-shadow: 0 6px 20px rgba(0,0,0,0.95);
   z-index: 50 !important;
 }
+.held-card-peek {
+  filter: brightness(0.75);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+}
+.held-card-peek:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7); /* no hover response — belongs to the front card */
+}
 
 /* Singular-item cards going dead: three distinct moments, three distinct feels. */
 .card-rise-fade {
@@ -9774,21 +9781,54 @@ function renderHeldCards(playerIdx) {
   // Only non-retained cards go in the fan hand
   const cards  = (players[playerIdx].heldCards || []).filter(hc => !isRetainedCard(hc));
   const isOwner = playerIdx === currentPIdx; // owner sees face up
-  const count  = cards.length;
-  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between cards
+
+  // Group duplicates (same card art) so they share one fan slot — extra copies
+  // stack behind the front card rather than each claiming their own spread
+  // position, which is what made the fan balloon out after a while.
+  const groups = [];
+  const groupByImg = new Map();
+  cards.forEach(hc => {
+    let g = groupByImg.get(hc.img);
+    if (!g) { g = []; groupByImg.set(hc.img, g); groups.push(g); }
+    g.push(hc);
+  });
+
+  const count  = groups.length;
+  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between fan slots
   const totalW = count > 1 ? spread * (count - 1) + 62 : 62;
 
   container.style.width  = totalW + 'px';
   container.style.height = '190px';
 
-  cards.forEach((hc, i) => {
+  groups.forEach((group, i) => {
+    const offset = i * spread;
+    const rot    = count > 1 ? (i - (count-1)/2) * 3 : 0;
+
+    // Extra copies of this same card, stacked just behind the front one —
+    // small peeking offset, lower z-index, not interactive (the front card
+    // represents the whole stack).
+    for (let d = group.length - 1; d >= 1; d--) {
+      const peek = document.createElement('div');
+      peek.className = 'held-card held-card-peek';
+      peek.style.left      = (offset - d * 2) + 'px';
+      peek.style.bottom    = (d * 11) + 'px';
+      peek.style.zIndex    = 10 + i;
+      peek.style.transform = `rotate(${rot}deg)`;
+      peek.style.pointerEvents = 'none';
+      const peekImg = document.createElement('img');
+      const ownerIsAI = (typeof aiPlayers !== 'undefined' && aiPlayers && aiPlayers[playerIdx]);
+      const showFace = (isOwner && !ownerIsAI) || group[d].alwaysFaceUp;
+      peekImg.src = showFace ? group[d].img : 'images/img-card-back.jpg';
+      peek.appendChild(peekImg);
+      container.appendChild(peek);
+    }
+
+    const hc = group[0];
     const el = document.createElement('div');
     el.className = 'held-card';
     el.dataset.cardId = hc.id;
-    const offset = i * spread;
-    const rot    = count > 1 ? (i - (count-1)/2) * 3 : 0;
     el.style.left      = offset + 'px';
-    el.style.zIndex    = 10 + i;
+    el.style.zIndex    = 10 + i + group.length; // stays above its own peeking duplicates
     el.style.transform = `rotate(${rot}deg)`;
     el.style.bottom    = '0';
 
@@ -9858,54 +9898,54 @@ function closeHeldDetail() {
 // ════════════════════════════════════════════════
 const OPPORTUNITY_CARDS = [
   // ── Amethyst geode ×2 — Minas Gerais, 8 ingots ──
-  ...Array(2).fill({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-amethyst2.jpeg',         label:'Amethyst Geode',        location:'Minas Gerais',      price:8,  currency:'ingots' })),
   // ── Dragon vase workshop ×3 — Hangzhou, 5 ingots ──
-  ...Array(2).fill({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots', note:'The kiln master also wants a rare cobalt pigment sample' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-dragonvaseworkshop.jpeg', label:'Dragon Vase',           location:'Foshan',            price:5,  currency:'ingots', note:'The kiln master also wants a rare cobalt pigment sample' })),
   // ── Nuremberg model maker ×2 — Nuremberg, 5 ingots ──
   // Central Sierras apatite miner ×3 — one op card per crystal available
-  ...Array(3).fill({ img:'images/op-apetite-miner.jpeg', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-apetite-miner.jpeg', label:'Apatite Miner — Central Sierras', location:'Central Sierras', price:4, currency:'ingots', note:'Journey east of Lisbon — asparagus stone awaits' })),
   // Nuremberg model maker ×3 — one per model, player gets random version on purchase
-  ...Array(3).fill({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-nurembergModel.jpeg', label:'Nuremberg Geometric Model', location:'Nuremberg', price:5, currency:'ingots' })),
   // ── Lapidary ×3 — Amsterdam, variable pricing ──
-  ...Array(3).fill({ img:'images/op-lapidary.jpeg',          label:'Lapidary — Nautilus Work', location:'Amsterdam',       price:1,  currency:'ingots', note:'Peeled 1 ingot / Bisected 3 ingots' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-lapidary.jpeg',          label:'Lapidary — Nautilus Work', location:'Amsterdam',       price:1,  currency:'ingots', note:'Peeled 1 ingot / Bisected 3 ingots' })),
   // ── Silversmith ×2 — Delft, 4 ingots ──
-  ...Array(4).fill({ img:'images/op-silvermith.jpeg',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' }),
+  ...Array(4).fill(null).map(()=>({ img:'images/op-silvermith.jpeg',        label:'Silversmith Mount',     location:'Delft',             price:4,  currency:'ingots' })),
   // ── Tourmaline ×1 — Ratnapura, 10 ingots ──
-  ...Array(2).fill({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots', note:'The miner also wants a fine Quadrant in trade' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-tourmaline.jpeg',        label:'Rainbow Tourmaline',    location:'Ratnapura',         price:10, currency:'ingots', note:'The miner also wants a fine Quadrant in trade' })),
   // ── Batavia sea shells ×4 — Batavia, 3 coins each ──
-  ...Array(7).fill({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' }),
+  ...Array(7).fill(null).map(()=>({ img:'images/op-seashells.jpeg',         label:'Batavia Sea Shells',    location:'Batavia',           price:3,  currency:'coins' })),
   // ── White sea fan coral ×3 — Abrolhos (label TBC) ──
-  ...Array(3).fill({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-seafandiver.jpeg',       label:'White Sea Fan Coral',   location:'Abrolhos',          price:0,  currency:'coins', note:'Label coming — free to collector' })),
   // ── Goto red coral ×1 — UNIQUE, discarded after use, Goto Islands, 12 ingots ──
-  ...Array(2).fill({ img:'images/coral_copy.jpeg', label:'Red Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves — he also wants a fine Telescope in trade.' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/coral_copy.jpeg', label:'Red Precious Coral', location:'Goto Islands', dest:'Goto Islands', price:12, currency:'ingots', note:'A Nagasaki fisherman will meet you in the hidden Goto sea caves — he also wants a fine Telescope in trade.' })),
   // ── Tree Agate ×2 — Dahel Gorge (inland from Bombay), 8 ingots per half ──
   // Two cards for one nodule: hold both to claim the matched pair; one card = one half.
-  ...Array(2).fill({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-treeagate.jpeg', label:'Tree Agate — Dahel Gorge', location:'Dahel Gorge', dest:'Dahel Gorge', price:8, currency:'ingots', note:'A tribal miner inland from Bombay — each card claims one mirrored half.' })),
   // ── Cambay mother-of-pearl casket ×1 — UNIQUE: the guild master's final, secret work ──
-  ...Array(2).fill({ img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. He also wants a peeled nautilus. Only one exists.' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-motherofpearlcasket.jpeg', label:'Mother-of-Pearl Casket — Cambay', location:'Cambay', dest:'Cambay', price:25, currency:'ingots', note:'The last surviving master of the Cambay guild — his final, secret casket. He also wants a peeled nautilus. Only one exists.' })),
   // ── Nautilus shell ×3 — Ancol, 5 coins ──
-  ...Array(3).fill({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-nautilusdiver.jpeg',     label:'Nautilus Shell',        location:'Ancol',             price:5,  currency:'coins' })),
   // ── Violet sea shells ×5 — Praia do Guincho, 5 coins ──
-  ...Array(3).fill({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-violetseasnail.jpeg',    label:'Violet Sea Shells',     location:'Praia do Guincho',  price:5,  currency:'coins' })),
   // ── Apatite ×3 — Central Sierras (single entry — duplicated above, remove) ──
   // ── Imperial Topaz ×1 — Minas Gerais, 12 ingots ──
-  ...Array(2).fill({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-imperialtopaz.jpeg',      label:'Imperial Topaz — Ouro Preto', location:'Ouro Preto', price:12, currency:'ingots' })),
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
-  ...Array(3).fill({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' })),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
-  ...Array(2).fill({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + Geometric Model required' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + Geometric Model required' })),
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
-  ...Array(3).fill({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-rubyminer.jpeg', label:'Raw Ruby Crystal', location:'Kongu Nadu', price:12, currency:'ingots' })),
   // ── Raw Cobalt Sample ×3 — Cornwall, 1 ingot ──
-  ...Array(3).fill({ img:'images/op-cobaltminer.jpg', label:'Raw Cobalt Sample', location:'Cornwall', price:1, currency:'ingots' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-cobaltminer.jpg', label:'Raw Cobalt Sample', location:'Cornwall', price:1, currency:'ingots' })),
   // ── Netti Carver ×3 — Poonamallee, 6 ingots ──
-  ...Array(3).fill({ img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' }),
+  ...Array(3).fill(null).map(()=>({ img:'images/op-netticarver.jpeg', label:'Pith-Root Carving', location:'Poonamallee', price:6, currency:'ingots' })),
   // ── Mandrake Root x4 — Caramujeira, 3 ingots (one per card held) ──
-  ...Array(4).fill({ img:'images/op-mandrake.jpeg', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' }),
+  ...Array(4).fill(null).map(()=>({ img:'images/op-mandrake.jpeg', label:'Mandrake Root', location:'Caramujeira', price:3, currency:'ingots' })),
   // ── Brain Coral x1 — False Bay, 3 ingots (a once-in-a-lifetime find) ──
-  ...Array(2).fill({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots', note:'The collector\u2019s agent here also wants a fine pocket watch' }),
+  ...Array(2).fill(null).map(()=>({ img:'images/op-braincoral.jpeg', label:'Brain Coral', location:'False Bay', price:3, currency:'ingots', note:'The collector\u2019s agent here also wants a fine pocket watch' })),
 ].map((c, i) => ({ ...c, _id: i }));
 
 let oppDeck      = [];
