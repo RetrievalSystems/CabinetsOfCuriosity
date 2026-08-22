@@ -4644,7 +4644,15 @@ function playerNode(p) {
 function playerAtSea(p) {
   if (p.shipId === null) return false;
   const s = getShip(p.shipId);
-  if (!s) { p.shipId = null; return false; } // ship removed — clear stale reference
+  if (!s) {
+    // Ship not found — normally means it was genuinely removed (solo cleanup).
+    // But never treat a momentary gap during a multiplayer state sync as proof
+    // of that: applyFullState() wholesale-replaces the ships array on every
+    // sync, and a read-only lookup permanently nulling a player's location
+    // because of one out-of-order snapshot would silently strand them.
+    if (!window._mpApplyingRemote) p.shipId = null;
+    return false;
+  } // ship removed — clear stale reference
   return s.nodeIndex > 0;
 }
 
@@ -14683,6 +14691,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   let ws = null;
   let reconnecting = false;
   let applyingRemote = false;   // guard so applying incoming state doesn't re-trigger a broadcast
+  window._mpApplyingRemote = false;  // same flag, exposed globally so main-script functions (defined in an earlier, separate script scope) can see it too
   let lastSnapshot = '';
 
   // ── connection ──────────────────────────────────────────────────
@@ -14911,7 +14920,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 
   // ── apply incoming state ────────────────────────────────────────
   function applyFullState(s) {
-    applyingRemote = true;
+    applyingRemote = true; window._mpApplyingRemote = true;
     try {
       currentPIdx = s.currentPIdx; roundNumber = s.roundNumber; turnsThisRound = s.turnsThisRound;
       if (s.gameMode !== undefined) gameMode = s.gameMode;
@@ -14949,7 +14958,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     } catch (e) {
       console.error('applyFullState failed', e);
     }
-    applyingRemote = false;
+    applyingRemote = false; window._mpApplyingRemote = false;
   }
 
   function refreshWholeUI() {
