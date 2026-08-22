@@ -4626,6 +4626,7 @@ let players = Array.from({length: NUM_PLAYERS}, (_, i) => ({
 
 let currentPIdx = 0;
 let pendingOneOff = null;   // card awaiting one-off removal after overlay closes
+let pendingBuyCard = null;  // isBuy card (e.g. Narwhal Tusk) awaiting purchase/pass decision
 const cp = () => players[currentPIdx];
 
 // Current node for a player (follows their ship, or London if not boarded)
