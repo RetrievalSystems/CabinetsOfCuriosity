@@ -14994,6 +14994,14 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       return;
     }
     if (d.type === 'full_state') {
+      // A relay can replay the last state it saw for a room to any new connection
+      // (e.g. reusing an old room name after a previous session already finished) —
+      // don't let that hijack a fresh character-select screen the local player
+      // hasn't actually confirmed yet.
+      if (!netChosen.mineDone) {
+        console.log('[MP] IGNORED full_state — character select not yet confirmed locally');
+        return;
+      }
       console.log('[MP] RECEIVED full_state — currentPIdx=' + d.data.currentPIdx + ', round=' + d.data.roundNumber);
       if (window._stateRetryInterval) { clearInterval(window._stateRetryInterval); window._stateRetryInterval = null; }
       hideNetMsg();
