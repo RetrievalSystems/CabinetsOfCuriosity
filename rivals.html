@@ -4627,6 +4627,7 @@ let players = Array.from({length: NUM_PLAYERS}, (_, i) => ({
 let currentPIdx = 0;
 let pendingOneOff = null;   // card awaiting one-off removal after overlay closes
 let pendingBuyCard = null;  // isBuy card (e.g. Narwhal Tusk) awaiting purchase/pass decision
+let pendingCardEffect = null;  // deferred effect for the currently-shown card, run on dismiss
 const cp = () => players[currentPIdx];
 
 // Current node for a player (follows their ship, or London if not boarded)
@@ -14725,7 +14726,14 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         } catch (err) { console.error('mp parse error', err); }
       };
 
-      ws.onerror = () => updateBadge(false);
+      ws.onerror = () => {
+        updateBadge(false);
+        // Some browsers never follow an outright connection failure (e.g. a cold
+        // relay refusing the handshake) with an onclose event, only onerror — so
+        // without a retry here too, a failed first attempt could leave this side
+        // never even trying again, silently stuck as a plain solo game forever.
+        if (!reconnecting) { reconnecting = true; setTimeout(() => { reconnecting = false; connect(); }, 2000); }
+      };
 
       ws.onclose = () => {
         updateBadge(false);
@@ -14890,7 +14898,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       nagasakiVaseStock, nagasakiImariStock,
       bataviaShellIdx, seafanStock, seafanIdx,
       treeAgateHalves: { ...treeAgateHalves },
-      seashellStock, violetSnailStock, polyhedraStock,
+      violetSnailStock, polyhedraStock,
       dragonVaseStock, redcoralStock, tourmalineStock,
       ITEM_POOLS:  JSON.parse(JSON.stringify(ITEM_POOLS)),
       boughtThisTurn: Array.from(boughtThisTurn),
@@ -14921,7 +14929,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       nagasakiVaseStock = s.nagasakiVaseStock; nagasakiImariStock = s.nagasakiImariStock;
       bataviaShellIdx = s.bataviaShellIdx; seafanStock = s.seafanStock; seafanIdx = s.seafanIdx;
       Object.assign(treeAgateHalves, s.treeAgateHalves);
-      seashellStock = s.seashellStock; violetSnailStock = s.violetSnailStock; polyhedraStock = s.polyhedraStock;
+      violetSnailStock = s.violetSnailStock; polyhedraStock = s.polyhedraStock;
       if (s.dragonVaseStock !== undefined) dragonVaseStock = s.dragonVaseStock;
       if (s.redcoralStock !== undefined) redcoralStock = s.redcoralStock;
       if (s.tourmalineStock !== undefined) tourmalineStock = s.tourmalineStock;
