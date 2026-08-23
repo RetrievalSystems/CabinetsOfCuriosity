@@ -6785,6 +6785,12 @@ function previewRoute() {
 let currentPortName = '';   // tracked so buyPortItem() can refresh the panel
 
 function openPort(portName, portImg) {
+  // Multiplayer: a player should never see or interact with a port/destination
+  // screen that isn't their own — this is the single, central guard for every
+  // possible way openPort() can get triggered (ship-arrival side effects run
+  // on whichever browser happened to process them, trek handoffs, etc.), rather
+  // than trying to individually gate each call site.
+  if (typeof window !== 'undefined' && window._mpActive && currentPIdx !== window._myPlayerIdx) return;
   // ── Geographic disambiguation: Haarlem/Leiden nodes sit close to Delft's hotspot radius ──
   // When the Delft hotspot fires but the player is actually at a Leiden node, correct the port name.
   try {
@@ -8316,6 +8322,9 @@ function _wireBodHover(slot, cardImg) {
 }
 
 function openBodleianPort() {
+  // Same multiplayer guard as openPort() above — never let the wrong player's
+  // browser show the Bodleian card-selection screen.
+  if (typeof window !== 'undefined' && window._mpActive && currentPIdx !== window._myPlayerIdx) return;
   const p = cp();
   const bodKey = `bodleian_selected_${currentPIdx}`;
   let visit = _bodleianVisits[currentPIdx];
@@ -10742,16 +10751,27 @@ function advanceShip(s) {
         const bodNode = ROUTES['london_bodleian'].nodes[ROUTES['london_bodleian'].nodes.length - 1];
         players.filter(pl => pl.shipId === s.id).forEach(pl => {
           pl.shipId = null; pl.disembarked = true; pl.landLocation = bodNode;
+          // Multiplayer note: ships advance at the START of their owning player's
+          // turn (see the comment above), which runs locally on whichever browser
+          // just clicked End Turn to hand over — not necessarily the arriving
+          // player's own browser. Flag the popup as pending rather than opening
+          // it immediately here, so it only actually shows on the correct side.
+          pl._bodleianArrivalPending = true;
         });
         s._remove = true;
         log(`${names} arrive at the Bodleian Library — choose a card!`);
-        setTimeout(() => {
-          console.log('[CoC] Bodleian: opening port then card selection');
-          try {
-            openPort('Bodleian Library', 'images/bodleiandestination.jpg');
-            // openPort itself re-opens the card selection (this visit's cards)
-          } catch(e) { console.error('Bodleian error:', e); }
-        }, 800);
+        const _arrivingIdx = players.findIndex(pl => pl.landLocation === bodNode && pl._bodleianArrivalPending);
+        const _isLocalPlayer = (typeof window === 'undefined' || !window._mpActive) || (_arrivingIdx === window._myPlayerIdx);
+        if (_isLocalPlayer) {
+          setTimeout(() => {
+            console.log('[CoC] Bodleian: opening port then card selection');
+            try {
+              openPort('Bodleian Library', 'images/bodleiandestination.jpg');
+              // openPort itself re-opens the card selection (this visit's cards)
+              if (_arrivingIdx >= 0) players[_arrivingIdx]._bodleianArrivalPending = false;
+            } catch(e) { console.error('Bodleian error:', e); }
+          }, 800);
+        }
       }
       // ── Return cart arrives at London — disembark quietly ────────────────
       if (dest.name === 'London' && s.routeId === 'london_bodleian_return') {
@@ -11232,6 +11252,10 @@ function endTurn() {
           pl.landLocation = dest;
           pl.shipId       = null;
           pl.disembarked  = true;
+          // Same multiplayer caveat as the other Bodleian arrival path above —
+          // this runs locally on whichever browser's End Turn triggered it, not
+          // necessarily the arriving player's own, so flag it rather than firing.
+          if (dest.name === 'Bodleian Library') pl._bodleianArrivalPending = true;
         }
       });
       ships = ships.filter(sh => sh.id !== _sid);
@@ -11243,17 +11267,27 @@ function endTurn() {
 
       // Bodleian Library: open card selection directly after arrival (bypass port system)
       if (dest.name === 'Bodleian Library') {
-        setTimeout(() => {
-          console.log('[CoC] Bodleian timeout fired — calling openBodleianPort');
-          try { openBodleianPort(); } catch(e) { console.error('Bodleian modal error:', e); }
-        }, 600);
+        const _arrivingIdx2 = players.findIndex(pl => pl.shipId === null && pl.landLocation === dest && pl._bodleianArrivalPending);
+        const _isLocalPlayer2 = (typeof window === 'undefined' || !window._mpActive) || (_arrivingIdx2 === window._myPlayerIdx);
+        if (_isLocalPlayer2) {
+          setTimeout(() => {
+            console.log('[CoC] Bodleian timeout fired — calling openBodleianPort');
+            try {
+              openBodleianPort();
+              if (_arrivingIdx2 >= 0) players[_arrivingIdx2]._bodleianArrivalPending = false;
+            } catch(e) { console.error('Bodleian modal error:', e); }
+          }, 600);
+        }
       } else if (dest.isPort && dest.name && _inP.shipId === null) {
         // ── Clean trek handoff ──
         // The rider has stepped off the mule/rowboat at the final port. An inland turn draws no
         // card (cardDrawn stays true, so End Turn works and boarding onward is allowed) — just pop
         // the port open so the choices (board onward, trade, re-board) are right in front of them.
+        // Multiplayer: defer via the same pendingPortOpen field regular port arrivals already use
+        // (consumed by dismissCard) rather than calling openPort() directly here — this code runs
+        // on whichever browser's End Turn triggered it, not necessarily _inP's own browser.
         setStatus(`${_inP.name}: Arrived at ${dest.name} — board onward or trade, then end your turn.`);
-        setTimeout(() => { try { openPort(dest.name, dest.portImg); } catch(e) {} }, 650);
+        _inP.pendingPortOpen = { name: dest.name, portImg: dest.portImg };
       }
     }
   });
@@ -15029,6 +15063,24 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (!_voyageReallyStarted) return;
     let lock = document.getElementById('mp-turnlock');
     const myTurn = currentPIdx === myPlayerIdx;
+    // Catch-up: if my own arrival at the Bodleian was flagged pending (because
+    // the ship that carried me there was actually advanced on the OTHER
+    // player's browser, via their End Turn), show it now that it's genuinely
+    // my turn on my own screen, rather than never at all.
+    if (myTurn && players[myPlayerIdx] && players[myPlayerIdx]._bodleianArrivalPending) {
+      players[myPlayerIdx]._bodleianArrivalPending = false;
+      setTimeout(() => { try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch(e) {} }, 400);
+    }
+    // Same catch-up, generalized: any other port arrival that was deferred via
+    // pendingPortOpen but has no card-draw this turn to trigger dismissCard's
+    // normal consumption of it (e.g. a clean inland trek handoff). Only for
+    // the cardDrawn-already-true case — a normal arrival still needs to wait
+    // for the player to actually draw first, same as solo play.
+    if (myTurn && players[myPlayerIdx] && players[myPlayerIdx].cardDrawn && players[myPlayerIdx].pendingPortOpen) {
+      const _ppo2 = players[myPlayerIdx].pendingPortOpen;
+      players[myPlayerIdx].pendingPortOpen = null;
+      setTimeout(() => { try { openPort(_ppo2.name, _ppo2.portImg); } catch(e) {} }, 400);
+    }
     if (!lock) {
       lock = document.createElement('div');
       lock.id = 'mp-turnlock';
@@ -15050,6 +15102,12 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (_lastLockState !== myTurn) {
       _lastLockState = myTurn;
       console.log('[MP] lock ' + (myTurn ? 'OPENED — my turn' : 'CLOSED — waiting') + ' (currentPIdx=' + currentPIdx + ', myPlayerIdx=' + myPlayerIdx + ', role=' + role + ')');
+      // The camera only auto-follows a ship on the browser that ran its own
+      // endTurn() — which, per the ship-advance timing note above, may not be
+      // this player's own browser. Re-focus explicitly whenever the lock opens
+      // for me, so a guest's screen doesn't sit zoomed out until they click
+      // a port dot manually to "wake" the view.
+      if (myTurn) { try { zoomToCurrent(); } catch(e) {} }
     }
     const msg = document.getElementById('mp-turnlock-msg');
     if (msg && !myTurn) {
