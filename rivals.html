@@ -14739,6 +14739,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         reconnecting = false;
         ws.send(JSON.stringify({ type:'join_room', room, role }));
         updateBadge(true);
+        ensureResyncButton();
 
         // Flush anything queued while the connection was still cold-starting —
         // e.g. a character-select confirm clicked before the relay woke up.
@@ -14794,13 +14795,52 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (!b) {
       b = document.createElement('div');
       b.id = 'mp-badge';
-      b.style.cssText = 'position:fixed;bottom:10px;right:10px;padding:6px 12px;'
-        + 'border-radius:6px;font:bold 12px Georgia, serif;z-index:999999;color:white;'
-        + 'box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;';
+      b.style.cssText = 'position:fixed;bottom:10px;right:52px;width:92px;height:34px;'
+        + 'background:url(images/plaque.png) center/100% 100% no-repeat;'
+        + 'display:flex;align-items:center;justify-content:center;'
+        + 'font-family:"Cinzel",Georgia,serif;font-size:0.62rem;font-weight:700;letter-spacing:0.08em;'
+        + 'color:#3a2008;text-shadow:0 1px 0 rgba(255,220,140,.4);'
+        + 'z-index:999999;pointer-events:none;';
+      const dot = document.createElement('span');
+      dot.id = 'mp-badge-dot';
+      dot.style.cssText = 'position:absolute;top:4px;right:6px;width:7px;height:7px;border-radius:50%;'
+        + 'box-shadow:0 0 3px rgba(0,0,0,0.6);';
+      b.appendChild(dot);
+      const label = document.createElement('span');
+      label.id = 'mp-badge-label';
+      b.appendChild(label);
       document.body.appendChild(b);
     }
-    b.style.background = isHost ? 'rgba(250,204,21,0.92)' : 'rgba(96,165,250,0.92)';
-    b.textContent = (ok ? '🟢 ' : '🔴 ') + (isHost ? 'HOST' : 'GUEST') + ' · room ' + room;
+    document.getElementById('mp-badge-dot').style.background = ok ? '#3ecf5e' : '#e04040';
+    document.getElementById('mp-badge-label').textContent = isHost ? 'HOST' : 'GUEST';
+  }
+
+  function resyncNow() {
+    const btn = document.getElementById('mp-resync');
+    if (btn) { btn.style.transition = 'transform 0.5s'; btn.style.transform = 'rotate(360deg)'; setTimeout(() => { btn.style.transition = ''; btn.style.transform = ''; }, 500); }
+    if (isHost) {
+      // Host is authoritative — re-broadcast current state to pull the guest back in sync.
+      if (_voyageReallyStarted) window.syncFullState();
+    } else {
+      // Guest — re-request the host's current state, same mechanism used on first connect.
+      window.syncAction('request_state', {});
+    }
+  }
+
+  function ensureResyncButton() {
+    if (document.getElementById('mp-resync')) return;
+    const btn = document.createElement('button');
+    btn.id = 'mp-resync';
+    btn.title = 'Resync — click if the game looks out of step';
+    btn.textContent = '⟳';
+    btn.style.cssText = 'position:fixed;bottom:10px;right:10px;width:34px;height:34px;'
+      + 'background:url(images/plaque.png) center/220% 220% no-repeat;background-position:50% 40%;'
+      + 'border:none;border-radius:4px;cursor:pointer;'
+      + 'display:flex;align-items:center;justify-content:center;'
+      + 'font-size:1.3rem;font-weight:900;color:#2a1706;'
+      + 'z-index:999999;';
+    btn.addEventListener('click', resyncNow);
+    document.body.appendChild(btn);
   }
 
   let _sendQueue = [];
@@ -14833,13 +14873,16 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       el = document.createElement('div');
       el.id = 'mp-netmsg';
       el.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);'
-        + 'background:rgba(20,20,25,0.94);color:#f0dfc0;padding:22px 34px;border-radius:10px;'
-        + 'font:bold 18px Georgia, serif;box-shadow:0 6px 22px rgba(0,0,0,0.55);'
-        + 'z-index:999999;text-align:center;max-width:80vw;';
+        + 'width:380px;min-height:92px;'
+        + 'background:url(images/plaque.png) center/100% 100% no-repeat;'
+        + 'display:flex;align-items:center;justify-content:center;'
+        + 'font-family:"Cinzel",Georgia,serif;font-size:0.85rem;font-weight:700;letter-spacing:0.05em;'
+        + 'color:#3a2008;text-shadow:0 1px 0 rgba(255,220,140,.4);'
+        + 'z-index:999999;text-align:center;padding:0 34px;line-height:1.4;max-width:80vw;box-sizing:border-box;';
       document.body.appendChild(el);
     }
     el.textContent = text;
-    el.style.display = 'block';
+    el.style.display = 'flex';
   }
   function hideNetMsg() {
     const el = document.getElementById('mp-netmsg');
@@ -14868,6 +14911,21 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       if (s1) s1.style.display = 'none';
       if (s2) { s2.classList.remove('hidden'); s2.style.display = ''; s2.style.opacity = '1'; }
     }
+    // Restyle the Ready/confirm buttons to match the plaque look used elsewhere
+    // in the multiplayer UI — inline, so the normal solo/pass-and-play red/green
+    // styling (shared CSS class) is untouched outside this networked context.
+    [s1, s2].forEach(s => {
+      const btn = s && s.querySelector('.char-confirm-btn');
+      if (btn) {
+        btn.style.background = 'url(images/plaque.png) center/100% 100% no-repeat';
+        btn.style.color = '#3a2008';
+        btn.style.textShadow = '0 1px 0 rgba(255,220,140,.4)';
+        btn.style.boxShadow = 'none';
+        btn.style.width = '180px';
+        btn.style.height = '64px';
+        btn.style.padding = '0';
+      }
+    });
   }
 
   function localConfirm() {
