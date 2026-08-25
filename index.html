@@ -4626,6 +4626,8 @@ let players = Array.from({length: NUM_PLAYERS}, (_, i) => ({
 
 let currentPIdx = 0;
 let pendingOneOff = null;   // card awaiting one-off removal after overlay closes
+let pendingBuyCard = null;  // isBuy card (e.g. Narwhal Tusk) awaiting purchase/pass decision
+let pendingCardEffect = null;  // deferred effect for the currently-shown card, run on dismiss
 const cp = () => players[currentPIdx];
 
 // Current node for a player (follows their ship, or London if not boarded)
@@ -4642,7 +4644,15 @@ function playerNode(p) {
 function playerAtSea(p) {
   if (p.shipId === null) return false;
   const s = getShip(p.shipId);
-  if (!s) { p.shipId = null; return false; } // ship removed — clear stale reference
+  if (!s) {
+    // Ship not found — normally means it was genuinely removed (solo cleanup).
+    // But never treat a momentary gap during a multiplayer state sync as proof
+    // of that: applyFullState() wholesale-replaces the ships array on every
+    // sync, and a read-only lookup permanently nulling a player's location
+    // because of one out-of-order snapshot would silently strand them.
+    if (!window._mpApplyingRemote) p.shipId = null;
+    return false;
+  } // ship removed — clear stale reference
   return s.nodeIndex > 0;
 }
 
@@ -6775,6 +6785,12 @@ function previewRoute() {
 let currentPortName = '';   // tracked so buyPortItem() can refresh the panel
 
 function openPort(portName, portImg) {
+  // Multiplayer: a player should never see or interact with a port/destination
+  // screen that isn't their own — this is the single, central guard for every
+  // possible way openPort() can get triggered (ship-arrival side effects run
+  // on whichever browser happened to process them, trek handoffs, etc.), rather
+  // than trying to individually gate each call site.
+  if (typeof window !== 'undefined' && window._mpActive && currentPIdx !== window._myPlayerIdx) return;
   // ── Geographic disambiguation: Haarlem/Leiden nodes sit close to Delft's hotspot radius ──
   // When the Delft hotspot fires but the player is actually at a Leiden node, correct the port name.
   try {
@@ -8306,6 +8322,9 @@ function _wireBodHover(slot, cardImg) {
 }
 
 function openBodleianPort() {
+  // Same multiplayer guard as openPort() above — never let the wrong player's
+  // browser show the Bodleian card-selection screen.
+  if (typeof window !== 'undefined' && window._mpActive && currentPIdx !== window._myPlayerIdx) return;
   const p = cp();
   const bodKey = `bodleian_selected_${currentPIdx}`;
   let visit = _bodleianVisits[currentPIdx];
@@ -9933,7 +9952,7 @@ const OPPORTUNITY_CARDS = [
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
   ...Array(3).fill(null).map(()=>({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' })),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
-  ...Array(2).fill(null).map(()=>({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + Geometric Model required' })),
+  ...Array(2).fill(null).map(()=>({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + green Apatite required' })),
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
@@ -9969,7 +9988,7 @@ const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket', reqItem: 'shellnautpeeled' },
   { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral', reqItem: 'telescope' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
-  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball', reqItem: 'polyhedra' },
+  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball', reqItem: 'apatite' },
   { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
 function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
@@ -10643,7 +10662,8 @@ const PORT_ITEMS = {
   ],
   'White Cloud Mountain': [
     { img:'images/jadeball.png', label:'Jade Puzzle Ball — 8-Layer Serpentine', price:8, currency:'ingots',
-      reqCard:'images/puzzleball.jpeg', reqItem:'polyhedra', reqItemLabel:'Geometric Model',
+      reqCard:'images/puzzleball.jpeg', reqItem:'apatite', reqItemLabel:'Asparagus Stone (Apatite)',
+      reqItemNote:'A green apatite specimen is required',
       pool:'whitecloud_jadeball', hardLimit:true, note:'Only one carving ever leaves the workshop' },
   ],
   // ── Nautilus journey ports ──
@@ -10732,16 +10752,27 @@ function advanceShip(s) {
         const bodNode = ROUTES['london_bodleian'].nodes[ROUTES['london_bodleian'].nodes.length - 1];
         players.filter(pl => pl.shipId === s.id).forEach(pl => {
           pl.shipId = null; pl.disembarked = true; pl.landLocation = bodNode;
+          // Multiplayer note: ships advance at the START of their owning player's
+          // turn (see the comment above), which runs locally on whichever browser
+          // just clicked End Turn to hand over — not necessarily the arriving
+          // player's own browser. Flag the popup as pending rather than opening
+          // it immediately here, so it only actually shows on the correct side.
+          pl._bodleianArrivalPending = true;
         });
         s._remove = true;
         log(`${names} arrive at the Bodleian Library — choose a card!`);
-        setTimeout(() => {
-          console.log('[CoC] Bodleian: opening port then card selection');
-          try {
-            openPort('Bodleian Library', 'images/bodleiandestination.jpg');
-            // openPort itself re-opens the card selection (this visit's cards)
-          } catch(e) { console.error('Bodleian error:', e); }
-        }, 800);
+        const _arrivingIdx = players.findIndex(pl => pl.landLocation === bodNode && pl._bodleianArrivalPending);
+        const _isLocalPlayer = (typeof window === 'undefined' || !window._mpActive) || (_arrivingIdx === window._myPlayerIdx);
+        if (_isLocalPlayer) {
+          setTimeout(() => {
+            console.log('[CoC] Bodleian: opening port then card selection');
+            try {
+              openPort('Bodleian Library', 'images/bodleiandestination.jpg');
+              // openPort itself re-opens the card selection (this visit's cards)
+              if (_arrivingIdx >= 0) players[_arrivingIdx]._bodleianArrivalPending = false;
+            } catch(e) { console.error('Bodleian error:', e); }
+          }, 800);
+        }
       }
       // ── Return cart arrives at London — disembark quietly ────────────────
       if (dest.name === 'London' && s.routeId === 'london_bodleian_return') {
@@ -11222,6 +11253,10 @@ function endTurn() {
           pl.landLocation = dest;
           pl.shipId       = null;
           pl.disembarked  = true;
+          // Same multiplayer caveat as the other Bodleian arrival path above —
+          // this runs locally on whichever browser's End Turn triggered it, not
+          // necessarily the arriving player's own, so flag it rather than firing.
+          if (dest.name === 'Bodleian Library') pl._bodleianArrivalPending = true;
         }
       });
       ships = ships.filter(sh => sh.id !== _sid);
@@ -11233,17 +11268,27 @@ function endTurn() {
 
       // Bodleian Library: open card selection directly after arrival (bypass port system)
       if (dest.name === 'Bodleian Library') {
-        setTimeout(() => {
-          console.log('[CoC] Bodleian timeout fired — calling openBodleianPort');
-          try { openBodleianPort(); } catch(e) { console.error('Bodleian modal error:', e); }
-        }, 600);
+        const _arrivingIdx2 = players.findIndex(pl => pl.shipId === null && pl.landLocation === dest && pl._bodleianArrivalPending);
+        const _isLocalPlayer2 = (typeof window === 'undefined' || !window._mpActive) || (_arrivingIdx2 === window._myPlayerIdx);
+        if (_isLocalPlayer2) {
+          setTimeout(() => {
+            console.log('[CoC] Bodleian timeout fired — calling openBodleianPort');
+            try {
+              openBodleianPort();
+              if (_arrivingIdx2 >= 0) players[_arrivingIdx2]._bodleianArrivalPending = false;
+            } catch(e) { console.error('Bodleian modal error:', e); }
+          }, 600);
+        }
       } else if (dest.isPort && dest.name && _inP.shipId === null) {
         // ── Clean trek handoff ──
         // The rider has stepped off the mule/rowboat at the final port. An inland turn draws no
         // card (cardDrawn stays true, so End Turn works and boarding onward is allowed) — just pop
         // the port open so the choices (board onward, trade, re-board) are right in front of them.
+        // Multiplayer: defer via the same pendingPortOpen field regular port arrivals already use
+        // (consumed by dismissCard) rather than calling openPort() directly here — this code runs
+        // on whichever browser's End Turn triggered it, not necessarily _inP's own browser.
         setStatus(`${_inP.name}: Arrived at ${dest.name} — board onward or trade, then end your turn.`);
-        setTimeout(() => { try { openPort(dest.name, dest.portImg); } catch(e) {} }, 650);
+        _inP.pendingPortOpen = { name: dest.name, portImg: dest.portImg };
       }
     }
   });
@@ -14681,6 +14726,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   let ws = null;
   let reconnecting = false;
   let applyingRemote = false;   // guard so applying incoming state doesn't re-trigger a broadcast
+  window._mpApplyingRemote = false;  // same flag, exposed globally so main-script functions (defined in an earlier, separate script scope) can see it too
   let lastSnapshot = '';
 
   // ── connection ──────────────────────────────────────────────────
@@ -14694,6 +14740,14 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         reconnecting = false;
         ws.send(JSON.stringify({ type:'join_room', room, role }));
         updateBadge(true);
+        ensureResyncButton();
+
+        // Flush anything queued while the connection was still cold-starting —
+        // e.g. a character-select confirm clicked before the relay woke up.
+        if (_sendQueue.length) {
+          _sendQueue.forEach(msg => ws.send(msg));
+          _sendQueue = [];
+        }
 
         setTimeout(() => {
           if (isHost) {
@@ -14717,7 +14771,14 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         } catch (err) { console.error('mp parse error', err); }
       };
 
-      ws.onerror = () => updateBadge(false);
+      ws.onerror = () => {
+        updateBadge(false);
+        // Some browsers never follow an outright connection failure (e.g. a cold
+        // relay refusing the handshake) with an onclose event, only onerror — so
+        // without a retry here too, a failed first attempt could leave this side
+        // never even trying again, silently stuck as a plain solo game forever.
+        if (!reconnecting) { reconnecting = true; setTimeout(() => { reconnecting = false; connect(); }, 2000); }
+      };
 
       ws.onclose = () => {
         updateBadge(false);
@@ -14735,18 +14796,65 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (!b) {
       b = document.createElement('div');
       b.id = 'mp-badge';
-      b.style.cssText = 'position:fixed;bottom:10px;right:10px;padding:6px 12px;'
-        + 'border-radius:6px;font:bold 12px Georgia, serif;z-index:999999;color:white;'
-        + 'box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;';
+      b.style.cssText = 'position:fixed;bottom:10px;right:52px;width:92px;height:34px;'
+        + 'background:url(images/plaque.png) center/100% 100% no-repeat;'
+        + 'display:flex;align-items:center;justify-content:center;'
+        + 'font-family:"Cinzel",Georgia,serif;font-size:0.62rem;font-weight:700;letter-spacing:0.08em;'
+        + 'color:#3a2008;text-shadow:0 1px 0 rgba(255,220,140,.4);'
+        + 'z-index:999999;pointer-events:none;';
+      const dot = document.createElement('span');
+      dot.id = 'mp-badge-dot';
+      dot.style.cssText = 'position:absolute;top:4px;right:6px;width:7px;height:7px;border-radius:50%;'
+        + 'box-shadow:0 0 3px rgba(0,0,0,0.6);';
+      b.appendChild(dot);
+      const label = document.createElement('span');
+      label.id = 'mp-badge-label';
+      b.appendChild(label);
       document.body.appendChild(b);
     }
-    b.style.background = isHost ? 'rgba(250,204,21,0.92)' : 'rgba(96,165,250,0.92)';
-    b.textContent = (ok ? '🟢 ' : '🔴 ') + (isHost ? 'HOST' : 'GUEST') + ' · room ' + room;
+    document.getElementById('mp-badge-dot').style.background = ok ? '#3ecf5e' : '#e04040';
+    document.getElementById('mp-badge-label').textContent = isHost ? 'HOST' : 'GUEST';
   }
 
+  function resyncNow() {
+    const btn = document.getElementById('mp-resync');
+    if (btn) { btn.style.transition = 'transform 0.5s'; btn.style.transform = 'rotate(360deg)'; setTimeout(() => { btn.style.transition = ''; btn.style.transform = ''; }, 500); }
+    if (isHost) {
+      // Host is authoritative — re-broadcast current state to pull the guest back in sync.
+      if (_voyageReallyStarted) window.syncFullState();
+    } else {
+      // Guest — re-request the host's current state, same mechanism used on first connect.
+      window.syncAction('request_state', {});
+    }
+  }
+
+  function ensureResyncButton() {
+    if (document.getElementById('mp-resync')) return;
+    const btn = document.createElement('button');
+    btn.id = 'mp-resync';
+    btn.title = 'Resync — click if the game looks out of step';
+    btn.textContent = '⟳';
+    btn.style.cssText = 'position:fixed;bottom:10px;right:10px;width:34px;height:34px;'
+      + 'background:url(images/plaque.png) center/220% 220% no-repeat;background-position:50% 40%;'
+      + 'border:none;border-radius:4px;cursor:pointer;'
+      + 'display:flex;align-items:center;justify-content:center;'
+      + 'font-size:1.3rem;font-weight:900;color:#2a1706;'
+      + 'z-index:999999;';
+    btn.addEventListener('click', resyncNow);
+    document.body.appendChild(btn);
+  }
+
+  let _sendQueue = [];
   window.syncAction = function(type, data) {
+    const msg = JSON.stringify({ type, data, room, sender: role });
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type, data, room, sender: role }));
+      ws.send(msg);
+    } else {
+      // Connection not ready yet (e.g. Render's relay still cold-starting) — queue it
+      // rather than silently dropping it. Without this, clicking "Ready" during that
+      // window meant the other browser would never learn you'd chosen at all, and
+      // both sides would wait on each other forever.
+      _sendQueue.push(msg);
     }
   };
 
@@ -14766,13 +14874,16 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       el = document.createElement('div');
       el.id = 'mp-netmsg';
       el.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);'
-        + 'background:rgba(20,20,25,0.94);color:#f0dfc0;padding:22px 34px;border-radius:10px;'
-        + 'font:bold 18px Georgia, serif;box-shadow:0 6px 22px rgba(0,0,0,0.55);'
-        + 'z-index:999999;text-align:center;max-width:80vw;';
+        + 'width:380px;min-height:92px;'
+        + 'background:url(images/plaque.png) center/100% 100% no-repeat;'
+        + 'display:flex;align-items:center;justify-content:center;'
+        + 'font-family:"Cinzel",Georgia,serif;font-size:0.85rem;font-weight:700;letter-spacing:0.05em;'
+        + 'color:#3a2008;text-shadow:0 1px 0 rgba(255,220,140,.4);'
+        + 'z-index:999999;text-align:center;padding:0 34px;line-height:1.4;max-width:80vw;box-sizing:border-box;';
       document.body.appendChild(el);
     }
     el.textContent = text;
-    el.style.display = 'block';
+    el.style.display = 'flex';
   }
   function hideNetMsg() {
     const el = document.getElementById('mp-netmsg');
@@ -14801,6 +14912,21 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       if (s1) s1.style.display = 'none';
       if (s2) { s2.classList.remove('hidden'); s2.style.display = ''; s2.style.opacity = '1'; }
     }
+    // Restyle the Ready/confirm buttons to match the plaque look used elsewhere
+    // in the multiplayer UI — inline, so the normal solo/pass-and-play red/green
+    // styling (shared CSS class) is untouched outside this networked context.
+    [s1, s2].forEach(s => {
+      const btn = s && s.querySelector('.char-confirm-btn');
+      if (btn) {
+        btn.style.background = 'url(images/plaque.png) center/100% 100% no-repeat';
+        btn.style.color = '#3a2008';
+        btn.style.textShadow = '0 1px 0 rgba(255,220,140,.4)';
+        btn.style.boxShadow = 'none';
+        btn.style.width = '180px';
+        btn.style.height = '64px';
+        btn.style.padding = '0';
+      }
+    });
   }
 
   function localConfirm() {
@@ -14863,6 +14989,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   function getFullState() {
     return {
       currentPIdx, roundNumber, turnsThisRound,
+      gameMode, NUM_PLAYERS,
       players:     JSON.parse(JSON.stringify(players)),
       ships:       JSON.parse(JSON.stringify(ships)),
       nextShipId,
@@ -14873,7 +15000,8 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       nagasakiVaseStock, nagasakiImariStock,
       bataviaShellIdx, seafanStock, seafanIdx,
       treeAgateHalves: { ...treeAgateHalves },
-      seashellStock, violetSnailStock, polyhedraStock,
+      violetSnailStock, polyhedraStock,
+      dragonVaseStock, redcoralStock, tourmalineStock,
       ITEM_POOLS:  JSON.parse(JSON.stringify(ITEM_POOLS)),
       boughtThisTurn: Array.from(boughtThisTurn),
       catDrawn,
@@ -14885,9 +15013,11 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 
   // ── apply incoming state ────────────────────────────────────────
   function applyFullState(s) {
-    applyingRemote = true;
+    applyingRemote = true; window._mpApplyingRemote = true;
     try {
       currentPIdx = s.currentPIdx; roundNumber = s.roundNumber; turnsThisRound = s.turnsThisRound;
+      if (s.gameMode !== undefined) gameMode = s.gameMode;
+      if (s.NUM_PLAYERS !== undefined) NUM_PLAYERS = s.NUM_PLAYERS;
 
       players.length = 0; s.players.forEach(p => players.push(p));
       ships.length = 0; s.ships.forEach(sh => ships.push(sh));
@@ -14901,7 +15031,10 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       nagasakiVaseStock = s.nagasakiVaseStock; nagasakiImariStock = s.nagasakiImariStock;
       bataviaShellIdx = s.bataviaShellIdx; seafanStock = s.seafanStock; seafanIdx = s.seafanIdx;
       Object.assign(treeAgateHalves, s.treeAgateHalves);
-      seashellStock = s.seashellStock; violetSnailStock = s.violetSnailStock; polyhedraStock = s.polyhedraStock;
+      violetSnailStock = s.violetSnailStock; polyhedraStock = s.polyhedraStock;
+      if (s.dragonVaseStock !== undefined) dragonVaseStock = s.dragonVaseStock;
+      if (s.redcoralStock !== undefined) redcoralStock = s.redcoralStock;
+      if (s.tourmalineStock !== undefined) tourmalineStock = s.tourmalineStock;
 
       Object.keys(ITEM_POOLS).forEach(k => delete ITEM_POOLS[k]);
       Object.assign(ITEM_POOLS, s.ITEM_POOLS);
@@ -14918,7 +15051,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     } catch (e) {
       console.error('applyFullState failed', e);
     }
-    applyingRemote = false;
+    applyingRemote = false; window._mpApplyingRemote = false;
   }
 
   function refreshWholeUI() {
@@ -14936,6 +15069,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         cabRefreshStorage();
       }
     } catch (e) {}
+    try { updateHUD(); } catch (e) {}
     updateTurnLock();
   }
 
@@ -14962,6 +15096,14 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       return;
     }
     if (d.type === 'full_state') {
+      // A relay can replay the last state it saw for a room to any new connection
+      // (e.g. reusing an old room name after a previous session already finished) —
+      // don't let that hijack a fresh character-select screen the local player
+      // hasn't actually confirmed yet.
+      if (!netChosen.mineDone) {
+        console.log('[MP] IGNORED full_state — character select not yet confirmed locally');
+        return;
+      }
       console.log('[MP] RECEIVED full_state — currentPIdx=' + d.data.currentPIdx + ', round=' + d.data.roundNumber);
       if (window._stateRetryInterval) { clearInterval(window._stateRetryInterval); window._stateRetryInterval = null; }
       hideNetMsg();
@@ -14980,6 +15122,24 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (!_voyageReallyStarted) return;
     let lock = document.getElementById('mp-turnlock');
     const myTurn = currentPIdx === myPlayerIdx;
+    // Catch-up: if my own arrival at the Bodleian was flagged pending (because
+    // the ship that carried me there was actually advanced on the OTHER
+    // player's browser, via their End Turn), show it now that it's genuinely
+    // my turn on my own screen, rather than never at all.
+    if (myTurn && players[myPlayerIdx] && players[myPlayerIdx]._bodleianArrivalPending) {
+      players[myPlayerIdx]._bodleianArrivalPending = false;
+      setTimeout(() => { try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch(e) {} }, 400);
+    }
+    // Same catch-up, generalized: any other port arrival that was deferred via
+    // pendingPortOpen but has no card-draw this turn to trigger dismissCard's
+    // normal consumption of it (e.g. a clean inland trek handoff). Only for
+    // the cardDrawn-already-true case — a normal arrival still needs to wait
+    // for the player to actually draw first, same as solo play.
+    if (myTurn && players[myPlayerIdx] && players[myPlayerIdx].cardDrawn && players[myPlayerIdx].pendingPortOpen) {
+      const _ppo2 = players[myPlayerIdx].pendingPortOpen;
+      players[myPlayerIdx].pendingPortOpen = null;
+      setTimeout(() => { try { openPort(_ppo2.name, _ppo2.portImg); } catch(e) {} }, 400);
+    }
     if (!lock) {
       lock = document.createElement('div');
       lock.id = 'mp-turnlock';
@@ -15001,6 +15161,12 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (_lastLockState !== myTurn) {
       _lastLockState = myTurn;
       console.log('[MP] lock ' + (myTurn ? 'OPENED — my turn' : 'CLOSED — waiting') + ' (currentPIdx=' + currentPIdx + ', myPlayerIdx=' + myPlayerIdx + ', role=' + role + ')');
+      // The camera only auto-follows a ship on the browser that ran its own
+      // endTurn() — which, per the ship-advance timing note above, may not be
+      // this player's own browser. Re-focus explicitly whenever the lock opens
+      // for me, so a guest's screen doesn't sit zoomed out until they click
+      // a port dot manually to "wake" the view.
+      if (myTurn) { try { zoomToCurrent(); } catch(e) {} }
     }
     const msg = document.getElementById('mp-turnlock-msg');
     if (msg && !myTurn) {

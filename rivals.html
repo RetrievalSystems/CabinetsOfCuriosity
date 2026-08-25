@@ -9952,7 +9952,7 @@ const OPPORTUNITY_CARDS = [
   // ── Blue Moonstone ×1 — Meetiyagoda, 3 ingots ──
   ...Array(3).fill(null).map(()=>({ img:'images/op-moonstone_copy.jpeg',    label:'Blue Moonstone',        location:'Meetiyagoda',       price:3,  currency:'ingots' })),
   // ── Jade Puzzle Ball ×1 — White Cloud Mountain, 8 ingots + telescope ──
-  ...Array(2).fill(null).map(()=>({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + Geometric Model required' })),
+  ...Array(2).fill(null).map(()=>({ img:'images/puzzleball.jpeg', label:'Jade Puzzle Ball — Master Carver', location:'White Cloud Mountain', price:0, currency:'ingots', note:'8 ingots + green Apatite required' })),
   // ── Anatomical Ceroplastic Torso ×1 — Amsterdam, 20 ingots ──
   { img:'images/connection1.jpg', label:'Anatomical Ceroplastic Torso — Italian States', location:'Amsterdam', price:20, currency:'ingots', note:'20 ingots • arrives by special shipment' },
   // ── Ruby Crystal ×3 — Kongu Nadu, 12 ingots ──
@@ -9988,7 +9988,7 @@ const SINGULAR_ITEMS = [
   { match: c => c.img && c.img.includes('op-motherofpearlcasket'), stock: () => (ITEM_POOLS['cambay_casket'] ? ITEM_POOLS['cambay_casket'].length : 0), label: 'Mother-of-Pearl Casket', reqItem: 'shellnautpeeled' },
   { match: c => c.img && (c.img.includes('coral_copy') || c.dest === 'Goto Islands'), stock: () => redcoralStock, label: 'Red Precious Coral', reqItem: 'telescope' },
   { match: c => c.img && c.img.includes('op-tourmaline'), stock: () => tourmalineStock, label: 'Rainbow Tourmaline', reqItem: 'quadrant' },
-  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball', reqItem: 'polyhedra' },
+  { match: c => c.img && c.img.includes('puzzleball.jpeg'), stock: () => (ITEM_POOLS['whitecloud_jadeball'] ? ITEM_POOLS['whitecloud_jadeball'].length : 0), label: 'Jade Puzzle Ball', reqItem: 'apatite' },
   { match: c => c.img && c.img.includes('op-braincoral'), stock: () => (ITEM_POOLS['falsebay_coral'] ? ITEM_POOLS['falsebay_coral'].length : 0), label: 'Brain Coral', reqItem: 'pocketwatch' },
 ];
 function _singularInfoFor(card) { return SINGULAR_ITEMS.find(s => s.match(card)) || null; }
@@ -10662,7 +10662,8 @@ const PORT_ITEMS = {
   ],
   'White Cloud Mountain': [
     { img:'images/jadeball.png', label:'Jade Puzzle Ball — 8-Layer Serpentine', price:8, currency:'ingots',
-      reqCard:'images/puzzleball.jpeg', reqItem:'polyhedra', reqItemLabel:'Geometric Model',
+      reqCard:'images/puzzleball.jpeg', reqItem:'apatite', reqItemLabel:'Asparagus Stone (Apatite)',
+      reqItemNote:'A green apatite specimen is required',
       pool:'whitecloud_jadeball', hardLimit:true, note:'Only one carving ever leaves the workshop' },
   ],
   // ── Nautilus journey ports ──
