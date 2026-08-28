@@ -347,23 +347,42 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 .rep-wrap {
   position: relative;
   width: 100%;
-  height: 14px;
+  height: 22px;
   display: flex;
   align-items: center;
 }
-.rep-gradient {
+.rep-segments {
   width: 100%;
-  height: 7px;
+  height: 16px;
   border-radius: 3px;
-  background: linear-gradient(90deg, #8b1a1a 0%, #c8923a 50%, #2a7a2a 100%);
-  border: 1px solid #4a2e0e;
+  display: flex;
+  overflow: hidden;
+  border: 1.5px solid #2a1a08;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+.rep-seg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(0,0,0,0.35);
+}
+.rep-seg:last-child { border-right: none; }
+.rep-seg.red   { background: linear-gradient(180deg, #a8342a, #7a2018); }
+.rep-seg.amber { background: linear-gradient(180deg, #c88a2a, #9a6415); }
+.rep-seg.green { background: linear-gradient(180deg, #3a9a3a, #226b22); }
+.rep-seg-num {
+  font-family: 'Cinzel', serif;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
 }
 .rep-marker {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
-  height: 14px;
+  width: 16px;
+  height: 20px;
   transition: left 0.5s cubic-bezier(0.4,0,0.2,1);
   pointer-events: none;
 }
@@ -2660,7 +2679,18 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div class="rep-area">
     <div class="rep-label">REPUTATION</div>
     <div class="rep-wrap">
-      <div class="rep-gradient"></div>
+      <div class="rep-segments">
+        <div class="rep-seg red"><span class="rep-seg-num">1</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">2</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">3</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">4</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">5</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">6</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">7</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">8</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">9</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">10</span></div>
+      </div>
       <div class="rep-marker" id="rep-p1" style="left:50%">
         <img src="images/tracker.png" alt="▾">
       </div>
@@ -2698,7 +2728,18 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div class="rep-area">
     <div class="rep-label">REPUTATION</div>
     <div class="rep-wrap">
-      <div class="rep-gradient"></div>
+      <div class="rep-segments">
+        <div class="rep-seg red"><span class="rep-seg-num">1</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">2</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">3</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">4</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">5</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">6</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">7</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">8</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">9</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">10</span></div>
+      </div>
       <div class="rep-marker" id="rep-p2" style="left:50%">
         <img src="images/tracker.png" alt="▾">
       </div>
@@ -3881,6 +3922,57 @@ const ROUTES = {
     nodes:[
       {x:1213,y:493, name:'Ancol Cove', isPort:true, portImg:'images/batavianuatilusdest.jpeg'},       // 0
       {x:1222, y:502, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'},         // 1
+    ],
+  },
+  // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 7+ ──
+  bomceydirect: {
+    id:'bomceydirect', shipImg:'images/foshanship.png', shipName:"Country Captain's boat to Ceylon",
+    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect'],
+    nodes:[
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
+      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 1
+    ],
+  },
+  bomceydirect_return: {
+    id:'bomceydirect_return', shipImg:'images/foshanship.png', shipName:"Country Captain's boat to Bombay",
+    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect_return'],
+    nodes:[
+      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 0
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
+    ],
+  },
+  // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 7+ ──
+  madbomdirect: {
+    id:'madbomdirect', shipImg:'images/foshanship.png', shipName:"Lascar Serang's boat to Bombay",
+    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect'],
+    nodes:[
+      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 0
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
+    ],
+  },
+  madbomdirect_return: {
+    id:'madbomdirect_return', shipImg:'images/foshanship.png', shipName:"Lascar Serang's boat to Madras",
+    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect_return'],
+    nodes:[
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
+      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 1
+    ],
+  },
+  // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 7+ ──
+  madbatdirect: {
+    id:'madbatdirect', shipImg:'images/foshanship.png', shipName:'Regional crew — textile run to Batavia',
+    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect'],
+    nodes:[
+      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 0
+      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 1
+    ],
+  },
+  madbatdirect_return: {
+    id:'madbatdirect_return', shipImg:'images/foshanship.png', shipName:'Regional crew — textile run to Madras',
+    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect_return'],
+    nodes:[
+      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 0
+      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 1
     ],
   },
   // ── Lapidary Outskirts: canal barge 1-node NE of Amsterdam ──
@@ -5527,9 +5619,22 @@ function boardRouteFromNode(routeId, portName) {
 // Origin/destination ports (London, Amsterdam, Canton etc.) are unchanged.
 const PORT_EXTRA_ROUTES = {
   'Cape of Good Hope': ['bei','bei_return','voc','voc_return'],
-  'Bombay':            ['bei_return'],
-  'Madras':            ['bei_return'],
-  'Ceylon':            ['voc_return'],
+  'Bombay':            ['bei_return', 'bomceydirect', 'madbomdirect_return'],
+  'Madras':            ['bei_return', 'madbomdirect', 'madbatdirect'],
+  'Ceylon':            ['voc_return', 'bomceydirect_return'],
+  'Batavia':           ['madbatdirect_return'],
+};
+
+// Extra requirements for a route beyond simply being at the right port — used by
+// the three travel-shortcut cards, which need both the standing contact (a specific
+// held card) and reputation 7+ before the option appears at all.
+const ROUTE_REQUIREMENTS = {
+  bomceydirect:         { cardFragment: 'shrtcutbombayceylon', minRep: 7 },
+  bomceydirect_return:  { cardFragment: 'shrtcutbombayceylon', minRep: 7 },
+  madbomdirect:         { cardFragment: 'shrtcutmadrasbombay', minRep: 7 },
+  madbomdirect_return:  { cardFragment: 'shrtcutmadrasbombay', minRep: 7 },
+  madbatdirect:         { cardFragment: 'shrtcutmadrasbatavia', minRep: 7 },
+  madbatdirect_return:  { cardFragment: 'shrtcutmadrasbatavia', minRep: 7 },
 };
 
 function renderPortDepartures(portName) {
@@ -5549,6 +5654,14 @@ function renderPortDepartures(portName) {
 
     const nodeIdx = route.nodes.findIndex(n => n.name === portName);
     if (nodeIdx < 0 || nodeIdx >= route.nodes.length - 1) return; // not on route or at end
+
+    // Gated shortcuts (travel-shortcut cards): only appear if the player holds
+    // the standing contact's card AND meets the reputation threshold.
+    const req = ROUTE_REQUIREMENTS[routeId];
+    if (req) {
+      const hasCard = (p.heldCards||[]).some(hc => hc.img && hc.img.includes(req.cardFragment));
+      if (!hasCard || (p.reputation||0) < req.minRep) return;
+    }
 
     // Skip if player is already on this exact ship
     const routeShip = ships.find(sh => sh.routeId === routeId);
@@ -9711,10 +9824,11 @@ function giveHeldCard(playerIdx, card) {
 
 function isRetainedCard(hc) {
   // These cards live in the portrait strip below the HUD, not in the hand fan
-  return hc.heldType === 'invite'   || hc.type === 'invite'   ||
-         hc.heldType === 'cat'      || hc.type === 'cat'      ||
-         hc.heldType === 'freepass' || hc.type === 'freepass' ||
-         hc.heldType === 'pox'      || hc.type === 'pox';
+  return hc.heldType === 'invite'     || hc.type === 'invite'     ||
+         hc.heldType === 'cat'        || hc.type === 'cat'        ||
+         hc.heldType === 'freepass'   || hc.type === 'freepass'   ||
+         hc.heldType === 'pox'        || hc.type === 'pox'        ||
+         hc.heldType === 'specialist' || hc.heldType === 'shortcut';
 }
 
 function renderRetainedCards(playerIdx) {
@@ -10161,14 +10275,32 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Specialist buyers — Haarlem conchologist (×3) and Leiden mineralogist (×3) ──
+  // heldType:'specialist' moves these to the retained-card strip under the HUD,
+  // out of the main hand fan — they're standing contacts, not one-off draws.
   ...Array(3).fill(null).map(()=> ({ img:'images/op-conchologist.jpeg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('conchologist'))) { log(`${p.name}: Conchologist card already held — returned to deck.`); return; }
-      p.heldCards.push({id:'conch_'+Date.now(),img:'images/op-conchologist.jpeg',faceUp:false,type:'opportunity',label:'Conchologist — Haarlem',dest:'Haarlem',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Conchologist in Haarlem — triple price for shells. Kept face down.`); } })),
+      p.heldCards.push({id:'conch_'+Date.now(),img:'images/op-conchologist.jpeg',faceUp:false,type:'opportunity',heldType:'specialist',label:'Conchologist — Haarlem',dest:'Haarlem',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Conchologist in Haarlem — triple price for shells. Kept face down.`); } })),
   ...Array(3).fill(null).map(()=> ({ img:'images/op-minerologist.jpeg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('minerologist'))) { log(`${p.name}: Mineralogist card already held — returned to deck.`); return; }
-      p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
+      p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',heldType:'specialist',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
+  // ── Travel shortcuts — Country Captain (Bombay/Ceylon ×3) and Lascar Serang (Madras/Bombay ×3) ──
+  // Permanent once drawn, kept for good, used infinitely — same standing-contact
+  // pattern as the specialists above, but gate a direct route instead of a sale.
+  // Both require reputation 7+ (checked at boarding time in renderPortDepartures).
+  ...Array(3).fill(null).map(()=> ({ img:'images/shrtcutbombayceylon.jpg',
+    effect:(p,i)=>{ p.heldCards=p.heldCards||[];
+      if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutbombayceylon'))) { log(`${p.name}: Country Captain's acquaintance already held — returned to deck.`); return; }
+      p.heldCards.push({id:'ccshortcut_'+Date.now(),img:'images/shrtcutbombayceylon.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Country Captain — Bombay ⇄ Ceylon',dest:'Bombay',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: an independent Country Captain — direct passage between Bombay and Ceylon, reputation 7+ required. Kept face down.`); } })),
+  ...Array(3).fill(null).map(()=> ({ img:'images/shrtcutmadrasbombay.jpg',
+    effect:(p,i)=>{ p.heldCards=p.heldCards||[];
+      if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutmadrasbombay'))) { log(`${p.name}: Lascar Serang's name already held — returned to deck.`); return; }
+      p.heldCards.push({id:'lsshortcut_'+Date.now(),img:'images/shrtcutmadrasbombay.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Lascar Serang — Madras ⇄ Bombay',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: the name of a Lascar Serang — direct passage between Madras and Bombay, reputation 7+ required. Kept face down.`); } })),
+  ...Array(3).fill(null).map(()=> ({ img:'images/shrtcutmadrasbatavia.jpg',
+    effect:(p,i)=>{ p.heldCards=p.heldCards||[];
+      if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutmadrasbatavia'))) { log(`${p.name}: Regional crew contact already held — returned to deck.`); return; }
+      p.heldCards.push({id:'mbshortcut_'+Date.now(),img:'images/shrtcutmadrasbatavia.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Regional Crew — Madras ⇄ Batavia',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: a veteran regional crew running textiles — direct passage between Madras and Batavia, reputation 7+ required. Kept face down.`); } })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
@@ -10594,8 +10726,8 @@ const PORT_ITEMS = {
     { img:'images/tulipvase.png', label:'Delft Tulip Vase',   price:2, currency:'ingots' },
     { img:'images/telescope.png', label:'Telescope',          price:5, currency:'ingots' },
     { img:'images/anatomicalmodeltorso.png', label:'Anatomical Ceroplastic Torso', price:15, currency:'ingots',
-      reqCard:'images/connection1.jpg', reqItem:'apatite',
-      reqItemLabel:'Asparagus Stone (Apatite)', reqItemNote:'A green apatite specimen is required' },
+      reqCard:'images/connection1.jpg', reqItem:'cinnabar',
+      reqItemLabel:'Cinnabar Box', reqItemNote:'A cinnabar lacquer box is required' },
   ],
   'Cape of Good Hope': [
     { img:'images/protearaw.png',  label:'King Protea',         price:5, currency:'coins' },
@@ -12720,13 +12852,13 @@ const ITEM_SCORES = {
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
   'amethyst':             { w:8,  c:7,  s:6,  a:8,  total:29, label:'Amethyst Geode',
     itemType:'mineral',   shellFamily:null,    mineralType:'quartz',  region:'americas' },
-  'moonstone':            { w:7,  c:8,  s:7,  a:7,  total:29, label:'Blue Moonstone',
+  'moonstone':            { w:3,  c:4,  s:3,  a:4,  total:14, label:'Blue Moonstone',
     itemType:'mineral',   shellFamily:null,    mineralType:'feldspar',region:'asia'   },
   'op-moonstone':         { w:7,  c:8,  s:7,  a:7,  total:29, label:'Blue Moonstone',
     itemType:'mineral',   shellFamily:null,    mineralType:'feldspar',region:'asia'   },
   'wenteltrap':           { w:6,  c:7,  s:8,  a:8,  total:29, label:'Precious Wenteltrap',
     itemType:'shell',     shellFamily:'wentletrap', mineralType:null, region:'asia'  },
-  'apatite':              { w:5,  c:9,  s:7,  a:7,  total:28, label:'Asparagus Stone',
+  'apatite':              { w:2,  c:3,  s:2,  a:3,  total:10, label:'Asparagus Stone',
     itemType:'mineral',   shellFamily:null,    mineralType:'phosphate',region:'europe'},
   'shell-nautiloushalf':  { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nautilus — Bisected',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'europe'  },
