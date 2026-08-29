@@ -465,7 +465,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 
 .held-card:hover {
   box-shadow: 0 6px 20px rgba(0,0,0,0.95);
-  z-index: 50 !important;
+  z-index: 9999 !important;
 }
 .held-card-peek {
   filter: brightness(0.75);
@@ -4745,6 +4745,10 @@ function playerAtSea(p) {
     if (!window._mpApplyingRemote) p.shipId = null;
     return false;
   } // ship removed — clear stale reference
+  // Inland routes (mule/rowboat/cart/etc — see INLAND_ROUTES) are short land
+  // journeys, never subject to ocean hazards like storms or pirates —
+  // regardless of how far along their own route they are.
+  if (isInlandRoute(s.routeId)) return false;
   return s.nodeIndex > 0;
 }
 
@@ -9950,7 +9954,7 @@ function renderHeldCards(playerIdx) {
       peek.className = 'held-card held-card-peek';
       peek.style.left      = (offset - d * 2) + 'px';
       peek.style.bottom    = (d * 11) + 'px';
-      peek.style.zIndex    = 10 + i;
+      peek.style.zIndex    = 10 + i * 10;
       peek.style.transform = `rotate(${rot}deg)`;
       peek.style.pointerEvents = 'none';
       const peekImg = document.createElement('img');
@@ -9966,7 +9970,7 @@ function renderHeldCards(playerIdx) {
     el.className = 'held-card';
     el.dataset.cardId = hc.id;
     el.style.left      = offset + 'px';
-    el.style.zIndex    = 10 + i + group.length; // stays above its own peeking duplicates
+    el.style.zIndex    = 10 + i * 10 + 1; // stays above its own peeking duplicates, but never above a later group
     el.style.transform = `rotate(${rot}deg)`;
     el.style.bottom    = '0';
 
@@ -10385,7 +10389,7 @@ const LAND_CARD_TEMPLATES = [
 //  port far more than out at sea.
 // ════════════════════════════════════════════════════════════════
 const BODLEIAN_ACCESS = 4; // 2 start invites + 2 mixed into the land deck
-const TIPOFF_TARGET   = Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS);
+const TIPOFF_TARGET   = Math.round(Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS) / 2); // halved — was crowding out real opportunity draws
 const _SEA_TIP_SRC = [
   { img:'images/tipoff8.jpeg', msg:'A senior officer tips you off — opportunity card!' },
   { img:'images/tipoff4.jpeg', msg:"The ship's clerk has useful information — opportunity card!" },
@@ -10881,7 +10885,7 @@ function advanceShip(s) {
       log(`${names} arrive at ${dest.name}!`);
       // Mark each passenger as freshly arrived so the port auto-opens after card draw
       players.forEach((pl,idx) => {
-        if (pl.shipId === s.id) { pl.arrivedAtPort = true; checkInviteRedemption(idx, dest.name); }
+        if (pl.shipId === s.id) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; checkInviteRedemption(idx, dest.name); }
       });
 
       // ── Bodleian Library arrival — open port overlay + card selection ──────
@@ -11386,7 +11390,7 @@ function endTurn() {
       // Disembark ALL passengers on this ship (handles 2 players arriving simultaneously)
       players.forEach(pl => {
         if (pl.shipId === _sid) {
-          if (dest.isPort && dest.name) pl.arrivedAtPort = true;
+          if (dest.isPort && dest.name) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; }
           pl.landLocation = dest;
           pl.shipId       = null;
           pl.disembarked  = true;
@@ -11518,8 +11522,15 @@ function endTurn() {
         if (document.getElementById('battle-overlay')?.classList.contains('active')) return;
         const curP = cp();
         if (!curP.arrivedAtPort) return; // only on fresh arrival, not lingering turns
-        curP.arrivedAtPort = false;       // consume the flag
         const node = playerNode(curP);
+        // Race guard: this fires after a ~1s delay, long enough for a fast player to
+        // already have clicked "board onward" before it runs. Boarding queues the next
+        // leg for the FOLLOWING endTurn() call rather than moving them immediately, so
+        // at this exact moment they can still appear to be sitting at the same port —
+        // only actually re-show the popup if that's genuinely still the port they just
+        // arrived at, not a stale flag catching up after they've already moved on.
+        if (node?.name !== curP._arrivedAtPortName) { curP.arrivedAtPort = false; return; }
+        curP.arrivedAtPort = false;       // consume the flag
         if (node?.isPort && node?.name && node?.portImg) {
           if (curP.cardDrawn) {
             // Inland — no card draw this turn, open port immediately
