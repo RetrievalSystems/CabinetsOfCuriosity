@@ -465,7 +465,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 
 .held-card:hover {
   box-shadow: 0 6px 20px rgba(0,0,0,0.95);
-  z-index: 50 !important;
+  z-index: 9999 !important;
 }
 .held-card-peek {
   filter: brightness(0.75);
@@ -521,7 +521,6 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 
 /* Retained-strip invite ready to redeem — the player has arrived at the
    card's destination and it now has an "Attend" action waiting. */
-.ret-card { position: relative; }
 .ret-redeem-dot {
   position: absolute;
   top: 5px; right: 5px;
@@ -2134,7 +2133,8 @@ body:has(#cab-overlay.open) #cabinet-btn { display: none !important; }
 body.solo-mode #retained-zone-p2 { display: none !important; }
 
 .ret-card {
-  width: 124px; height: 172px;   /* identical to .held-card */
+  position: relative;
+  width: 118px; height: 163px;   /* matches .held-card exactly */
   border-radius: 4px; overflow: hidden; flex-shrink: 0;
   border: 1px solid #6b4416;
   box-shadow: 0 3px 10px rgba(0,0,0,0.8);
@@ -2707,7 +2707,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <div class="rep-seg amber"><span class="rep-seg-num">4</span></div>
         <div class="rep-seg amber"><span class="rep-seg-num">5</span></div>
         <div class="rep-seg amber"><span class="rep-seg-num">6</span></div>
-        <div class="rep-seg green"><span class="rep-seg-num">7</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">7</span></div>
         <div class="rep-seg green"><span class="rep-seg-num">8</span></div>
         <div class="rep-seg green"><span class="rep-seg-num">9</span></div>
         <div class="rep-seg green"><span class="rep-seg-num">10</span></div>
@@ -2756,7 +2756,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <div class="rep-seg amber"><span class="rep-seg-num">4</span></div>
         <div class="rep-seg amber"><span class="rep-seg-num">5</span></div>
         <div class="rep-seg amber"><span class="rep-seg-num">6</span></div>
-        <div class="rep-seg green"><span class="rep-seg-num">7</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">7</span></div>
         <div class="rep-seg green"><span class="rep-seg-num">8</span></div>
         <div class="rep-seg green"><span class="rep-seg-num">9</span></div>
         <div class="rep-seg green"><span class="rep-seg-num">10</span></div>
@@ -3945,7 +3945,7 @@ const ROUTES = {
       {x:1222, y:502, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'},         // 1
     ],
   },
-  // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 7+ ──
+  // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 8+ ──
   bomceydirect: {
     id:'bomceydirect', shipImg:'images/foshanship.png', shipName:"Country Captain's boat to Ceylon",
     lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect'],
@@ -3962,7 +3962,7 @@ const ROUTES = {
       {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
     ],
   },
-  // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 7+ ──
+  // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 8+ ──
   madbomdirect: {
     id:'madbomdirect', shipImg:'images/foshanship.png', shipName:"Lascar Serang's boat to Bombay",
     lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect'],
@@ -3979,7 +3979,7 @@ const ROUTES = {
       {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 1
     ],
   },
-  // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 7+ ──
+  // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 8+ ──
   madbatdirect: {
     id:'madbatdirect', shipImg:'images/foshanship.png', shipName:'Regional crew — textile run to Batavia',
     lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect'],
@@ -4766,6 +4766,10 @@ function playerAtSea(p) {
     if (!window._mpApplyingRemote) p.shipId = null;
     return false;
   } // ship removed — clear stale reference
+  // Inland routes (mule/rowboat/cart/etc — see INLAND_ROUTES) are short land
+  // journeys, never subject to ocean hazards like storms or pirates —
+  // regardless of how far along their own route they are.
+  if (isInlandRoute(s.routeId)) return false;
   return s.nodeIndex > 0;
 }
 
@@ -5648,14 +5652,14 @@ const PORT_EXTRA_ROUTES = {
 
 // Extra requirements for a route beyond simply being at the right port — used by
 // the three travel-shortcut cards, which need both the standing contact (a specific
-// held card) and reputation 7+ before the option appears at all.
+// held card) and reputation 8+ before the option appears at all.
 const ROUTE_REQUIREMENTS = {
-  bomceydirect:         { cardFragment: 'shrtcutbombayceylon', minRep: 7 },
-  bomceydirect_return:  { cardFragment: 'shrtcutbombayceylon', minRep: 7 },
-  madbomdirect:         { cardFragment: 'shrtcutmadrasbombay', minRep: 7 },
-  madbomdirect_return:  { cardFragment: 'shrtcutmadrasbombay', minRep: 7 },
-  madbatdirect:         { cardFragment: 'shrtcutmadrasbatavia', minRep: 7 },
-  madbatdirect_return:  { cardFragment: 'shrtcutmadrasbatavia', minRep: 7 },
+  bomceydirect:         { cardFragment: 'shrtcutbombayceylon', minRep: 8 },
+  bomceydirect_return:  { cardFragment: 'shrtcutbombayceylon', minRep: 8 },
+  madbomdirect:         { cardFragment: 'shrtcutmadrasbombay', minRep: 8 },
+  madbomdirect_return:  { cardFragment: 'shrtcutmadrasbombay', minRep: 8 },
+  madbatdirect:         { cardFragment: 'shrtcutmadrasbatavia', minRep: 8 },
+  madbatdirect_return:  { cardFragment: 'shrtcutmadrasbatavia', minRep: 8 },
 };
 
 function renderPortDepartures(portName) {
@@ -9579,7 +9583,12 @@ function changeRep(playerIdx, delta) {
 
 function updateRepMarker(i) {
   const marker = document.getElementById(`rep-p${i+1}`);
-  if (marker) marker.style.left = (players[i].reputation * 10) + '%';
+  if (marker) {
+    // Center the marker within its segment (each segment is 10% wide) rather than
+    // sitting on the boundary line between two segments.
+    const seg = Math.min(10, Math.max(1, players[i].reputation));
+    marker.style.left = (seg * 10 - 5) + '%';
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -9863,10 +9872,10 @@ function renderRetainedCards(playerIdx) {
 
   const SPREAD  = 16;   // px between card left edges — half spacing, tighter row
   const waveY   = [0, -10, -4, 8, 2, -8, 5, -3];
-  const totalW  = SPREAD * (cards.length - 1) + 124;
+  const totalW  = SPREAD * (cards.length - 1) + 118;
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = `position:relative; width:${totalW}px; height:184px;`;
+  wrap.style.cssText = `position:relative; width:${totalW}px; height:175px;`;
   zone.appendChild(wrap);
 
   cards.forEach((hc, i) => {
@@ -9876,7 +9885,7 @@ function renderRetainedCards(playerIdx) {
 
     // P1: card 0 leftmost (near panel), grows right
     // P2: card 0 rightmost (near panel), grows left
-    const xPos = isP2 ? (totalW - 124 - i * SPREAD) : (i * SPREAD);
+    const xPos = isP2 ? (totalW - 118 - i * SPREAD) : (i * SPREAD);
     // P2: first card (panel-side) on top; P1: last card on top
     const zIdx = isP2 ? (10 + cards.length - i) : (10 + i);
 
@@ -9976,7 +9985,7 @@ function renderHeldCards(playerIdx) {
       peek.className = 'held-card held-card-peek';
       peek.style.left      = (offset - d * 2) + 'px';
       peek.style.bottom    = (d * 11) + 'px';
-      peek.style.zIndex    = 10 + i;
+      peek.style.zIndex    = 10 + i * 10;
       peek.style.transform = `rotate(${rot}deg)`;
       peek.style.pointerEvents = 'none';
       const peekImg = document.createElement('img');
@@ -9992,7 +10001,7 @@ function renderHeldCards(playerIdx) {
     el.className = 'held-card';
     el.dataset.cardId = hc.id;
     el.style.left      = offset + 'px';
-    el.style.zIndex    = 10 + i + group.length; // stays above its own peeking duplicates
+    el.style.zIndex    = 10 + i * 10 + 1; // stays above its own peeking duplicates, but never above a later group
     el.style.transform = `rotate(${rot}deg)`;
     el.style.bottom    = '0';
 
@@ -10319,19 +10328,19 @@ const LAND_CARD_TEMPLATES = [
   // ── Travel shortcuts — Country Captain (Bombay/Ceylon ×3) and Lascar Serang (Madras/Bombay ×3) ──
   // Permanent once drawn, kept for good, used infinitely — same standing-contact
   // pattern as the specialists above, but gate a direct route instead of a sale.
-  // Both require reputation 7+ (checked at boarding time in renderPortDepartures).
-  ...Array(3).fill(null).map(()=> ({ img:'images/shrtcutbombayceylon.jpg',
+  // Both require reputation 8+ (checked at boarding time in renderPortDepartures).
+  ...Array(2).fill(null).map(()=> ({ img:'images/shrtcutbombayceylon.jpg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutbombayceylon'))) { log(`${p.name}: Country Captain's acquaintance already held — returned to deck.`); return; }
-      p.heldCards.push({id:'ccshortcut_'+Date.now(),img:'images/shrtcutbombayceylon.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Country Captain — Bombay ⇄ Ceylon',dest:'Bombay',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: an independent Country Captain — direct passage between Bombay and Ceylon, reputation 7+ required. Kept face down.`); } })),
-  ...Array(3).fill(null).map(()=> ({ img:'images/shrtcutmadrasbombay.jpg',
+      p.heldCards.push({id:'ccshortcut_'+Date.now(),img:'images/shrtcutbombayceylon.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Country Captain — Bombay ⇄ Ceylon',dest:'Bombay',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: an independent Country Captain — direct passage between Bombay and Ceylon, reputation 8+ required. Kept face down.`); } })),
+  ...Array(2).fill(null).map(()=> ({ img:'images/shrtcutmadrasbombay.jpg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutmadrasbombay'))) { log(`${p.name}: Lascar Serang's name already held — returned to deck.`); return; }
-      p.heldCards.push({id:'lsshortcut_'+Date.now(),img:'images/shrtcutmadrasbombay.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Lascar Serang — Madras ⇄ Bombay',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: the name of a Lascar Serang — direct passage between Madras and Bombay, reputation 7+ required. Kept face down.`); } })),
-  ...Array(3).fill(null).map(()=> ({ img:'images/shrtcutmadrasbatavia.jpg',
+      p.heldCards.push({id:'lsshortcut_'+Date.now(),img:'images/shrtcutmadrasbombay.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Lascar Serang — Madras ⇄ Bombay',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: the name of a Lascar Serang — direct passage between Madras and Bombay, reputation 8+ required. Kept face down.`); } })),
+  ...Array(2).fill(null).map(()=> ({ img:'images/shrtcutmadrasbatavia.jpg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutmadrasbatavia'))) { log(`${p.name}: Regional crew contact already held — returned to deck.`); return; }
-      p.heldCards.push({id:'mbshortcut_'+Date.now(),img:'images/shrtcutmadrasbatavia.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Regional Crew — Madras ⇄ Batavia',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: a veteran regional crew running textiles — direct passage between Madras and Batavia, reputation 7+ required. Kept face down.`); } })),
+      p.heldCards.push({id:'mbshortcut_'+Date.now(),img:'images/shrtcutmadrasbatavia.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Regional Crew — Madras ⇄ Batavia',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: a veteran regional crew running textiles — direct passage between Madras and Batavia, reputation 8+ required. Kept face down.`); } })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
@@ -10413,7 +10422,7 @@ const LAND_CARD_TEMPLATES = [
 //  port far more than out at sea.
 // ════════════════════════════════════════════════════════════════
 const BODLEIAN_ACCESS = 4; // 2 start invites + 2 mixed into the land deck
-const TIPOFF_TARGET   = Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS);
+const TIPOFF_TARGET   = Math.round(Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS) / 2); // halved — was crowding out real opportunity draws
 const _SEA_TIP_SRC = [
   { img:'images/tipoff8.jpeg', msg:'A senior officer tips you off — opportunity card!' },
   { img:'images/tipoff4.jpeg', msg:"The ship's clerk has useful information — opportunity card!" },
@@ -10909,7 +10918,7 @@ function advanceShip(s) {
       log(`${names} arrive at ${dest.name}!`);
       // Mark each passenger as freshly arrived so the port auto-opens after card draw
       players.forEach((pl,idx) => {
-        if (pl.shipId === s.id) { pl.arrivedAtPort = true; checkInviteRedemption(idx, dest.name); }
+        if (pl.shipId === s.id) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; checkInviteRedemption(idx, dest.name); }
       });
 
       // ── Bodleian Library arrival — open port overlay + card selection ──────
@@ -11414,7 +11423,7 @@ function endTurn() {
       // Disembark ALL passengers on this ship (handles 2 players arriving simultaneously)
       players.forEach(pl => {
         if (pl.shipId === _sid) {
-          if (dest.isPort && dest.name) pl.arrivedAtPort = true;
+          if (dest.isPort && dest.name) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; }
           pl.landLocation = dest;
           pl.shipId       = null;
           pl.disembarked  = true;
@@ -11546,8 +11555,15 @@ function endTurn() {
         if (document.getElementById('battle-overlay')?.classList.contains('active')) return;
         const curP = cp();
         if (!curP.arrivedAtPort) return; // only on fresh arrival, not lingering turns
-        curP.arrivedAtPort = false;       // consume the flag
         const node = playerNode(curP);
+        // Race guard: this fires after a ~1s delay, long enough for a fast player to
+        // already have clicked "board onward" before it runs. Boarding queues the next
+        // leg for the FOLLOWING endTurn() call rather than moving them immediately, so
+        // at this exact moment they can still appear to be sitting at the same port —
+        // only actually re-show the popup if that's genuinely still the port they just
+        // arrived at, not a stale flag catching up after they've already moved on.
+        if (node?.name !== curP._arrivedAtPortName) { curP.arrivedAtPort = false; return; }
+        curP.arrivedAtPort = false;       // consume the flag
         if (node?.isPort && node?.name && node?.portImg) {
           if (curP.cardDrawn) {
             // Inland — no card draw this turn, open port immediately
