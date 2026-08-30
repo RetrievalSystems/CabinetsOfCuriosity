@@ -565,6 +565,74 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   cursor: pointer;
 }
 
+/* ══ THE TAVERN — London-only, once per stay ══ */
+#tavern-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0,0,0,0.78);
+  align-items: center;
+  justify-content: center;
+}
+#tavern-overlay.visible { display: flex; }
+#tavern-scene {
+  position: relative;
+  width: min(80vw, 820px);
+  max-height: 90vh;
+  border: 2px solid rgba(212,168,85,0.55);
+  box-shadow: 0 10px 60px rgba(0,0,0,0.85);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+}
+#tavern-scene > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 90vh;
+  object-fit: cover;
+}
+#tavern-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  z-index: 6;
+  background: rgba(20,12,4,0.75);
+  color: #e8c878;
+  border: 1px solid rgba(212,168,85,0.5);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+#tavern-close:hover { border-color: #d4a855; }
+#tavern-informant-area {
+  position: absolute;
+  left: 4%;
+  bottom: 6%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#tavern-used-msg {
+  position: absolute;
+  left: 4%;
+  bottom: 6%;
+  z-index: 5;
+  display: none;
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+  font-size: 0.68rem;
+  color: rgba(232,200,120,0.75);
+  background: rgba(14,8,4,0.7);
+  padding: 8px 12px;
+  border-radius: 3px;
+  max-width: 220px;
+  line-height: 1.5;
+}
+
 .bar-fill.health { background: linear-gradient(90deg, #8b1a1a, #d44444); width: 80%; }
 .bar-fill.gold   { background: linear-gradient(90deg, #7a5a10, #e8c040); width: 60%; }
 
@@ -2941,6 +3009,24 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   </div>
 </div>
 
+<!-- ══ THE TAVERN — London only, informant offers an Opportunity card for 2 ingots ══ -->
+<div id="tavern-overlay">
+  <div id="tavern-scene">
+    <button id="tavern-close" onclick="closeTavern()">✕ Leave</button>
+    <img src="images/taverninterior.jpg" alt="The Tavern">
+    <div id="tavern-informant-area">
+      <div class="buy-item-frame" onclick="buyTavernTip()" style="cursor:pointer;">
+        <img id="tavern-informant-img" src="images/taverninformant.jpeg" style="width:100%;height:100%;object-fit:cover;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <span class="buy-item-label">A Fellow Merchant</span>
+        <button class="port-action-btn" id="tavern-buy-btn" onclick="buyTavernTip()">Buy tip — 2 ingots</button>
+      </div>
+    </div>
+    <div id="tavern-used-msg">He's already shared what he knows — come back another time.</div>
+  </div>
+</div>
+
 <!-- ══ CARD OVERLAY ══ -->
 <div id="card-overlay">
   <div id="card-display">
@@ -3367,6 +3453,16 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
             <img src="images/rowboat.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
           </div>
           <span class="ship-boarding-label">Rowboat<br>→ Lisbon</span>
+        </div>
+
+        <!-- The Tavern — shown at Cape of Good Hope (always available), left of
+             the main shipping-route column, smaller than the other inland icons.
+             Boarding it is a one-turn trip, same as any other route. -->
+        <div id="cape-tavern-area" style="display:none; flex-direction:column; align-items:center; gap:6px;">
+          <div class="buy-item-frame" onclick="boardCapeTavern()" title="Trip to the Tavern" style="width:56px;height:56px;">
+            <img src="images/taverninterior.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:2px;">
+          </div>
+          <span class="ship-boarding-label" style="font-size:0.52rem;">The Tavern</span>
         </div>
 
         <!-- False Bay mule — shown at the Cape when holding the brain-coral op card -->
@@ -4393,6 +4489,18 @@ const ROUTES = {
     nodes: [
       {x:896, y:602, name:'False Bay',         isPort:true, portImg:'images/falsecapedestination.jpeg'},
       {x:881, y:605, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
+    ],
+  },
+
+  // ── The Tavern: one-hop trip from the Cape, like the Bodleian cart out of London.
+  // No separate return route — arrival drops the player straight back at Cape of
+  // Good Hope and pops the tavern open right there (see advanceShip()). ──
+  cape_tavern: {
+    id:'cape_tavern', shipImg:'images/mule.png', shipName:'Trip to the Tavern',
+    lineColor:'rgba(150,120,90,0.45)', smallToken:true, tokenSize:'15px', nextRoute:null, circuit:['cape_tavern'],
+    nodes: [
+      {x:881, y:605, name:'Cape of Good Hope', isPort:true, portImg:'images/portcape.jpeg'},
+      {x:886, y:609, name:'Tavern',            isPort:true, portImg:'images/taverninterior.jpg'},
     ],
   },
 
@@ -7342,6 +7450,8 @@ function openPort(portName, portImg) {
   if (playerIsHere && portName === 'Cape of Good Hope') {
     const hasCoralCard = (p.heldCards||[]).some(hc => hc.img && (hc.img.includes('op-braincoral') || hc.dest === 'False Bay'));
     if (hasCoralCard) document.getElementById('falsebay-boat-area').style.display = 'flex';
+    // The Tavern — always available at the Cape
+    document.getElementById('cape-tavern-area').style.display = 'flex';
   }
   // ── False Bay — return mule to the Cape ──
   if (playerIsHere && portName === 'False Bay') {
@@ -7393,7 +7503,7 @@ function closePort() {
    'meetiyagoda-dhow-area','meetiyagoda-moonstone-area','meetiyagoda-return-area',
    'cornwall-cart-area','cornwall-return-area',
    'ratnapura-sampan-area','ratnapura-tourmaline-area','ratnapura-return-area',
-   'london-cart-area','bodleian-return-area','bodleian-select-area',
+   'london-cart-area','bodleian-return-area','bodleian-select-area','cape-tavern-area',
    'batavia-proa-area','shellcove-buy-area','shellcove-return-area',
    'rio-proa-area','abrolhos-buy-area','abrolhos-return-area',
    'nagasaki-skiff-area','goto-buy-area','goto-return-area','nagasaki-wares-area',
@@ -8398,6 +8508,43 @@ function returnLondonCart() {
   closePort();
 }
 
+// ── The Tavern — Cape of Good Hope only. One of three fellow merchants (picked at
+// random each visit) sells a tip (an Opportunity card) for 2 ingots. Good for one
+// visit per stay at the Cape — arriving fresh at the Cape clears the flag (see the
+// "Cape of Good Hope" arrival block in advanceShip), so a later pass-through gets
+// a fresh visit again. ──
+const TAVERN_INFORMANTS = ['images/taverninformant.jpeg', 'images/taverninformant2.jpeg', 'images/taverninformant3.jpeg'];
+function openTavern() {
+  const p = cp();
+  const used = !!p.tavernUsedAtCape;
+  document.getElementById('tavern-informant-area').style.display = used ? 'none' : 'flex';
+  document.getElementById('tavern-used-msg').style.display = used ? 'block' : 'none';
+  if (!used) {
+    const pick = TAVERN_INFORMANTS[Math.floor(Math.random() * TAVERN_INFORMANTS.length)];
+    document.getElementById('tavern-informant-img').src = pick;
+  }
+  document.getElementById('tavern-overlay').classList.add('visible');
+}
+
+function closeTavern() {
+  document.getElementById('tavern-overlay').classList.remove('visible');
+}
+
+function buyTavernTip() {
+  const p = cp();
+  if (p.tavernUsedAtCape) return;
+  if (!payPrice(p, 2, 'ingots')) {
+    log(`${p.name}: Not enough ingots — the merchant wants 2.`);
+    setStatus('Not enough ingots (2 needed) for the tavern tip.');
+    return;
+  }
+  updateInventory(currentPIdx);
+  p.tavernUsedAtCape = true;
+  log(`${p.name} pays a fellow merchant 2 ingots for a tip.`);
+  drawOpportunityCard(currentPIdx);
+  closeTavern();
+}
+
 // Bodleian: hovering a face-up choice blows it up full-screen so the text is readable,
 // shrinking back when the cursor leaves. The overlay is pointer-transparent so the slot
 // underneath keeps the hover (no flicker) and a click still selects.
@@ -9346,6 +9493,19 @@ function returnFalseBay() {
   closePort(); renderShips();
 }
 
+// ── The Tavern — boarding this is a one-turn trip out of the Cape, same as any
+// other route (requires the turn's card draw first, like False Bay/Poonamallee).
+// There's no separate return leg to board: arrival handling in advanceShip()
+// drops the player straight back at the Cape and opens the tavern automatically. ──
+function boardCapeTavern() {
+  const p = cp();
+  if (!p.cardDrawn) { triggerPeekBounce(); return; }
+  const s = { id:nextShipId++, routeId:'cape_tavern', nodeIndex:0, unmanned:false };
+  ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  log(`${p.name} heads off to the tavern.`);
+  closePort(); renderShips();
+}
+
 function boardPoonamallee() {
   const p = cp();
   if (!p.cardDrawn) { triggerPeekBounce(); return; }
@@ -9511,8 +9671,7 @@ document.getElementById('board-ship-area').addEventListener('click', (e) => {
     log(`${p.name} pays ${cost} silver passage fee.`);
   }
 
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  // If this ship already has another player aboard (it hasn't departed yet, or
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;  // If this ship already has another player aboard (it hasn't departed yet, or
   // it's paused mid-voyage at this exact port — see the "stranded player
   // fallback" above), adopt the crew's existing pirate danger level rather
   // than starting this player's own dial from wherever it last was.
@@ -9543,8 +9702,7 @@ document.getElementById('board-north-sea-area').addEventListener('click', () => 
     updateInventory(currentPIdx);
     log(`${p.name} pays ${cost} silver.`);
   }
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  closePort();
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;  closePort();
   if (routeId === 'north_sea') spawnNorthSeaAtLondon();
   const dest = ROUTES[routeId]?.nodes?.slice(-1)[0]?.name || 'destination';
   log(`${p.name} boards — ${dest} bound.`);
@@ -9567,8 +9725,7 @@ document.getElementById('board-atlantic-area').addEventListener('click', () => {
     updateInventory(currentPIdx);
     log(`${p.name} pays ${cost} silver for the Atlantic Packet.`);
   }
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  closePort();
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;  closePort();
   log(`${p.name} boards the Atlantic Packet — Lisbon bound!`);
   renderShips(); buildSVG(); requestAnimationFrame(renderPortHotspots); updateHUD();
   setStatus('Bound for Lisbon — end your turn each round to advance south.');
@@ -10941,6 +11098,39 @@ function advanceShip(s) {
       players.forEach((pl,idx) => {
         if (pl.shipId === s.id) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; checkInviteRedemption(idx, dest.name); }
       });
+      // The Tavern (Cape of Good Hope): a fresh arrival always earns a fresh visit,
+      // even if this player already used it on an earlier pass through the Cape.
+      if (dest.name === 'Cape of Good Hope') {
+        players.forEach(pl => { if (pl.shipId === s.id) pl.tavernUsedAtCape = false; });
+      }
+
+      // ── The Tavern arrival — one-turn trip out of the Cape, same shape as the
+      // Bodleian's. No return leg to board: this drops the player straight back
+      // at Cape of Good Hope and pops the tavern open right there. ──
+      if (dest.name === 'Tavern' && s.routeId === 'cape_tavern') {
+        const capeNode = ROUTES['cape_tavern'].nodes[0];
+        players.filter(pl => pl.shipId === s.id).forEach(pl => {
+          pl.shipId = null; pl.disembarked = true; pl.landLocation = capeNode;
+          // Same multiplayer caveat as the Bodleian arrival below — this runs on
+          // whichever browser's turn just started the ship moving, not necessarily
+          // the arriving player's own browser, so flag it pending rather than
+          // opening the tavern immediately here.
+          pl._tavernArrivalPending = true;
+        });
+        s._remove = true;
+        log(`${names} arrive at the tavern.`);
+        const _arrivingIdx = players.findIndex(pl => pl.landLocation === capeNode && pl._tavernArrivalPending);
+        const _isLocalPlayer = (typeof window === 'undefined' || !window._mpActive) || (_arrivingIdx === window._myPlayerIdx);
+        if (_isLocalPlayer) {
+          setTimeout(() => {
+            try {
+              openPort('Cape of Good Hope', PORT_IMAGES['Cape of Good Hope']);
+              if (_arrivingIdx >= 0) players[_arrivingIdx]._tavernArrivalPending = false;
+              openTavern();
+            } catch (e) { console.error('Tavern arrival error:', e); }
+          }, 800);
+        }
+      }
 
       // ── Bodleian Library arrival — open port overlay + card selection ──────
       if (dest.name === 'Bodleian Library' && s.routeId === 'london_bodleian') {
