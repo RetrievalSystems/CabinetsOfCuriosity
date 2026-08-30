@@ -7450,8 +7450,11 @@ function openPort(portName, portImg) {
   if (playerIsHere && portName === 'Cape of Good Hope') {
     const hasCoralCard = (p.heldCards||[]).some(hc => hc.img && (hc.img.includes('op-braincoral') || hc.dest === 'False Bay'));
     if (hasCoralCard) document.getElementById('falsebay-boat-area').style.display = 'flex';
-    // The Tavern — always available at the Cape
-    document.getElementById('cape-tavern-area').style.display = 'flex';
+    // The Tavern — available at the Cape once per stay; hidden once used until
+    // the player actually leaves (a fresh arrival back at the Cape resets the flag).
+    if (!p.tavernUsedAtCape) {
+      document.getElementById('cape-tavern-area').style.display = 'flex';
+    }
   }
   // ── False Bay — return mule to the Cape ──
   if (playerIsHere && portName === 'False Bay') {
@@ -8540,6 +8543,10 @@ function buyTavernTip() {
   }
   updateInventory(currentPIdx);
   p.tavernUsedAtCape = true;
+  // Hide the icon on the port screen right away — the screen underneath was
+  // rendered before this purchase, so nothing else will refresh it for us.
+  const _cta = document.getElementById('cape-tavern-area');
+  if (_cta) _cta.style.display = 'none';
   log(`${p.name} pays a fellow merchant 2 ingots for a tip.`);
   drawOpportunityCard(currentPIdx);
   closeTavern();
@@ -9500,6 +9507,7 @@ function returnFalseBay() {
 function boardCapeTavern() {
   const p = cp();
   if (!p.cardDrawn) { triggerPeekBounce(); return; }
+  if (p.tavernUsedAtCape) { setStatus('Already visited the tavern this stay — leave the Cape for a fresh one.'); return; }
   const s = { id:nextShipId++, routeId:'cape_tavern', nodeIndex:0, unmanned:false };
   ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   log(`${p.name} heads off to the tavern.`);
