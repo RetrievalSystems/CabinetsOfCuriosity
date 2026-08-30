@@ -1051,19 +1051,18 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 }
 
 #btn-end {
-  font-family: 'Cinzel', serif;
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  padding: 6px 18px;
-  border: 1px solid #6b4416;
-  background: linear-gradient(160deg, #2a1a08, #1a0e04);
-  color: #e8c078;
+  padding: 0;
+  border: none;
+  background: none;
   cursor: pointer;
-  border-radius: 2px;
-  transition: background 0.2s, border-color 0.2s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  line-height: 0;
+  transition: transform 0.15s, filter 0.15s;
 }
-#btn-end:hover { background: linear-gradient(160deg,#3d2510,#2a1a08); border-color:#c8923a; }
+#btn-end img { display: block; height: 34px; width: auto; pointer-events: none; }
+#btn-end:hover   { filter: brightness(1.15); }
+#btn-end:active  { transform: scale(0.96); }
+#btn-end:disabled { cursor: default; filter: grayscale(0.5) brightness(0.75); }
+#btn-end:disabled:hover { filter: grayscale(0.5) brightness(0.75); }
 
 #status-msg {
   font-family: 'IM Fell English', serif;
@@ -2873,7 +2872,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
       </div>
     </div>
     <div id="action-row">
-      <button id="btn-end" onclick="endTurn()">End Turn</button>
+      <button id="btn-end" onclick="endTurn()"><img src="images/endturnplaque.png" alt="End Turn"></button>
       <div id="status-msg">You are in London.<br>Click the port to enter.</div>
     </div>
   </div>
@@ -3947,7 +3946,7 @@ const ROUTES = {
   },
   // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 8+ ──
   bomceydirect: {
-    id:'bomceydirect', shipImg:'images/foshanship.png', shipName:"Country Captain's boat to Ceylon",
+    id:'bomceydirect', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Ceylon",
     lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect'],
     nodes:[
       {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
@@ -3955,7 +3954,7 @@ const ROUTES = {
     ],
   },
   bomceydirect_return: {
-    id:'bomceydirect_return', shipImg:'images/foshanship.png', shipName:"Country Captain's boat to Bombay",
+    id:'bomceydirect_return', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Bombay",
     lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect_return'],
     nodes:[
       {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 0
@@ -3964,7 +3963,7 @@ const ROUTES = {
   },
   // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 8+ ──
   madbomdirect: {
-    id:'madbomdirect', shipImg:'images/foshanship.png', shipName:"Lascar Serang's boat to Bombay",
+    id:'madbomdirect', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Bombay",
     lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect'],
     nodes:[
       {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 0
@@ -3972,7 +3971,7 @@ const ROUTES = {
     ],
   },
   madbomdirect_return: {
-    id:'madbomdirect_return', shipImg:'images/foshanship.png', shipName:"Lascar Serang's boat to Madras",
+    id:'madbomdirect_return', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Madras",
     lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect_return'],
     nodes:[
       {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
@@ -3981,7 +3980,7 @@ const ROUTES = {
   },
   // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 8+ ──
   madbatdirect: {
-    id:'madbatdirect', shipImg:'images/foshanship.png', shipName:'Regional crew — textile run to Batavia',
+    id:'madbatdirect', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Batavia',
     lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect'],
     nodes:[
       {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 0
@@ -3989,7 +3988,7 @@ const ROUTES = {
     ],
   },
   madbatdirect_return: {
-    id:'madbatdirect_return', shipImg:'images/foshanship.png', shipName:'Regional crew — textile run to Madras',
+    id:'madbatdirect_return', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Madras',
     lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect_return'],
     nodes:[
       {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 0
@@ -6010,10 +6009,19 @@ function spinGhostShipDial(pIdx) {
 function mirrorPirateToCrewmate(activePIdx) {
   const shipId = players[activePIdx]?.shipId;
   if (!shipId) return;
-  const state = JSON.parse(JSON.stringify(pirateState[activePIdx]));
   players.forEach((pl, idx) => {
-    if (idx !== activePIdx && pl.shipId === shipId) {
-      pirateState[idx] = state;
+    if (idx === activePIdx || pl.shipId !== shipId) return;
+    const active = pirateState[activePIdx];
+    const mate   = pirateState[idx];
+    // Crewmates on the same ship face one shared danger level. Normally the
+    // player who just drew the card is authoritative, but if a crewmate's
+    // state is somehow further along — e.g. they boarded through a path that
+    // missed syncing, or joined mid-battle — never let that regress them.
+    // Always keep whichever side is closer to (or already in) a battle.
+    if (mate && !active.inBattle && (mate.inBattle || mate.steps > active.steps)) {
+      pirateState[activePIdx] = JSON.parse(JSON.stringify(mate));
+    } else {
+      pirateState[idx] = JSON.parse(JSON.stringify(active));
     }
   });
 }
@@ -6854,7 +6862,12 @@ function updateHUD() {
   document.getElementById('deck-land').classList.toggle('disabled', useSea  || p.cardDrawn);
   document.getElementById('deck-sea').classList.toggle('disabled',  !useSea || p.cardDrawn);
   updateDeckPeek();
-  document.getElementById('btn-end').disabled = !!aiPlayers[currentPIdx];  // clickable on your turn so a premature click jumps the peek; endTurn() enforces the draw
+  const _btnEnd = document.getElementById('btn-end');
+  _btnEnd.disabled = !!aiPlayers[currentPIdx];  // clickable on your turn so a premature click jumps the peek; endTurn() enforces the draw
+  // Stay hidden until the current player has actually drawn their card for the
+  // turn — inland treks pre-mark cardDrawn=true (no card to draw), so they
+  // reveal it immediately; every other turn waits for the real draw.
+  _btnEnd.style.display = p.cardDrawn ? '' : 'none';
   updateTradeBtns();
 }
 
@@ -9499,6 +9512,11 @@ document.getElementById('board-ship-area').addEventListener('click', (e) => {
   }
 
   p.shipId = s.id; p.disembarked = false; p.landLocation = null;
+  // If this ship already has another player aboard (it hasn't departed yet, or
+  // it's paused mid-voyage at this exact port — see the "stranded player
+  // fallback" above), adopt the crew's existing pirate danger level rather
+  // than starting this player's own dial from wherever it last was.
+  syncShipPirateStates(currentPIdx);
   closePort();
   log(`${p.name} boards the ${ROUTES[s.routeId].shipName}.`);
   // Spawn the right replacement ship depending on which route was boarded
@@ -9566,6 +9584,9 @@ document.getElementById('reboard-area').addEventListener('click', (e) => {
   const s = getShip(parseInt(rba.dataset.shipId));
   if (!s) return;
   p.shipId = s.id; p.disembarked = false; p.landLocation = null; s.unmanned = false;
+  // Same reasoning as boarding fresh: if a crewmate is already aboard, take
+  // their current pirate danger level rather than this player's stale one.
+  syncShipPirateStates(currentPIdx);
   closePort();
   log(`${p.name} re-boards the ${ROUTES[s.routeId].shipName}.`);
   updateHUD();
@@ -11026,6 +11047,18 @@ function advanceShip(s) {
         s._remove = true;
         if (!ships.some(sh=>sh.routeId==='voc_return'&&sh.nodeIndex===0))
           ships.push({id:nextShipId++,routeId:'voc_return',nodeIndex:0,unmanned:false});
+      }
+      // ── Shortcut routes (Country Captain / Lascar Serang / Regional Crew) —
+      // each is a single direct hop with no chained return leg (the return is a
+      // separate route the player boards later from the arrival port), so unlike
+      // the main sea routes nothing above ever marked these for removal — the
+      // ship sprite was being left behind on the map forever once the player
+      // disembarked. Disembark and remove it here, same as every other arrival.
+      if (['bomceydirect','bomceydirect_return','madbomdirect','madbomdirect_return','madbatdirect','madbatdirect_return'].includes(s.routeId)) {
+        const finalNode = nodes[nodes.length - 1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=finalNode;});
+        log(`${names} arrive at ${finalNode.name} — the shortcut voyage is complete.`);
+        s._remove = true;
       }
     }
   } else {
