@@ -15112,6 +15112,57 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (oppHeld) oppHeld.style.display = 'none';
   }
 
+  // ── networked mode select — shown after the intro plays out, same beat as
+  // solo play's Solo/Rivals/Collaborative picker, but trimmed to just the two
+  // options that make sense over the network (no Solo, no tutorial). Whichever
+  // browser clicks first locks the mode for BOTH sides — the other browser
+  // receives it via the 'mode_select' sync below instead of picking its own. ──
+  let _netModeApplied = false;
+  let _modeRequestInterval = null;
+  function setupNetworkedModeSelect() {
+    const ms = document.getElementById('mode-select-overlay');
+    if (!ms) { setupNetworkedCharSelect(); return; }
+    const soloCard = ms.querySelector('.mode-card[onclick="chooseSolo()"]');
+    const tutCard  = ms.querySelector('.mode-card[onclick="startTutorial()"]');
+    if (soloCard) soloCard.style.display = 'none';
+    if (tutCard)  tutCard.style.display  = 'none';
+    // The shared intro script (identical to index.html's) handles the actual
+    // preload + reveal timing — it un-hides #mode-select-overlay once ready.
+    // Only the click behavior of the two remaining cards changes, below.
+
+    // Catch-up for a late-joining browser: if the OTHER side already picked a
+    // mode before this one even connected (e.g. one player clicks Rivals
+    // seconds after opening their link, before the other has loaded theirs at
+    // all), that original mode_select broadcast is long gone — nothing resends
+    // it on its own. So, same pattern as the guest's request_state retry for
+    // full_state below, ask for it: the side that already chose replies with
+    // its own mode_select again the moment it sees the request.
+    let retries = 0;
+    _modeRequestInterval = setInterval(() => {
+      if (_netModeApplied) { clearInterval(_modeRequestInterval); _modeRequestInterval = null; return; }
+      if (retries++ >= 30) { clearInterval(_modeRequestInterval); _modeRequestInterval = null; return; } // ~60s, then give up quietly — a real click still works fine
+      window.syncAction('request_mode', {});
+    }, 2000);
+  }
+
+  function _applyNetworkedMode(mode, broadcast) {
+    if (_netModeApplied) return;
+    _netModeApplied = true;
+    if (_modeRequestInterval) { clearInterval(_modeRequestInterval); _modeRequestInterval = null; }
+    gameMode = mode;
+    const ms = document.getElementById('mode-select-overlay');
+    if (ms) { ms.style.transition = 'opacity 0.5s ease'; ms.style.opacity = '0'; setTimeout(() => ms.remove(), 550); }
+    _retireIntroOverlay();
+    if (broadcast) window.syncAction('mode_select', { mode });
+    setupNetworkedCharSelect();
+  }
+
+  // Override the solo/pass-and-play mode switches — clicking either remaining
+  // card now locks that mode in for both browsers instead of just switching
+  // the local player count the way it does in solo/pass-and-play play.
+  window.chooseRival  = function() { _applyNetworkedMode('rivals', true); };
+  window.chooseCollab = function() { _applyNetworkedMode('collab', true); };
+
   function setupNetworkedCharSelect() {
     const ms = document.getElementById('mode-select-overlay');
     if (ms) ms.remove();
@@ -15199,8 +15250,8 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     _originalBeginVoyage();
   };
 
-  document.addEventListener('DOMContentLoaded', setupNetworkedCharSelect);
-  if (document.readyState !== 'loading') setupNetworkedCharSelect();
+  document.addEventListener('DOMContentLoaded', setupNetworkedModeSelect);
+  if (document.readyState !== 'loading') setupNetworkedModeSelect();
 
   // ── gather full state ───────────────────────────────────────────
   function getFullState() {
@@ -15297,6 +15348,17 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   };
 
   window.onSync = function(d) {
+    if (d.type === 'mode_select') {
+      _applyNetworkedMode(d.data.mode, false);
+      return;
+    }
+    if (d.type === 'request_mode') {
+      // A late-joining browser is asking whether a mode's already been chosen.
+      // Only answer if this side genuinely settled one — otherwise both sides
+      // are still waiting and there's nothing to hand back yet.
+      if (_netModeApplied) window.syncAction('mode_select', { mode: gameMode });
+      return;
+    }
     if (d.type === 'char_select') {
       const idx = d.data.idx;
       chosenMerchant[idx] = { src: d.data.src, bx: d.data.bx, by: d.data.by, idx: d.data.mIdx };
