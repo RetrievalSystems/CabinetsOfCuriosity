@@ -2187,7 +2187,7 @@ body:has(#cab-overlay.open) #cabinet-btn { display: none !important; }
 /* ── Retained card zones — below player panels, horizontal wave row ─────── */
 .retained-zone {
   position: fixed;
-  top: 305px;           /* 10px lower than before */
+  top: 320px;           /* 10px lower than before, +15px to stop card tops clipping */
   z-index: 29;
   display: flex;
   flex-direction: row;
@@ -3459,10 +3459,10 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
              the main shipping-route column, smaller than the other inland icons.
              Boarding it is a one-turn trip, same as any other route. -->
         <div id="cape-tavern-area" style="display:none; flex-direction:column; align-items:center; gap:6px;">
-          <div class="buy-item-frame" onclick="boardCapeTavern()" title="Trip to the Tavern" style="width:56px;height:56px;">
+          <div class="buy-item-frame" onclick="boardCapeTavern()" title="Trip to the Tavern" style="width:72px;height:72px;">
             <img src="images/taverninterior.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:2px;">
           </div>
-          <span class="ship-boarding-label" style="font-size:0.52rem;">The Tavern</span>
+          <span class="ship-boarding-label" style="font-size:0.58rem;">The Tavern</span>
         </div>
 
         <!-- False Bay mule — shown at the Cape when holding the brain-coral op card -->
@@ -6135,13 +6135,25 @@ function mirrorPirateToCrewmate(activePIdx) {
 }
 
 // Sync pirateState when a player boards a ship already crewed by another player.
-// The boarding player adopts the existing crew's pirate state.
 function syncShipPirateStates(boardingPIdx) {
   const shipId = players[boardingPIdx]?.shipId;
   if (shipId === null || shipId === undefined) return;
   const crewIdx = players.findIndex((pl, idx) => idx !== boardingPIdx && pl.shipId === shipId);
   if (crewIdx < 0) return;
-  pirateState[boardingPIdx] = JSON.parse(JSON.stringify(pirateState[crewIdx]));
+  const boarding = pirateState[boardingPIdx];
+  const crew     = pirateState[crewIdx];
+  // Same principle as mirrorPirateToCrewmate(): crewmates now sharing one physical
+  // ship face one shared danger level. Take whichever side is further along (or
+  // already in battle) rather than always adopting the existing crew's state —
+  // otherwise a player who built up real pirate-dial progress on their OWN ship
+  // loses all of it the instant they board a crewmate's less-threatened vessel
+  // (e.g. joining another player's in-progress liner mid-route at Cape of Good
+  // Hope), which looks exactly like the dial randomly resetting.
+  if (boarding && !crew.inBattle && (boarding.inBattle || boarding.steps > crew.steps)) {
+    pirateState[crewIdx] = JSON.parse(JSON.stringify(boarding));
+  } else {
+    pirateState[boardingPIdx] = JSON.parse(JSON.stringify(crew));
+  }
 }
 
 // ── Flash effects — hit (red), miss (gold-green), storm strike (blue-white scale) ──
@@ -8536,6 +8548,10 @@ function closeTavern() {
 function buyTavernTip() {
   const p = cp();
   if (p.tavernUsedAtCape) return;
+  // Snapshot the exact pre-payment currency — payPrice() for 'ingots' can partially
+  // convert from silver, so a flat "+2 ingots" refund would NOT correctly undo it.
+  const _preSilver = p.silver;
+  const _preIngots = p.ingots;
   if (!payPrice(p, 2, 'ingots')) {
     log(`${p.name}: Not enough ingots — the merchant wants 2.`);
     setStatus('Not enough ingots (2 needed) for the tavern tip.');
@@ -8548,7 +8564,18 @@ function buyTavernTip() {
   const _cta = document.getElementById('cape-tavern-area');
   if (_cta) _cta.style.display = 'none';
   log(`${p.name} pays a fellow merchant 2 ingots for a tip.`);
-  drawOpportunityCard(currentPIdx);
+  drawOpportunityCard(currentPIdx, (outcome) => {
+    if (outcome && outcome.dud) {
+      // The tip turned out to be worthless (deck empty, or a stale singular-item lead) —
+      // the player paid for nothing, so make them whole and let them try again.
+      p.silver = _preSilver;
+      p.ingots = _preIngots;
+      p.tavernUsedAtCape = false;
+      if (_cta) _cta.style.display = 'flex';
+      log(`${p.name}'s tip turns out to be stale — the merchant refunds the 2 ingots.`);
+      updateInventory(currentPIdx);
+    }
+  });
   closeTavern();
 }
 
@@ -10364,15 +10391,20 @@ function _sweepDeadSingularCards(matchFn, itemLabel) {
   });
 }
 
-function drawOpportunityCard(playerIdx) {
+function drawOpportunityCard(playerIdx, onOutcome) {
   // Safety net: this function is the actual ground truth for "a card was drawn this
   // turn" — a player ending up here (however they got here — a direct draw, or a
   // tip-off card's effect) has definitely drawn, so the turn-end gate must reflect
   // that even if some upstream path failed to set it.
+  // onOutcome (optional) — called once with {dud:true,reason} if this draw ended up
+  // giving the player nothing usable (deck empty, nothing drawable, or a singular-item
+  // dud), or {dud:false} on a genuine successful draw. Existing call sites that don't
+  // pass it are completely unaffected.
   if (players[playerIdx]) players[playerIdx].cardDrawn = true;
   if (oppDeck.length === 0) {
     log(`${players[playerIdx].name}: the opportunity deck is empty — every card has been claimed.`);
     setStatus('No opportunity cards remain in the deck.');
+    if (onOutcome) onOutcome({ dud: true, reason: 'deckEmpty' });
     return;
   }
 
@@ -10390,6 +10422,7 @@ function drawOpportunityCard(playerIdx) {
 
   if (drawIdx < 0) {
     log(`${players[playerIdx].name}: No suitable opportunity card available right now.`);
+    if (onOutcome) onOutcome({ dud: true, reason: 'noneSuitable' });
     return;
   }
 
@@ -10426,6 +10459,7 @@ function drawOpportunityCard(playerIdx) {
   if (alreadyGone) {
     _animateDiscardHeldCard(playerIdx, newCardId, 'card-fade-cold',
       `${players[playerIdx].name}: word was already stale — the ${singularInfo.label} is long gone.`);
+    if (onOutcome) onOutcome({ dud: true, reason: 'alreadyGone' });
     return;
   }
   if (alreadyHeld) {
@@ -10444,6 +10478,7 @@ function drawOpportunityCard(playerIdx) {
         renderHeldCards(playerIdx);
       }, 520);
     }, 350);
+    if (onOutcome) onOutcome({ dud: true, reason: 'alreadyHeld' });
     return;
   }
 
@@ -10461,6 +10496,7 @@ function drawOpportunityCard(playerIdx) {
     // Show the card visually in the card overlay
     showCard(card.img, null);
   }
+  if (onOutcome) onOutcome({ dud: false });
 }
 
 // Call this from tipoff card effects once images are in
@@ -11038,14 +11074,21 @@ const PORT_ITEMS = {
       note:'3 available in total — one per card held per turn' },
   ],
   'Lapidary Outskirts': [
+    // repeatable: true — this is a service performed on however many raw shells the player
+    // is carrying, not a one-of-a-kind collectible. Without it, populateBuyItems() hides the
+    // option forever the instant the player owns one Bisected/Peeled nautilus, even with a
+    // second raw shell in hand ready for the same treatment (boughtThisTurn still caps it to
+    // one purchase per turn either way — this only controls whether it can ever be bought again).
     { img:'images/shell-nautiloushalf.png', label:'Nautilus — Bisected', price:3, currency:'ingots',
-      consumes:'images/shellnaut.png', note:'Cross-section reveals golden Fibonacci chambers' },
+      consumes:'images/shellnaut.png', repeatable:true, note:'Cross-section reveals golden Fibonacci chambers' },
     { img:'images/shellnautpeeled.png', label:'Nautilus — Peeled', price:1, currency:'ingots',
-      consumes:'images/shellnaut.png', note:'Outer whorl removed to show iridescent nacre' },
+      consumes:'images/shellnaut.png', repeatable:true, note:'Outer whorl removed to show iridescent nacre' },
   ],
   'Delft': [
+    // Same fix as Lapidary above — a player with two peeled shells should be able to
+    // commission two cups (one per turn), not be blocked after the first.
     { img:'images/shellnautmount.png', label:'Nautilus Cup — Silver Mount', price:4, currency:'ingots',
-      consumes:'images/shellnautpeeled.png', note:'Peeled shell set in goldsmith silver-dragon mount' },
+      consumes:'images/shellnautpeeled.png', repeatable:true, note:'Peeled shell set in goldsmith silver-dragon mount' },
   ],
 };
 
@@ -11690,8 +11733,11 @@ function endTurn() {
         // card (cardDrawn stays true, so End Turn works and boarding onward is allowed) — just pop
         // the port open so the choices (board onward, trade, re-board) are right in front of them.
         // Multiplayer: defer via the same pendingPortOpen field regular port arrivals already use
-        // (consumed by dismissCard) rather than calling openPort() directly here — this code runs
-        // on whichever browser's End Turn triggered it, not necessarily _inP's own browser.
+        // (consumed by the generic pendingPortOpen catch-up in updateTurnLock(), which is what
+        // actually gets this to open on the ARRIVING player's own browser rather than whichever
+        // browser's End Turn happened to process the arrival) rather than calling openPort()
+        // directly here. See the matching cleanup where this gets consumed (search this file for
+        // "orphaned pendingPortOpen") — that's what keeps this from going stale.
         setStatus(`${_inP.name}: Arrived at ${dest.name} — board onward or trade, then end your turn.`);
         _inP.pendingPortOpen = { name: dest.name, portImg: dest.portImg };
       }
@@ -11797,7 +11843,15 @@ function endTurn() {
         curP.arrivedAtPort = false;       // consume the flag
         if (node?.isPort && node?.name && node?.portImg) {
           if (curP.cardDrawn) {
-            // Inland — no card draw this turn, open port immediately
+            // Inland — no card draw this turn, open port immediately. Also clear any
+            // pendingPortOpen the arrival site set for this same event (used by the generic
+            // pendingPortOpen catch-up to reach the right browser in multiplayer) — otherwise,
+            // since we're opening it right here directly and nothing else will ever consume that
+            // flag on an inland turn (no card gets drawn, so dismissCard() never fires), it would
+            // sit there orphaned until some unrelated future turn's card draw wrongly reopened
+            // this stale, long-since-departed port out of nowhere ("the port I've just left pops
+            // up on the next step").
+            curP.pendingPortOpen = null;
             openPort(node.name, node.portImg);
           } else {
             curP.pendingPortOpen = { name: node.name, portImg: node.portImg };
@@ -13315,15 +13369,22 @@ function toggleBonusGroupsPanel() {
   const panel = document.getElementById('bonus-groups-panel');
   if (!panel) return;
   if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-  panel.innerHTML = BONUS_DEFS.map(b => `
-    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;
-      padding:7px 0; border-bottom:1px solid rgba(212,168,85,0.18);">
-      <div>
-        <div style="color:#e8c860; font-size:0.75rem; letter-spacing:.04em;">${b.name}</div>
-        <div style="color:rgba(240,223,192,0.65); font-size:0.65rem; margin-top:2px;">${b.desc}</div>
-      </div>
-      <div style="color:#d4a832; font-size:0.75rem; white-space:nowrap;">+${b.pts}</div>
-    </div>`).join('');
+  panel.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <div style="color:#e8c860; font-size:1.6rem; letter-spacing:.08em;">BONUS GROUPS</div>
+      <div style="color:rgba(240,223,192,0.5); font-size:0.85rem;">click outside to close</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px 36px;">` +
+    BONUS_DEFS.map(b => `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:18px;
+        padding:18px 22px; border:1px solid rgba(212,168,85,0.25); border-radius:6px; background:rgba(255,255,255,0.02);">
+        <div>
+          <div style="color:#e8c860; font-size:1.2rem; letter-spacing:.04em;">${b.name}</div>
+          <div style="color:rgba(240,223,192,0.72); font-size:0.98rem; margin-top:8px; line-height:1.45;">${b.desc}</div>
+        </div>
+        <div style="color:#d4a832; font-size:1.35rem; font-weight:700; white-space:nowrap;">+${b.pts}</div>
+      </div>`).join('') +
+    `</div>`;
   panel.style.display = 'block';
 }
 document.addEventListener('click', (e) => {
@@ -14963,9 +15024,9 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     <span id="cab-london-badge">🔒 Not in London</span>
     <div id="bonus-groups-wrap" style="position:relative;display:inline-block;margin-right:8px;">
       <button id="cab-bonus-btn" onclick="toggleBonusGroupsPanel()" style="background:linear-gradient(135deg,#3a1e08,#1a0e04);color:#d4a832;border:1px solid #6b4416;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:.12em;padding:5px 14px;cursor:pointer;border-radius:2px;">🏆 BONUS GROUPS</button>
-      <div id="bonus-groups-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:50;
-        background:linear-gradient(160deg,#241407,#160c04);border:1px solid #6b4416;border-radius:4px;
-        box-shadow:0 10px 30px rgba(0,0,0,0.6);padding:12px 16px;width:340px;font-family:'Cinzel',serif;">
+      <div id="bonus-groups-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;
+        background:linear-gradient(160deg,#241407,#160c04);border:2px solid #6b4416;border-radius:8px;
+        box-shadow:0 20px 70px rgba(0,0,0,0.75);padding:36px 44px;width:min(1300px,92vw);max-height:88vh;overflow-y:auto;font-family:'Cinzel',serif;">
       </div>
     </div>
     <button id="cab-close-btn" onclick="closeCabinet()">✕ CLOSE</button>
