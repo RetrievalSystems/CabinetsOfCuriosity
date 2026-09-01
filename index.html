@@ -4504,14 +4504,14 @@ const ROUTES = {
     ],
   },
 
-  // ── Minas Gerais: Rio → Minas Gerais (5-node mule journey north, ~10px per hop) ──
+  // ── Minas Gerais: Rio → Minas Gerais (3-node mule journey north — one hop to the
+  // conditional Ouro Preto topaz stop, one more on to the amethyst) ──
   minasgerais: {
     id:'minasgerais', shipImg:'images/mule2.png', shipName:'Mule train to Minas Gerais',
     lineColor:'rgba(160,100,200,0.4)', smallToken:true, nextRoute:null, circuit:['minasgerais'],
     nodes:[
       {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 0
-      {x:533,y:548, name:'',            isPort:false },                                           // 1
-      {x:537,y:533, name:'Ouro Preto',  isPort:true,  stopCard:'op-imperialtopaz', portImg:'images/imperialtopazdestination.jpg'}, // 2 — topaz (conditional)
+      {x:537,y:533, name:'Ouro Preto',  isPort:true,  stopCard:'op-imperialtopaz', portImg:'images/imperialtopazdestination.jpg'}, // 1 — topaz (conditional)
       {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}
     ],
   },
@@ -4521,7 +4521,6 @@ const ROUTES = {
     nodes:[
       {x:543,y:513, name:'Minas Gerais',isPort:true,  portImg:'images/amethystdestination.jpeg'}, // 0
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  stopCard:'op-imperialtopaz', portImg:'images/imperialtopazdestination.jpg'}, // 1 — topaz (conditional)
-      {x:533,y:548, name:'',            isPort:false },                                           // 2
       {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'}
     ],
   },
@@ -10267,8 +10266,9 @@ function showHeldDetail(imgSrc) {
   document.getElementById('held-detail-img').src = imgSrc;
   document.getElementById('held-card-detail').classList.add('open');
   const isSingularCompanion = !!(_singularInfoFor({ img: imgSrc })?.reqItem);
-  document.getElementById('held-pulse-badge').classList.toggle('show', isSingularCompanion);
-  document.getElementById('held-pulse-price').classList.toggle('show', isSingularCompanion);
+  // Pulsing highlight disabled for now — see the matching note in showCard().
+  document.getElementById('held-pulse-badge').classList.toggle('show', false);
+  document.getElementById('held-pulse-price').classList.toggle('show', false);
 }
 function closeHeldDetail() {
   document.getElementById('held-card-detail').classList.remove('open');
@@ -10809,8 +10809,11 @@ function showCard(imgSrc, buyCard, isPox, isGhostShip, isCaptainsOffer, opts) {
   const overlay = document.getElementById('card-overlay');
   document.getElementById('card-img').src = imgSrc;
   const isSingularCompanion = !!(_singularInfoFor({ img: imgSrc })?.reqItem);
-  document.getElementById('card-pulse-badge').classList.toggle('show', isSingularCompanion);
-  document.getElementById('card-pulse-price').classList.toggle('show', isSingularCompanion);
+  // Pulsing highlight disabled for now — user added their own visual cue for
+  // singular-item cards directly on the card art and wants to see how that
+  // reads on its own first, without this one competing with it.
+  document.getElementById('card-pulse-badge').classList.toggle('show', false);
+  document.getElementById('card-pulse-price').classList.toggle('show', false);
   document.getElementById('card-buy-popup').classList.remove('visible');
   document.getElementById('card-pox-popup').classList.remove('visible');
   document.getElementById('ghost-ship-popup').classList.remove('visible');
@@ -11244,6 +11247,50 @@ function advanceShip(s) {
         if (!ships.some(sh=>sh.routeId==='atlantic_cont_return'&&sh.nodeIndex===0))
           ships.push({id:nextShipId++,routeId:'atlantic_cont_return',nodeIndex:0,unmanned:false});
       }
+      // ── Ouro Preto / Minas Gerais mule treks — disembark on the same tick they
+      // reach their true final stop, same reasoning as the Sierras fix below: none
+      // of these six routeIds are in the exclusion list at the top of this function,
+      // so without a named block they'd only disembark a whole extra turn late via
+      // that list's generic isInlandRoute() fallback, leaving the player stuck
+      // "still on the mule" right when they arrive. (Ouro Preto is only a
+      // CONDITIONAL mid-route stop on the direct 'minasgerais' route — no disembark
+      // there; the rider stays mounted and automatically continues to Minas Gerais.)
+      if (dest.name === 'Ouro Preto' && s.routeId === 'ouroupreto') {
+        const opNode = ROUTES['ouroupreto'].nodes[ROUTES['ouroupreto'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=opNode;});
+        log(`${names} arrive at Ouro Preto.`);
+        s._remove = true;
+      }
+      if (dest.name === 'Rio' && s.routeId === 'ouroupreto_return') {
+        const rioNode2 = ROUTES['ouroupreto_return'].nodes[ROUTES['ouroupreto_return'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=rioNode2;});
+        log(`${names} arrive back in Rio from Ouro Preto.`);
+        s._remove = true;
+      }
+      if (dest.name === 'Minas Gerais' && s.routeId === 'minas_cont') {
+        const mgNode = ROUTES['minas_cont'].nodes[ROUTES['minas_cont'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=mgNode;});
+        log(`${names} arrive at Minas Gerais.`);
+        s._remove = true;
+      }
+      if (dest.name === 'Ouro Preto' && s.routeId === 'minas_cont_return') {
+        const opNode2 = ROUTES['minas_cont_return'].nodes[ROUTES['minas_cont_return'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=opNode2;});
+        log(`${names} arrive back at Ouro Preto.`);
+        s._remove = true;
+      }
+      if (dest.name === 'Minas Gerais' && s.routeId === 'minasgerais') {
+        const mgNode2 = ROUTES['minasgerais'].nodes[ROUTES['minasgerais'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=mgNode2;});
+        log(`${names} arrive at Minas Gerais.`);
+        s._remove = true;
+      }
+      if (dest.name === 'Rio' && s.routeId === 'minasgerais_return') {
+        const rioNode3 = ROUTES['minasgerais_return'].nodes[ROUTES['minasgerais_return'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=rioNode3;});
+        log(`${names} arrive back in Rio from Minas Gerais.`);
+        s._remove = true;
+      }
       // ── Arrive at Lisbon (atlantic_cont_return) — spawn Lisbon→London ship ──
       if (dest.name === 'Lisbon' && s.routeId === 'atlantic_cont_return') {
         const lisNode = ROUTES['atlantic_cont_return'].nodes[ROUTES['atlantic_cont_return'].nodes.length-1];
@@ -11252,6 +11299,21 @@ function advanceShip(s) {
         s._remove = true;
         if (!ships.some(sh=>sh.routeId==='atlantic_return'&&sh.nodeIndex===0))
           ships.push({id:nextShipId++,routeId:'atlantic_return',nodeIndex:0,unmanned:false});
+      }
+      // ── Arrive at Lisbon (sierras_return) — disembark immediately ──
+      // This short 3-node mule route isn't in advanceShip()'s exclusion list at the
+      // top of this function, so without a named block here it fell through to that
+      // list's generic isInlandRoute() fallback — which only disembarks on the NEXT
+      // call to advanceShip() for this ship (i.e. a whole extra turn later), leaving
+      // the player still technically "boarded" on the mule (shipId still set) right
+      // after arriving, unable to board a different route at Lisbon until they
+      // waited out that extra turn. Disembarking here, on the same tick as arrival,
+      // matches every other named-port arrival in this function.
+      if (dest.name === 'Lisbon' && s.routeId === 'sierras_return') {
+        const sierrasLisbonNode = ROUTES['sierras_return'].nodes[ROUTES['sierras_return'].nodes.length-1];
+        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=sierrasLisbonNode;});
+        log(`${names} arrive back in Lisbon from the Central Sierras.`);
+        s._remove = true;
       }
       // atlantic_return London arrival handled by the generic London !nextRoute check below
       if (dest.name === 'Amsterdam' && s.routeId === 'voc_return') {
@@ -12116,10 +12178,24 @@ async function aiTakeTurn() {
 }
 
 async function _aiResolveCombat(me) {
+  // If sharing a ship with a HUMAN crewmate, don't independently spin our own copy of
+  // a PIRATE BATTLE — pirateState is shared via mirrorPirateToCrewmate() once the ship's
+  // dial reaches battle, so if the AI ALSO spins here at the top of its own turn while
+  // the human crewmate is still working through the same battle on their turn, both
+  // sides' spins race over the same shared state (whoever finishes last overwrites the
+  // other). That race is what made the AI's astrolabe visibly bounce between resting
+  // and full-battle-zoom, spinning every ~4s, for a long stretch after the human had
+  // already cleared it. Let the human resolve it; mirroring keeps our own display in
+  // sync once they're done. Ghost ship spins aren't a shared-ship mechanic, so those
+  // still resolve normally either way.
+  const shipId = players[me]?.shipId;
+  const hasHumanCrewmate = shipId != null && players.some((pl, idx) => idx !== me && pl.shipId === shipId && !aiPlayers[idx]);
+
   let guard = 0;
   while (guard++ < 20) {                  // enough passes to actually clear a battle
     const s = pirateState[me];
     if (!s || !(s.inBattle || s.ghostShipSpin)) return;   // resolved → done
+    if (hasHumanCrewmate && s.inBattle && !s.ghostShipSpin) return;  // defer to the human
     if (!s.spinning) {
       // A fresh battle's first click only raises the overlay; click again right away so the
       // AI genuinely SPINS every pass instead of wasting half of them and leaving the dial stuck.
