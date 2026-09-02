@@ -15100,6 +15100,18 @@ function cabClearHighlights() {
     var ov = document.getElementById('intro-overlay');
     if (!ov) { bye(); return; }
 
+    // IMPORTANT: _imgBlob (the in-memory blob-URL cache that makes every <img>.src
+    // assignment transparently immune to GitHub Pages' short HTTP cache expiring
+    // mid-game — see its own comment further up the file) lives ONLY in page
+    // memory. A reload wipes it clean no matter what any sessionStorage flag says.
+    // So both "skip the intro" cases below must still kick off the real
+    // fetch-and-blob-cache sweep in the background even though they skip the
+    // VISUAL doors/scroll wait — otherwise every image on a repeat load falls
+    // back to a plain network request, and once GitHub Pages' cache window
+    // passes mid-session, ports go cold and pictures stutter/pop in again. This
+    // is exactly what going straight to bye() with no preload() call used to do.
+    function _bgPreload() { preload(gatherImages(), function () {}, function () {}); }
+
     // A player who chose "Start Fresh" or "End Tutorial" already sat through
     // this whole sequence once — skip straight to the game-choice screen on
     // this particular reload rather than making them wait through it again.
@@ -15107,19 +15119,19 @@ function cabClearHighlights() {
     // loading chrome — same as the normal flow, just without sitting through it.
     if (sessionStorage.getItem('coc_skipIntro') === '1') {
       sessionStorage.removeItem('coc_skipIntro');
+      _bgPreload();
       bye();
       return;
     }
 
     // Already ran a full preload once this browser session (flag is set below,
-    // right when the loading bar reaches 100%) — the browser's own cache almost
-    // certainly still has every image warm from that pass, so redoing the whole
-    // fetch-and-blob-cache sweep would just be repeated work for nothing. Skip
-    // straight past the animated doors/scroll sequence, same as coc_skipIntro,
-    // but WITHOUT clearing the flag — it should keep skipping every reload until
-    // the tab actually closes (sessionStorage clears itself then automatically,
-    // so the very next fresh session preloads properly again).
+    // right when the loading bar reaches 100%). Skip straight past the animated
+    // doors/scroll sequence, same as coc_skipIntro, but WITHOUT clearing the
+    // flag — it should keep skipping every reload until the tab actually closes
+    // (sessionStorage clears itself then automatically, so the very next fresh
+    // session preloads properly again, doors and all).
     if (sessionStorage.getItem('coc_preloaded') === '1') {
+      _bgPreload();
       bye();
       return;
     }
@@ -15132,14 +15144,22 @@ function cabClearHighlights() {
     var total  = urls.length, done = 0;
     var startT = Date.now();
     var MIN_FILL = 4000;   // floor that smooths the bar fill; real load may take longer
-    var ready = false, scrollDone = false, dismissing = false;
+    // imagesReady tracks ONLY whether every image has actually finished loading —
+    // deliberately independent of the scroll's own long climb off-screen (that
+    // duration is intentional, giving players time to read it, not a loading
+    // wait). scrollDone tracks the scroll animation separately. The game only
+    // auto-advances once BOTH are true — same pacing as before — but a click is
+    // let through as soon as imagesReady alone is true, so an impatient (or
+    // fast-reading) player is never blocked once there's genuinely nothing left
+    // to wait for; a click while images are still loading does nothing.
+    var imagesReady = false, scrollDone = false, dismissing = false;
 
     preload(urls, function(d, t) { done = d; total = t; }, function() {});
 
     // Bar reflects real load progress (floored by a short minimum so it animates
     // smoothly rather than snapping to full on a warm cache).
     function tick() {
-      if (ready) return;
+      if (imagesReady) return;
       var loadFrac = total ? done / total : 1;
       var timeFrac = Math.min(1, (Date.now() - startT) / MIN_FILL);
       if (fill) fill.style.width = (Math.min(loadFrac, timeFrac) * 100).toFixed(1) + '%';
@@ -15147,38 +15167,51 @@ function cabClearHighlights() {
     }
     requestAnimationFrame(tick);
 
-    // Hold on the doors (bar visible) until the very last image has loaded, then
-    // fade the doors and begin. Honours \"wait for all images\".
-    function finishWhenLoaded() {
-      if (ready) return;
-      if (done >= total) {
-        ready = true;
-        if (fill) fill.style.width = '100%';
-        try { sessionStorage.setItem('coc_preloaded', '1'); } catch (e) {}  // skip the pass on the next reload this session
-        setTimeout(bye, 400);
-        return;
-      }
-      setTimeout(finishWhenLoaded, 150);
+    // Leave once both the images are ready AND the scroll has finished its own
+    // journey (or the player clicked through early — see the click handler).
+    function maybeAutoLeave() {
+      if (dismissing || !imagesReady || !scrollDone) return;
+      dismissing = true;
+      setTimeout(bye, 400);
     }
 
-    // Click anywhere to skip straight to the game — but only once loading has
-    // actually finished; before that there's nothing to skip to yet, so the
-    // scroll just keeps making its way up regardless of a click.
+    // Polls for real image-load completion — starts right away, not gated behind
+    // the scroll animation, so imagesReady can become true well before the scroll
+    // finishes climbing (that's the whole point: a click can then skip the rest
+    // of the scroll's journey immediately instead of waiting the full ~100s).
+    function pollImages() {
+      if (imagesReady) return;
+      if (done >= total) {
+        imagesReady = true;
+        if (fill) fill.style.width = '100%';
+        try { sessionStorage.setItem('coc_preloaded', '1'); } catch (e) {}  // skip the pass on the next reload this session
+        maybeAutoLeave();
+        return;
+      }
+      setTimeout(pollImages, 150);
+    }
+    setTimeout(pollImages, 150);
+
+    // Click anywhere to skip straight to the game — but only once every image
+    // has actually finished loading; before that there's nothing to skip to
+    // yet, so a click while still loading does nothing (the scroll just keeps
+    // making its own way up regardless).
     ov.style.cursor = 'pointer';
     ov.addEventListener('click', function() {
-      if (!ready || dismissing) return;
+      if (!imagesReady || dismissing) return;
       dismissing = true;
       bye();
     });
 
     // Once the scroll finishes its own journey off the top of the screen,
-    // either the game's already loaded (go straight in) or it isn't yet
-    // (finishWhenLoaded quietly waits, then goes as soon as it is).
+    // either the images are already loaded (go straight in) or they aren't yet
+    // (maybeAutoLeave quietly does nothing here — pollImages will call it again
+    // the moment loading actually finishes).
     if (scroll) {
       scroll.addEventListener('transitionend', function(e) {
         if (e.propertyName !== 'top' || scrollDone || dismissing) return;
         scrollDone = true;
-        finishWhenLoaded();
+        maybeAutoLeave();
       });
     }
 
@@ -15194,7 +15227,7 @@ function cabClearHighlights() {
         });
       }, 3900);
     } else {
-      setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
+      setTimeout(function() { scrollDone = true; maybeAutoLeave(); }, 4200);   // no scroll element — don't trap the player
     }
   }
 
