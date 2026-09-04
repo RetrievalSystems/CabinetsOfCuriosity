@@ -4137,7 +4137,7 @@ const ROUTES = {
     id:'meetiyagoda_return', shipImg:'images/foshanship.png', shipName:'Dhow back to Ceylon',
     lineColor:'rgba(180,200,240,0.35)', circuit:['meetiyagoda_return'],
     nodes:[
-      {x:1113, y:459, name:'Meetiyagoda', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 0 — pulled in close to Ceylon, ~5px hop (was ~20px)
+      {x:1126, y:455, name:'Meetiyagoda', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 0
       {x:1128, y:460, name:'Ceylon',      isPort:true, portImg:'images/portcey.jpeg'},       // 1
     ],
   },
@@ -4241,13 +4241,11 @@ const ROUTES = {
     circuit:   ['meetiyagoda'],
     nodes: [
       {x:1128, y:460, name:'Ceylon',       isPort:true, portImg:'images/portcey.jpeg'},        // 0 — Galle
-      {x:1113, y:459, name:'Meetiyagoda',  isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 1 — inland gem mines, ~5px hop (was ~20px)
+      {x:1126, y:455, name:'Meetiyagoda',  isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 1 — inland gem mines
     ],
   },
 
   // ── Ratnapura Sampan: Ceylon → Ratnapura (rainbow tourmaline journey) ──
-  // Each leg pulled in to ~5px (was ~22px then ~5px — first leg used to jump much
-  // further than the second, which read as the ship suddenly leaping out to sea).
   ratnapura: {
     id:        'ratnapura',
     shipImg:   'images/foshanship.png',
@@ -4257,8 +4255,8 @@ const ROUTES = {
     circuit:   ['ratnapura'],
     nodes: [
       {x:1128, y:460, name:'Ceylon',    isPort:true,  portImg:'images/portcey.jpeg'},       // 0
-      {x:1113, y:459, name:'',          isPort:false},                                        // 1
-      {x:1117, y:457, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},       // 2
+      {x:1129, y:456, name:'',          isPort:false},                                        // 1
+      {x:1131, y:452, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},       // 2
     ],
   },
 
@@ -4270,8 +4268,8 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['ratnapura_return'],
     nodes: [
-      {x:1117, y:457, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},
-      {x:1113, y:459, name:'',          isPort:false},
+      {x:1131, y:452, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},
+      {x:1129, y:456, name:'',          isPort:false},
       {x:1128, y:460, name:'Ceylon',    isPort:true,  portImg:'images/portcey.jpeg'},
     ],
   },
@@ -4395,42 +4393,40 @@ const ROUTES = {
   },
 
   // ── Bombay inland: Bombay → Dahel Gorge (tree agate), on a mule ──
-  // Both legs halved from their original length — was wandering noticeably far out.
   dahel: {
     id:'dahel', shipImg:'images/mule.png', shipName:'Mule train to the Dahel Gorge',
     lineColor:'rgba(150,120,70,0.4)', nextRoute:null, circuit:['dahel'],
     nodes: [
       {x:1093, y:419, name:'Bombay',      isPort:true,  portImg:'images/portbom.jpeg'},      // 0
-      {x:1073, y:424, name:'',            isPort:false},                                      // 1
-      {x:1074, y:423, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 2
+      {x:1071, y:426, name:'',            isPort:false},                                      // 1
+      {x:1073, y:424, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 2
     ],
   },
   dahel_return: {
     id:'dahel_return', shipImg:'images/mule.png', shipName:'Mule train back to Bombay',
     lineColor:'rgba(150,120,70,0.3)', nextRoute:null, circuit:['dahel_return'],
     nodes: [
-      {x:1074, y:423, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 0
-      {x:1073, y:424, name:'',            isPort:false},                                      // 1
+      {x:1073, y:424, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 0
+      {x:1071, y:426, name:'',            isPort:false},                                      // 1
       {x:1093, y:419, name:'Bombay',      isPort:true,  portImg:'images/portbom.jpeg'},      // 2
     ],
   },
   // ── Bombay inland: Bombay → Cambay (mother-of-pearl casket), north into Gujarat, on a mule ──
-  // Both legs halved from their original length — was wandering noticeably far out.
   cambay: {
     id:'cambay', shipImg:'images/mule.png', shipName:'Mule train to Cambay',
     lineColor:'rgba(150,120,70,0.4)', nextRoute:null, circuit:['cambay'],
     nodes: [
       {x:1093, y:419, name:'Bombay', isPort:true,  portImg:'images/portbom.jpeg'}, // 0
-      {x:1071, y:422, name:'',       isPort:false},                                // 1
-      {x:1070, y:418, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 2
+      {x:1067, y:421, name:'',       isPort:false},                                // 1
+      {x:1065, y:414, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 2
     ],
   },
   cambay_return: {
     id:'cambay_return', shipImg:'images/mule.png', shipName:'Mule train back to Bombay',
     lineColor:'rgba(150,120,70,0.3)', nextRoute:null, circuit:['cambay_return'],
     nodes: [
-      {x:1070, y:418, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 0
-      {x:1071, y:422, name:'',       isPort:false},                                // 1
+      {x:1065, y:414, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 0
+      {x:1067, y:421, name:'',       isPort:false},                                // 1
       {x:1093, y:419, name:'Bombay', isPort:true,  portImg:'images/portbom.jpeg'}, // 2
     ],
   },
@@ -4527,13 +4523,15 @@ const ROUTES = {
       {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'}
     ],
   },
-  // ── Ouro Preto (topaz journey): Rio → Ouro Preto (2 nodes, 1 hop) ──
+  // ── Ouro Preto (topaz journey): Rio → Ouro Preto (4 nodes, 3 hops) ──
   ouroupreto: {
     id:'ouroupreto', shipImg:'images/mule2.png', shipName:'Mule train to Ouro Preto',
     lineColor:'rgba(220,140,60,0.4)', smallToken:true, nextRoute:null, circuit:['ouroupreto'],
     nodes:[
       {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 0
-      {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 1
+      {x:531,y:553, name:'',            isPort:false },                                           // 1
+      {x:534,y:543, name:'',            isPort:false },                                           // 2
+      {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 3
     ],
   },
   ouroupreto_return: {
@@ -4541,7 +4539,9 @@ const ROUTES = {
     lineColor:'rgba(220,140,60,0.25)', smallToken:true, nextRoute:null, circuit:['ouroupreto_return'],
     nodes:[
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 0
-      {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 1
+      {x:534,y:543, name:'',            isPort:false },                                           // 1
+      {x:531,y:553, name:'',            isPort:false },                                           // 2
+      {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 3
     ],
   },
   // ── Minas Gerais continuation (from Ouro Preto, for topaz travelers with amethyst card) ──
@@ -4594,7 +4594,7 @@ const ROUTES = {
     ],
   },
 
-  // ── Kongu Nadu: Madras → Kongu Nadu (ruby miner mule journey SW, 2 nodes, 1 hop) ──
+  // ── Kongu Nadu: Madras → Kongu Nadu (ruby miner mule journey SW) ──
   kongumadras: {
     id:        'kongumadras',
     shipImg:   'images/mule.png',
@@ -4605,7 +4605,8 @@ const ROUTES = {
     circuit:   ['kongumadras'],
     nodes: [
       {x:1115, y:445, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 0
-      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 1
+      {x:1086, y:449, name:'',           isPort:false },                                // 1
+      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 2
     ],
   },
   kongumadras_return: {
@@ -4618,7 +4619,8 @@ const ROUTES = {
     circuit:   ['kongumadras_return'],
     nodes: [
       {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 0
-      {x:1115, y:445, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 1
+      {x:1086, y:449, name:'',           isPort:false },                                // 1
+      {x:1115, y:445, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 2
     ],
   },
 
@@ -10016,13 +10018,7 @@ const SEA_CARD_TEMPLATES = [
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
   // ── Dominoes win ×2, loss ×2 ──
   ...[1,2].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
-  ...[1,2].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{
-    // Can't cover the 3-silver debt outright? Take the hit on reputation instead —
-    // enacted quietly, no log line for this specific outcome (per design request).
-    if ((players[i].silver||0) < 3) { changeRep(i,-2); updateInventory(i); return; }
-    players[i].silver -= 3;
-    updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`);
-  })),
+  ...[1,2].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
   // ── Purchasable items (one-offs) ──
   mkCard('images/sailiorscrimshaw.jpeg', (p,i)=>{ log(`${p.name}: A sailor offers fine scrimshaw.`); },
     { isBuy:true, oneOff:true, buyImg:'images/scrimshaw.png', buyName:'Whale Tooth Scrimshaw', buyPrice:4 }),
@@ -10821,7 +10817,7 @@ function purchaseItem() {
     passItem(); return;
   }
   players[i].items  = players[i].items || [];
-  const _base = (card.buyImg||'').replace(/^.*\//,'').replace(/\.\w+$/,''); players[i].items.push({ id: _base+'_card_'+Date.now(), name: card.buyName, label: card.buyName, img: card.buyImg, price: card.buyPrice||0, priceCurrency: usesIngots ? 'ingots' : 'coins', type:'goods' });
+  const _base = (card.buyImg||'').replace(/^.*\//,'').replace(/\.\w+$/,''); players[i].items.push({ id: _base+'_card_'+Date.now(), name: card.buyName, label: card.buyName, img: card.buyImg, price: 0, type:'goods' });
   updateInventory(i);
   log(`${p.name} buys ${card.buyName} for ${card.buyPrice} ${usesIngots ? 'ingots' : 'silver'}.`);
   passItem();
@@ -15129,15 +15125,16 @@ function cabClearHighlights() {
     }
 
     // Already ran a full preload once this browser session (flag is set below,
-    // right when the loading bar reaches 100%). The player still gets the same
-    // cabinet doors/title/scroll scene as a fresh load — that's presentation,
-    // not just a progress bar — the only difference is loading is already
-    // known to be done, so a click works immediately instead of only once the
-    // scroll finishes its own ~100s climb (see imagesReady below). The real
-    // fetch-and-blob-cache sweep still runs quietly in the background either
-    // way, same reason as _bgPreload() above: _imgBlob is wiped by this very
-    // reload no matter what this flag says.
-    var alreadyPreloaded = sessionStorage.getItem('coc_preloaded') === '1';
+    // right when the loading bar reaches 100%). Skip straight past the animated
+    // doors/scroll sequence, same as coc_skipIntro, but WITHOUT clearing the
+    // flag — it should keep skipping every reload until the tab actually closes
+    // (sessionStorage clears itself then automatically, so the very next fresh
+    // session preloads properly again, doors and all).
+    if (sessionStorage.getItem('coc_preloaded') === '1') {
+      _bgPreload();
+      bye();
+      return;
+    }
 
     var titleWrap = document.getElementById('intro-title-wrap');
     var scroll    = document.getElementById('intro-scroll');
@@ -15154,14 +15151,10 @@ function cabClearHighlights() {
     // auto-advances once BOTH are true — same pacing as before — but a click is
     // let through as soon as imagesReady alone is true, so an impatient (or
     // fast-reading) player is never blocked once there's genuinely nothing left
-    // to wait for; a click while images are still loading does nothing. Already
-    // preloaded this session? Then imagesReady starts true — a click works from
-    // the very first frame, even though the scroll/doors still play out normally
-    // for anyone who doesn't click.
-    var imagesReady = alreadyPreloaded, scrollDone = false, dismissing = false;
+    // to wait for; a click while images are still loading does nothing.
+    var imagesReady = false, scrollDone = false, dismissing = false;
 
     preload(urls, function(d, t) { done = d; total = t; }, function() {});
-    if (alreadyPreloaded && fill) fill.style.width = '100%';
 
     // Bar reflects real load progress (floored by a short minimum so it animates
     // smoothly rather than snapping to full on a warm cache).
@@ -15197,7 +15190,7 @@ function cabClearHighlights() {
       }
       setTimeout(pollImages, 150);
     }
-    if (!alreadyPreloaded) setTimeout(pollImages, 150);
+    setTimeout(pollImages, 150);
 
     // Click anywhere to skip straight to the game — but only once every image
     // has actually finished loading; before that there's nothing to skip to
