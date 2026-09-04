@@ -6113,20 +6113,19 @@ function spinGhostShipDial(pIdx) {
 function mirrorPirateToCrewmate(activePIdx) {
   const shipId = players[activePIdx]?.shipId;
   if (!shipId) return;
+  const active = pirateState[activePIdx];
   players.forEach((pl, idx) => {
     if (idx === activePIdx || pl.shipId !== shipId) return;
-    const active = pirateState[activePIdx];
-    const mate   = pirateState[idx];
-    // Crewmates on the same ship face one shared danger level. Normally the
-    // player who just drew the card is authoritative, but if a crewmate's
-    // state is somehow further along — e.g. they boarded through a path that
-    // missed syncing, or joined mid-battle — never let that regress them.
-    // Always keep whichever side is closer to (or already in) a battle.
-    if (mate && !active.inBattle && (mate.inBattle || mate.steps > active.steps)) {
-      pirateState[activePIdx] = JSON.parse(JSON.stringify(mate));
-    } else {
-      pirateState[idx] = JSON.parse(JSON.stringify(active));
-    }
+    // The caller (a pirate-sighting draw, or a battle spin resolving) just updated
+    // the ACTIVE player's own pirateState — that is always the fresh, authoritative
+    // copy for this event, so simply mirror it onto every crewmate sharing the ship.
+    // (This used to also copy backwards — pulling the crewmate's OLDER state onto
+    // the active player — whenever the crewmate's inBattle flag hadn't caught up
+    // yet. But the crewmate is always exactly one mirror-call behind, so that was
+    // true on literally every battle: the very spin that finally clears the
+    // pirates. That silently re-armed inBattle on the player who'd just resolved
+    // it, so End Turn kept refusing with no visible battle left onscreen to fight.)
+    pirateState[idx] = JSON.parse(JSON.stringify(active));
   });
 }
 
