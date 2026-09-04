@@ -1116,6 +1116,23 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 #btn-end:disabled { cursor: default; filter: grayscale(0.5) brightness(0.75); }
 #btn-end:disabled:hover { filter: grayscale(0.5) brightness(0.75); }
 
+/* Small, unobtrusive escape hatch for a battle that visually resolved but left the
+   game refusing End Turn — see resyncPirateState(). Faint until hovered so it never
+   competes with the real controls in normal play. */
+#btn-resync {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 19px;
+  line-height: 1;
+  color: #c8b48a;
+  opacity: 0.4;
+  transition: opacity 0.15s, transform 0.5s;
+}
+#btn-resync:hover  { opacity: 0.95; }
+#btn-resync:active { transform: rotate(200deg); }
+
 #status-msg {
   font-family: 'IM Fell English', serif;
   font-style: italic;
@@ -2925,6 +2942,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
     </div>
     <div id="action-row">
       <button id="btn-end" onclick="endTurn()"><img src="images/endturnplaque.png" alt="End Turn"></button>
+      <button id="btn-resync" onclick="resyncPirateState()" title="Turn stuck after a pirate/ghost-ship battle? Click to resync.">⟳</button>
       <div id="status-msg">You are in London.<br>Click the port to enter.</div>
     </div>
   </div>
@@ -6127,6 +6145,41 @@ function mirrorPirateToCrewmate(activePIdx) {
     // it, so End Turn kept refusing with no visible battle left onscreen to fight.)
     pirateState[idx] = JSON.parse(JSON.stringify(active));
   });
+}
+
+// Manual escape hatch (small "⟳" button next to End Turn): clears any pirate battle
+// or ghost-ship spin flag that's left a player stuck — astrolabe visually settled,
+// but some `inBattle`/`ghostShipSpin`/`spinning` flag still set behind the scenes,
+// so End Turn keeps refusing with nothing left onscreen to actually fight. Safe to
+// click any time: if nothing is actually stuck, this is a complete no-op.
+function resyncPirateState() {
+  let anyStuck = false;
+  pirateState.forEach((s, i) => {
+    if (!s) return;
+    if (s.inBattle || s.ghostShipSpin) {
+      anyStuck = true;
+      if (s.inBattle) {
+        s.steps    = 0;                                   // battle's over — sighting progress resets same as a clean clear
+        s.wheelRot = Math.ceil((s.wheelRot || 0) / 360) * 360; // snap wheel to resting position
+      }
+      s.inBattle      = false;
+      s.ghostShipSpin = false;
+    }
+    if (s.spinning) anyStuck = true;
+    s.spinning       = false;
+    s.clearStepsDone = 0;
+    document.getElementById('ast-stack-p' + i)?.classList.remove('ast-battle', 'ast-clearing');
+    document.getElementById('ast-dial-p'   + i)?.classList.remove('visible');
+    unzoomAstrolabe(i);
+    renderAstrolabe(i, true);
+  });
+  setBattleOverlay(false);
+  if (anyStuck) {
+    setStatus('🔄 Battle state resynced — try End Turn again.');
+    log('Pirate/ghost-ship battle state manually resynced.');
+  } else {
+    setStatus('🔄 Nothing was stuck.');
+  }
 }
 
 // Sync pirateState when a player boards a ship already crewed by another player.
