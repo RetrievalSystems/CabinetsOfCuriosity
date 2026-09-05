@@ -16466,17 +16466,11 @@ function _tutRender(step) {
   box.classList.toggle('tut-box-right', step.boxPos === 'right');
   box.classList.toggle('tut-box-left', step.boxPos === 'left');
   box.classList.toggle('tut-box-nudge-left', step.boxPos === 'nudge-left');
-  // 'shift-left-20' is the same bottom-centre default, just nudged 20px further
-  // left (used at the Cape of Good Hope so the box clears the port icons); 'custom'
-  // opts out of default positioning entirely — the step's own action places the
-  // box itself (e.g. below an enlarged card it's showing).
-  if (!step.boxPos || step.boxPos === 'nudge-left' || step.boxPos === 'shift-left-20') {
+  if (!step.boxPos || step.boxPos === 'nudge-left') {
     box.style.left = step.boxPos === 'nudge-left' ? '35%' : '50%';
     box.style.bottom = '26px';
     box.style.top = 'auto';
-    box.style.transform = step.boxPos === 'shift-left-20'
-      ? 'translateX(calc(-50% - 20px))'
-      : 'translateX(-50%)';
+    box.style.transform = 'translateX(-50%)';
   }
 
   if (step.callouts) step.callouts();
@@ -17497,43 +17491,8 @@ function _tutBuildSteps() {
       title: 'A Guest Aboard',
       text: 'As your network and reputation grows, local traders will begin offering you discrete passage, granting you greater freedom of movement. Go ahead and sail onto the Cape of Good Hope.',
       target: () => null,
-      boxPos: 'custom',
       action: async () => {
-        // Show an example of the discreet-passage shortcut card, at the same
-        // size as a normal in-game card draw (#card-display's own min(500px,86vw)
-        // width, that card art's own 2:3 aspect ratio) — and drop this step's
-        // narration box below it instead of at its usual spot at the bottom.
-        const gap = 20, bottomMargin = 20, cardTop = window.innerHeight * 0.06;
-        const tutBoxForCard = document.getElementById('tut-box');
-        // Measure the box's own real rendered height (it already has this step's
-        // title/text in it by now) rather than guessing a fixed reserve, so the
-        // card only ever shrinks as much as this box genuinely needs below it.
-        const boxH = tutBoxForCard ? tutBoxForCard.offsetHeight : 160;
-        const maxCardH = Math.max(160, window.innerHeight - cardTop - gap - boxH - bottomMargin);
-        let cardW = Math.min(500, window.innerWidth * 0.86);
-        let cardH = cardW * 1.5;
-        if (cardH > maxCardH) { cardH = maxCardH; cardW = cardH / 1.5; }
-
-        const cardImg = document.createElement('img');
-        cardImg.id = 'tut-shortcut-card-example';
-        cardImg.src = 'images/shrtcutbombayceylon.jpg';
-        cardImg.style.cssText = `
-          position:fixed; z-index:899999; top:${cardTop}px; left:50%; transform:translateX(-50%);
-          width:${cardW}px; height:${cardH}px; object-fit:contain; border-radius:4px;
-          box-shadow:0 8px 40px rgba(0,0,0,0.95);`;
-        document.body.appendChild(cardImg);
-
-        if (tutBoxForCard) {
-          tutBoxForCard.style.left = '50%';
-          tutBoxForCard.style.top = (cardTop + cardH + gap) + 'px';
-          tutBoxForCard.style.bottom = 'auto';
-          tutBoxForCard.style.transform = 'translateX(-50%)';
-        }
-
         await _tutWaitForNext();
-
-        cardImg.remove();
-        if (tutBoxForCard) { tutBoxForCard.style.top = ''; tutBoxForCard.style.bottom = ''; tutBoxForCard.style.transform = ''; }
 
         // Back to the regular close-up play view before continuing.
         previewRouteId = _tutSavedPreviewRouteId;
@@ -17583,25 +17542,21 @@ function _tutBuildSteps() {
       title: 'Buying at Ports',
       text: 'You do not need to officially disembark to buy port items, only to travel inland.',
       target: () => null,
-      boxPos: 'shift-left-20',
     },
     {
       title: 'The Busiest Port',
       text: 'The Cape of Good Hope is the crossroads of all ships heading east \u2014 here you may change ship for different routes, or switch direction and backtrack.',
       target: () => null,
-      boxPos: 'shift-left-20',
     },
     {
       title: 'The Tavern',
       text: 'At the Cape of Good Hope there is a bustling tavern where traders from all over the world converge \u2014 you may disembark and spend one turn here, paying a fellow merchant 2 ingots for information.',
       target: () => document.querySelector('#cape-tavern-area .buy-item-frame'),
-      boxPos: 'shift-left-20',
     },
     {
       title: 'Moving On',
       text: 'If you do not wish to change ship or buy any port items, simply close the port windows and end turn to continue on your chosen route.',
       target: () => null,
-      boxPos: 'shift-left-20',
       action: async () => {
         // This is now the tutorial's genuine last step, so the button already
         // reads "Finish ✓" rather than "Next →" — clicking it flows straight
