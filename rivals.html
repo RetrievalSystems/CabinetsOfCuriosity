@@ -15221,6 +15221,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   const netChosen = { mineDone: false, theirsDone: false };
   let _originalBeginVoyage = null;
   let _voyageReallyStarted = false;
+  let _charRequestInterval = null;
 
   function showNetMsg(text) {
     let el = document.getElementById('mp-netmsg');
@@ -15342,6 +15343,33 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         btn.style.padding = '0';
       }
     });
+
+    // Catch-up for a late-joining/late-connecting browser: the online lobby's
+    // instant "&mode=" auto-apply (see setupNetworkedModeSelect above) means
+    // both sides can reach this screen — and one impatient player can confirm
+    // their character — within a second or two of the page loading, well
+    // before the old ~100s intro-scroll buffer used to guarantee both relay
+    // connections were fully up and had joined the room. A char_select
+    // broadcast sent before the other side has joined the room is gone for
+    // good on this "dumb" relay (nothing replays it), and there was no
+    // re-ask for it — unlike mode_select/full_state, which already have one.
+    // Same pattern here: poll for it until an answer arrives.
+    let charRetries = 0;
+    if (_charRequestInterval) clearInterval(_charRequestInterval);
+    _charRequestInterval = setInterval(() => {
+      if (netChosen.theirsDone) { clearInterval(_charRequestInterval); _charRequestInterval = null; return; }
+      if (charRetries++ >= 30) { clearInterval(_charRequestInterval); _charRequestInterval = null; return; } // ~60s, then give up quietly
+      window.syncAction('request_char_select', {});
+    }, 2000);
+  }
+
+  function _sendMyCharSelect() {
+    const myScreenIdx = isHost ? 0 : 1;
+    const cm = chosenMerchant[myScreenIdx];
+    if (!cm) return;   // haven't confirmed (or picked) yet — nothing to send
+    const nameEl = document.getElementById(isHost ? 'char-name-p1' : 'char-name-p2');
+    const myName = (nameEl && nameEl.value.trim()) || (isHost ? 'Player 1' : 'Player 2');
+    window.syncAction('char_select', { idx: myScreenIdx, src: cm.src, bx: cm.bx, by: cm.by, mIdx: cm.idx, name: myName });
   }
 
   function localConfirm() {
@@ -15354,11 +15382,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     const warn = document.getElementById('char-warning');
     if (warn) warn.textContent = '';
 
-    const nameEl = document.getElementById(isHost ? 'char-name-p1' : 'char-name-p2');
-    const myName = (nameEl && nameEl.value.trim()) || (isHost ? 'Player 1' : 'Player 2');
-    const cm = chosenMerchant[myScreenIdx];
-
-    window.syncAction('char_select', { idx: myScreenIdx, src: cm.src, bx: cm.bx, by: cm.by, mIdx: cm.idx, name: myName });
+    _sendMyCharSelect();
 
     const myScreenEl = document.getElementById(isHost ? 'char-screen-1' : 'char-screen-2');
     if (myScreenEl) { myScreenEl.style.pointerEvents = 'none'; myScreenEl.style.opacity = '0.4'; }
@@ -15512,8 +15536,17 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       const nameInput = document.getElementById(idx === 0 ? 'char-name-p1' : 'char-name-p2');
       if (nameInput) nameInput.value = d.data.name;
       netChosen.theirsDone = true;
+      if (_charRequestInterval) { clearInterval(_charRequestInterval); _charRequestInterval = null; }
       if (netChosen.mineDone) showNetMsg('Starting the voyage…');
       tryFinishSelect();
+      return;
+    }
+    if (d.type === 'request_char_select') {
+      // The other side hasn't seen our pick yet (e.g. our original char_select
+      // broadcast went out before they'd joined the room) — resend it if we've
+      // actually confirmed one; if we haven't picked yet either, there's
+      // nothing to answer with, they'll just ask again in a couple seconds.
+      if (netChosen.mineDone) _sendMyCharSelect();
       return;
     }
     if (d.type === 'request_state') {
