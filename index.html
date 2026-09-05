@@ -16361,6 +16361,7 @@ window.addEventListener('beforeunload', () => {
 let _tutSteps = [];
 let _tutIdx = 0;
 let _tutActive = false;
+let _tutSavedPreviewRouteId = null;
 
 function startTutorial() {
   _tutActive = true;
@@ -17473,20 +17474,28 @@ function _tutBuildSteps() {
     },
     {
       title: 'A Guest Aboard',
-      text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route. Go ahead and sail onto the Cape of Good Hope.',
+      text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route.',
       target: () => null,
       action: async () => {
         // Same full-map overview the spacebar triggers — shown while this text is
         // being read, so all the routes are visible for what it's describing.
-        const preOverviewPreview = previewRouteId;
+        // Left showing as-is when this step ends — the next step continues on
+        // the same overview view, no restore happens until that step is done.
+        _tutSavedPreviewRouteId = previewRouteId;
         previewRouteId = OVERVIEW_ROUTES;
         buildSVG();
         zoomOut();
-
+      },
+    },
+    {
+      title: 'A Guest Aboard',
+      text: 'As your network and reputation grows, local traders will begin offering you discrete passage, granting you greater freedom of movement. Go ahead and sail onto the Cape of Good Hope.',
+      target: () => null,
+      action: async () => {
         await _tutWaitForNext();
 
         // Back to the regular close-up play view before continuing.
-        previewRouteId = preOverviewPreview;
+        previewRouteId = _tutSavedPreviewRouteId;
         buildSVG();
         zoomToCurrent();
 
