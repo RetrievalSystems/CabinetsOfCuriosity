@@ -2407,7 +2407,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 .bodleian-card-slot.chosen { pointer-events: none; opacity: 0.25; transition: opacity 0.4s; }
 
 /* ── Mode select screen ─────────────────────────────────────────────────── */
-#mode-select-overlay {
+#mode-select-overlay, #online-mode-select-overlay {
   position: fixed; inset: 0; z-index: 10001;
   background: transparent;
   display: flex; flex-direction: column;
@@ -2415,7 +2415,17 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   opacity: 0; transition: opacity 0.9s ease;
   pointer-events: none;
 }
-#mode-select-overlay.visible { opacity: 1; pointer-events: all; }
+#mode-select-overlay.visible, #online-mode-select-overlay.visible { opacity: 1; pointer-events: all; }
+/* The online sub-menu fades in/out instantly on top of the main mode-select
+   screen rather than waiting on the slow intro-reveal transition above. */
+#online-mode-select-overlay { transition: opacity 0.35s ease; }
+
+#online-mode-back {
+  font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.14em;
+  color: rgba(212,168,85,0.5); cursor: pointer; transition: color 0.2s;
+  text-transform: uppercase;
+}
+#online-mode-back:hover { color: rgba(212,168,85,0.95); }
 
 .mode-select-title {
   font-family: 'Cinzel', serif; font-size: 1.1rem; letter-spacing: 0.35em;
@@ -2475,6 +2485,18 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 }
 .mode-card.online-matched .mode-card-icon-placeholder {
   background: rgba(60,207,94,0.22); border-color: rgba(60,207,94,0.9);
+  animation: none;
+}
+/* Same waiting/matched cues, but for a card with a real <img> icon (the
+   Rivals/Collaborative cards on the online sub-menu) rather than the
+   placeholder box — a colored outline standing in for the placeholder's
+   background/border swap. */
+.mode-card.online-waiting .mode-card-icon {
+  outline: 3px solid rgba(224,160,40,0.85); outline-offset: 5px;
+  animation: online-pulse 1.4s ease-in-out infinite;
+}
+.mode-card.online-matched .mode-card-icon {
+  outline: 3px solid rgba(60,207,94,0.9); outline-offset: 5px;
   animation: none;
 }
 @keyframes online-pulse {
@@ -15364,35 +15386,45 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 //
 //  Manually sharing a "?room=NAME&role=host/guest" link still works (see
 //  rivals.html) — this just adds a friendlier front door: click "Play
-//  Online", wait for someone else to click it too, and both browsers get
-//  sent to a freshly-minted rivals.html room automatically, host/guest
-//  assigned for you.
+//  Online", pick Rivals or Collaborative on the small follow-up menu, wait
+//  for someone else to pick the SAME one, and both browsers get sent to a
+//  freshly-minted rivals.html room automatically, host/guest and game
+//  mode all assigned for you.
 //
 //  Runs over the SAME "dumb" relay rivals.html already uses (a bare
 //  websocket that groups sockets into named rooms and fans out whatever
-//  any member sends to the rest of that room) — just a different, fixed
-//  room name used only for pairing, never for actual game state. Nothing
-//  server-side needed.
+//  any member sends to the rest of that room) — just different, fixed
+//  room names used only for pairing, never for actual game state. Nothing
+//  server-side needed. Rivals-seekers and Collaborative-seekers queue in
+//  two entirely separate rooms (one per mode) so they can never be paired
+//  with someone who chose the other mode.
 //
-//  Pairing rule: everyone waiting broadcasts an id (random per attempt)
-//  and a periodic heartbeat; a stale id nobody's heard a heartbeat from in
-//  a while drops out so a closed tab can't jam the queue. Each client
-//  sorts all the ids it currently knows about (mine + everyone recently
-//  heard from) and pairs them off two at a time in that order — (1st,2nd),
-//  (3rd,4th), and so on — so more than one pair can be sorting themselves
-//  out at once. The lower id in a candidate pair PROPOSES rather than
-//  assuming the pairing is real: two different clients' views of the
-//  queue can disagree for a moment (messages don't all arrive in the same
-//  order to everyone), so a proposal can arrive at someone who's already
-//  paired up with a different partner in the meantime. That's why this
-//  is a handshake, not a unilateral decision: the receiving side accepts
-//  only if it's genuinely still free, and rejects otherwise — a rejected
-//  (or unanswered) proposer just re-evaluates the queue as it now stands
-//  and tries again, rather than ever launching a game with no one on the
+//  Pairing rule: everyone waiting in a mode's room broadcasts an id
+//  (random per attempt) and a periodic heartbeat; a stale id nobody's
+//  heard a heartbeat from in a while drops out so a closed tab can't jam
+//  the queue. Each client sorts all the ids it currently knows about
+//  (mine + everyone recently heard from) and pairs them off two at a time
+//  in that order — (1st,2nd), (3rd,4th), and so on — so more than one
+//  pair can be sorting themselves out at once. The lower id in a
+//  candidate pair PROPOSES rather than assuming the pairing is real: two
+//  different clients' views of the queue can disagree for a moment
+//  (messages don't all arrive in the same order to everyone), so a
+//  proposal can arrive at someone who's already paired up with a
+//  different partner in the meantime. That's why this is a handshake,
+//  not a unilateral decision: the receiving side accepts only if it's
+//  genuinely still free, and rejects otherwise — a rejected (or
+//  unanswered) proposer just re-evaluates the queue as it now stands and
+//  tries again, rather than ever launching a game with no one on the
 //  other end.
+//
+//  Once launched, the chosen mode travels with the pair as a "&mode="
+//  URL param on rivals.html, which auto-applies it for both browsers on
+//  arrival (see rivals.html's setupNetworkedModeSelect) — since it was
+//  already agreed here, neither side sees rivals.html's own mode-select
+//  screen at all.
 // ════════════════════════════════════════════════════════════════════════
 const LOBBY_RELAY_URL   = 'wss://coc-relay.onrender.com';
-const LOBBY_ROOM         = 'coc-online-lobby-v1';
+const LOBBY_ROOM_PREFIX = 'coc-online-lobby-v1-';   // + 'rivals' | 'collab' — keeps the two queues apart
 const LOBBY_STALE_MS     = 6000;   // drop a peer we haven't heard a heartbeat from in this long
 const LOBBY_HEARTBEAT_MS = 2000;
 const LOBBY_SETTLE_MS    = 900;    // wait this long after the last change before proposing
@@ -15402,6 +15434,8 @@ let _lobbyWs          = null;
 let _lobbyId          = null;
 let _lobbyPeers       = {};   // id -> last-seen timestamp (ms)
 let _lobbyState       = 'idle';   // 'idle' | 'connecting' | 'waiting' | 'proposed' | 'matched'
+let _lobbyMode        = null; // 'rivals' | 'collab' — which queue we're in
+let _lobbyRoom        = null; // LOBBY_ROOM_PREFIX + _lobbyMode
 let _lobbyProposedTo  = null; // id of the peer a 'proposed' state is currently pending with
 let _lobbyHeartbeatIv = null;
 let _lobbyStaleIv     = null;
@@ -15409,25 +15443,58 @@ let _lobbySettleTO    = null;
 let _lobbyReplyTO     = null;
 let _lobbyRetries     = 0;
 
-function chooseOnlinePlay() {
-  if (_lobbyState === 'idle') { _lobbyStart(); }
-  else                        { _lobbyCancel('You left the online queue.'); }
+function _lobbyDefaultTitle(mode) { return mode === 'collab' ? 'Collaborative' : 'Rival Merchants'; }
+
+// #mode-select-overlay's normal 0.9s opacity transition is tuned for its
+// one-time reveal after the intro — swapping it out for the online sub-menu
+// should feel like an instant screen change, not a slow crossfade, so this
+// briefly disables its transition for that one toggle (same trick used
+// elsewhere in the game for instant map-position snaps on resize).
+function _lobbyToggleMainMenu(show) {
+  const ms = document.getElementById('mode-select-overlay');
+  if (!ms) return;
+  ms.style.transition = 'none';
+  if (show) ms.classList.add('visible'); else ms.classList.remove('visible');
+  void ms.offsetHeight;   // force a layout flush so the instant change actually applies
+  ms.style.transition = '';
 }
 
-function _lobbySetCardState(state, title) {
-  const card = document.getElementById('mode-card-online');
-  const label = document.getElementById('mode-card-online-title');
+function openOnlineModeMenu() {
+  _lobbyToggleMainMenu(false);
+  const om = document.getElementById('online-mode-select-overlay');
+  if (om) om.classList.add('visible');
+}
+
+function closeOnlineModeMenu() {
+  if (_lobbyState !== 'idle') _lobbyCancel(null);   // quietly leave the queue, no goodbye message needed
+  const om = document.getElementById('online-mode-select-overlay');
+  if (om) om.classList.remove('visible');
+  _lobbyToggleMainMenu(true);
+}
+
+function chooseOnlineMode(mode) {
+  if (_lobbyState === 'idle') { _lobbyStart(mode); return; }
+  if (_lobbyMode === mode)    { _lobbyCancel('You left the online queue.'); return; }
+  _lobbyCancel(null);   // switch queues: leave the one we were in, join the other
+  _lobbyStart(mode);
+}
+
+function _lobbySetCardState(mode, state, title) {
+  const card  = document.getElementById('online-mode-card-' + mode);
+  const label = document.getElementById('online-mode-card-' + mode + '-title');
   if (card) card.classList.remove('online-waiting', 'online-matched');
   if (card && state) card.classList.add(state);
   if (label) label.textContent = title;
 }
 
-function _lobbyStart() {
+function _lobbyStart(mode) {
+  _lobbyMode  = mode;
+  _lobbyRoom  = LOBBY_ROOM_PREFIX + mode;
   _lobbyState = 'connecting';
   _lobbyId    = 'p' + Math.random().toString(36).slice(2, 10);
   _lobbyPeers = {};
   _lobbyRetries = 0;
-  _lobbySetCardState('online-waiting', 'Connecting…');
+  _lobbySetCardState(mode, 'online-waiting', 'Connecting…');
   _lobbyConnect();
 }
 
@@ -15440,10 +15507,10 @@ function _lobbyConnect() {
   }
   _lobbyWs.onopen = () => {
     _lobbyRetries = 0;
-    _lobbyWs.send(JSON.stringify({ type: 'join_room', room: LOBBY_ROOM, role: 'seeker' }));
+    _lobbyWs.send(JSON.stringify({ type: 'join_room', room: _lobbyRoom, role: 'seeker' }));
     _lobbySend({ type: 'hello' });
     _lobbyState = 'waiting';
-    _lobbySetCardState('online-waiting', 'Waiting for another player… (click to cancel)');
+    _lobbySetCardState(_lobbyMode, 'online-waiting', 'Waiting for another player… (click to cancel)');
     if (_lobbyHeartbeatIv) clearInterval(_lobbyHeartbeatIv);
     _lobbyHeartbeatIv = setInterval(() => _lobbySend({ type: 'heartbeat' }), LOBBY_HEARTBEAT_MS);
     if (_lobbyStaleIv) clearInterval(_lobbyStaleIv);
@@ -15452,7 +15519,7 @@ function _lobbyConnect() {
   _lobbyWs.onmessage = (e) => {
     let d;
     try { d = JSON.parse(e.data); } catch (err) { return; }
-    if (!d || d.room !== LOBBY_ROOM || d.from === _lobbyId) return;
+    if (!d || d.room !== _lobbyRoom || d.from === _lobbyId) return;
 
     if (d.type === 'hello' || d.type === 'heartbeat') {
       _lobbyPeers[d.from] = Date.now();
@@ -15466,7 +15533,7 @@ function _lobbyConnect() {
       _lobbyState = 'proposed';
       _lobbyProposedTo = d.from;
       _lobbySend({ type: 'accept', to: d.from });
-      _lobbySetCardState('online-waiting', 'Found another player — confirming…');
+      _lobbySetCardState(_lobbyMode, 'online-waiting', 'Found another player — confirming…');
       if (_lobbyReplyTO) clearTimeout(_lobbyReplyTO);
       _lobbyReplyTO = setTimeout(() => _lobbyRevertToWaiting(), LOBBY_REPLY_MS);   // host never followed up — try again
       return;
@@ -15509,7 +15576,7 @@ function _lobbyReconnectOrGiveUp() {
 
 function _lobbySend(msg) {
   if (!_lobbyWs || _lobbyWs.readyState !== WebSocket.OPEN) return;
-  msg.room = LOBBY_ROOM;
+  msg.room = _lobbyRoom;
   msg.from = _lobbyId;
   _lobbyWs.send(JSON.stringify(msg));
 }
@@ -15531,7 +15598,7 @@ function _lobbyRevertToWaiting() {
   if (_lobbyReplyTO) { clearTimeout(_lobbyReplyTO); _lobbyReplyTO = null; }
   _lobbyState = 'waiting';
   _lobbyProposedTo = null;
-  _lobbySetCardState('online-waiting', 'Waiting for another player… (click to cancel)');
+  _lobbySetCardState(_lobbyMode, 'online-waiting', 'Waiting for another player… (click to cancel)');
   _lobbyScheduleEvaluate();
 }
 
@@ -15551,7 +15618,7 @@ function _lobbyEvaluate() {
   _lobbyState = 'proposed';
   _lobbyProposedTo = otherId;
   _lobbySend({ type: 'propose', to: otherId });
-  _lobbySetCardState('online-waiting', 'Found another player — confirming…');
+  _lobbySetCardState(_lobbyMode, 'online-waiting', 'Found another player — confirming…');
   if (_lobbyReplyTO) clearTimeout(_lobbyReplyTO);
   _lobbyReplyTO = setTimeout(() => _lobbyRevertToWaiting(), LOBBY_REPLY_MS);   // no accept/reject came back — try again
 }
@@ -15559,11 +15626,12 @@ function _lobbyEvaluate() {
 function _lobbyLaunch(gameRoom, role) {
   if (_lobbyState === 'matched') return;   // already acted on one assignment — ignore any more
   _lobbyState = 'matched';
+  const mode = _lobbyMode;
   _lobbySend({ type: 'bye' });
   _lobbyStopTimers();
-  _lobbySetCardState('online-matched', 'Matched! Launching…');
+  _lobbySetCardState(mode, 'online-matched', 'Matched! Launching…');
   setTimeout(() => {
-    window.location.href = 'rivals.html?room=' + encodeURIComponent(gameRoom) + '&role=' + role;
+    window.location.href = 'rivals.html?room=' + encodeURIComponent(gameRoom) + '&role=' + role + '&mode=' + mode;
   }, 260);
 }
 
@@ -15581,12 +15649,16 @@ function _lobbyCancel(message) {
   _lobbyState = 'idle';
   _lobbyProposedTo = null;
   _lobbyPeers = {};
+  const mode = _lobbyMode;
+  _lobbyMode = null;
+  _lobbyRoom = null;
+  if (!mode) return;   // never actually joined a queue — nothing to reset visually
   if (message) {
     // Briefly show why we stopped (e.g. gave up reconnecting), then settle back to normal.
-    _lobbySetCardState(null, message);
-    setTimeout(() => { if (_lobbyState === 'idle') _lobbySetCardState(null, 'Play Online'); }, 2600);
+    _lobbySetCardState(mode, null, message);
+    setTimeout(() => { _lobbySetCardState(mode, null, _lobbyDefaultTitle(mode)); }, 2600);
   } else {
-    _lobbySetCardState(null, 'Play Online');
+    _lobbySetCardState(mode, null, _lobbyDefaultTitle(mode));
   }
 }
 
@@ -15673,7 +15745,7 @@ window.addEventListener('beforeunload', () => {
       <img class="mode-card-icon" src="images/collabicon.jpg" alt="">
       <div class="mode-card-title">Collaborative</div>
     </div>
-    <div class="mode-card" id="mode-card-online" onclick="chooseOnlinePlay()">
+    <div class="mode-card" id="mode-card-online" onclick="openOnlineModeMenu()">
       <div class="mode-card-icon-placeholder">🌐</div>
       <div class="mode-card-title" id="mode-card-online-title">Play Online</div>
     </div>
@@ -15684,6 +15756,25 @@ window.addEventListener('beforeunload', () => {
       <div class="mode-card-title">How to Play</div>
     </div>
   </div>
+</div>
+
+<!-- ══ ONLINE MODE SELECT — pick Rivals or Collaborative, then wait for a
+     second player to pick the same one. First click on a card turns it
+     amber and joins that mode's queue; as soon as another browser picks
+     the same card it turns green and both are launched together. ══ -->
+<div id="online-mode-select-overlay">
+  <div class="mode-select-title">Play Online — Choose a Mode</div>
+  <div class="mode-cards">
+    <div class="mode-card" id="online-mode-card-rivals" onclick="chooseOnlineMode('rivals')">
+      <img class="mode-card-icon" src="images/rivalsicon.jpg" alt="">
+      <div class="mode-card-title" id="online-mode-card-rivals-title">Rival Merchants</div>
+    </div>
+    <div class="mode-card" id="online-mode-card-collab" onclick="chooseOnlineMode('collab')">
+      <img class="mode-card-icon" src="images/collabicon.jpg" alt="">
+      <div class="mode-card-title" id="online-mode-card-collab-title">Collaborative</div>
+    </div>
+  </div>
+  <div id="online-mode-back" onclick="closeOnlineModeMenu()">← Back</div>
 </div>
 
 <!-- ══ SHIPWRECK SEQUENCE ══════════════════════════════════════════════════ -->

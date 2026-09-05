@@ -15257,16 +15257,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   let _netModeApplied = false;
   let _modeRequestInterval = null;
   function setupNetworkedModeSelect() {
-    // Arrived here already paired up by index.html's online lobby, which only
-    // ever matches two seekers who picked the SAME mode — so both browsers
-    // carry an identical "&mode=" and there's nothing left to ask either
-    // player about. Apply it immediately and skip the mode-select screen
-    // (and its request_mode catch-up polling) entirely.
-    const urlMode = qs.get('mode');
-    if (urlMode === 'rivals' || urlMode === 'collab') {
-      _applyNetworkedMode(urlMode, isHost);
-      return;
-    }
     const ms = document.getElementById('mode-select-overlay');
     if (!ms) { setupNetworkedCharSelect(); return; }
     const soloCard = ms.querySelector('.mode-card[onclick="chooseSolo()"]');
