@@ -347,23 +347,42 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 .rep-wrap {
   position: relative;
   width: 100%;
-  height: 14px;
+  height: 22px;
   display: flex;
   align-items: center;
 }
-.rep-gradient {
+.rep-segments {
   width: 100%;
-  height: 7px;
+  height: 16px;
   border-radius: 3px;
-  background: linear-gradient(90deg, #8b1a1a 0%, #c8923a 50%, #2a7a2a 100%);
-  border: 1px solid #4a2e0e;
+  display: flex;
+  overflow: hidden;
+  border: 1.5px solid #2a1a08;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+.rep-seg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(0,0,0,0.35);
+}
+.rep-seg:last-child { border-right: none; }
+.rep-seg.red   { background: linear-gradient(180deg, #a8342a, #7a2018); }
+.rep-seg.amber { background: linear-gradient(180deg, #c88a2a, #9a6415); }
+.rep-seg.green { background: linear-gradient(180deg, #3a9a3a, #226b22); }
+.rep-seg-num {
+  font-family: 'Cinzel', serif;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
 }
 .rep-marker {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
-  height: 14px;
+  width: 16px;
+  height: 20px;
   transition: left 0.5s cubic-bezier(0.4,0,0.2,1);
   pointer-events: none;
 }
@@ -446,7 +465,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 
 .held-card:hover {
   box-shadow: 0 6px 20px rgba(0,0,0,0.95);
-  z-index: 50 !important;
+  z-index: 9999 !important;
 }
 .held-card-peek {
   filter: brightness(0.75);
@@ -500,6 +519,24 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   pointer-events: none;
 }
 
+/* Retained-strip invite ready to redeem — the player has arrived at the
+   card's destination and it now has an "Attend" action waiting. */
+.ret-redeem-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #e8c078;
+  border: 1px solid #6b4416;
+  box-shadow: 0 0 6px 2px rgba(232,192,120,0.9);
+  pointer-events: none;
+  animation: ret-redeem-pulse 1.4s ease-in-out infinite;
+}
+@keyframes ret-redeem-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%      { opacity: 0.55; transform: scale(1.25); }
+}
+
 /* ══ CARD DETAIL OVERLAY (click held card) ══ */
 #held-card-detail {
   display: none;
@@ -507,8 +544,10 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   inset: 0;
   z-index: 65;
   background: rgba(0,0,0,0.75);
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
 }
 #held-card-detail.open { display: flex; }
 #held-detail-wrap {
@@ -576,22 +615,6 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
   display: flex;
   align-items: center;
   gap: 12px;
-}
-#tavern-used-msg {
-  position: absolute;
-  left: 4%;
-  bottom: 6%;
-  z-index: 5;
-  display: none;
-  font-family: 'Cinzel', serif;
-  font-style: italic;
-  font-size: 0.68rem;
-  color: rgba(232,200,120,0.75);
-  background: rgba(14,8,4,0.7);
-  padding: 8px 12px;
-  border-radius: 3px;
-  max-width: 220px;
-  line-height: 1.5;
 }
 
 .bar-fill.health { background: linear-gradient(90deg, #8b1a1a, #d44444); width: 80%; }
@@ -2178,7 +2201,8 @@ body:has(#cab-overlay.open) #cabinet-btn { display: none !important; }
 body.solo-mode #retained-zone-p2 { display: none !important; }
 
 .ret-card {
-  width: 124px; height: 172px;   /* identical to .held-card */
+  position: relative;
+  width: 118px; height: 163px;   /* matches .held-card exactly */
   border-radius: 4px; overflow: hidden; flex-shrink: 0;
   border: 1px solid #6b4416;
   box-shadow: 0 3px 10px rgba(0,0,0,0.8);
@@ -2383,7 +2407,7 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 .bodleian-card-slot.chosen { pointer-events: none; opacity: 0.25; transition: opacity 0.4s; }
 
 /* ── Mode select screen ─────────────────────────────────────────────────── */
-#mode-select-overlay {
+#mode-select-overlay, #online-mode-select-overlay {
   position: fixed; inset: 0; z-index: 10001;
   background: transparent;
   display: flex; flex-direction: column;
@@ -2391,7 +2415,17 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
   opacity: 0; transition: opacity 0.9s ease;
   pointer-events: none;
 }
-#mode-select-overlay.visible { opacity: 1; pointer-events: all; }
+#mode-select-overlay.visible, #online-mode-select-overlay.visible { opacity: 1; pointer-events: all; }
+/* The online sub-menu fades in/out instantly on top of the main mode-select
+   screen rather than waiting on the slow intro-reveal transition above. */
+#online-mode-select-overlay { transition: opacity 0.35s ease; }
+
+#online-mode-back {
+  font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.14em;
+  color: rgba(212,168,85,0.5); cursor: pointer; transition: color 0.2s;
+  text-transform: uppercase;
+}
+#online-mode-back:hover { color: rgba(212,168,85,0.95); }
 
 .mode-select-title {
   font-family: 'Cinzel', serif; font-size: 1.1rem; letter-spacing: 0.35em;
@@ -2420,6 +2454,54 @@ body.solo-mode #retained-zone-p2 { display: none !important; }
 .mode-card-title {
   font-family: 'Cinzel', serif; font-size: 0.88rem; letter-spacing: 0.18em;
   color: #e8c878; text-align: center;
+}
+
+/* Temporary stand-in for a real "Play Online" icon (none commissioned yet) —
+   same footprint as .mode-card-icon so the card lines up with its siblings. */
+.mode-card-icon-placeholder {
+  height: min(200px, 11.7vw); width: min(200px, 11.7vw);
+  display: flex; align-items: center; justify-content: center;
+  font-size: min(84px, 4.6vw);
+  background: rgba(212,168,85,0.08);
+  border: 1px dashed rgba(212,168,85,0.4);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+/* A second row beneath the main four, for a card that doesn't belong in the
+   primary row (currently just "How to Play", relocated to make room for
+   "Play Online" until it has a real icon of its own). */
+.mode-cards-secondary {
+  display: flex; justify-content: center;
+  width: calc(100vw - 60px); max-width: calc(100vw - 60px);
+}
+
+/* Online-lobby card states — see chooseOnlinePlay() / the lobby matchmaking
+   logic below. Waiting = amber (still looking for another player); matched
+   = green (paired — about to launch). */
+.mode-card.online-waiting .mode-card-icon-placeholder {
+  background: rgba(224,160,40,0.18); border-color: rgba(224,160,40,0.85);
+  animation: online-pulse 1.4s ease-in-out infinite;
+}
+.mode-card.online-matched .mode-card-icon-placeholder {
+  background: rgba(60,207,94,0.22); border-color: rgba(60,207,94,0.9);
+  animation: none;
+}
+/* Same waiting/matched cues, but for a card with a real <img> icon (the
+   Rivals/Collaborative cards on the online sub-menu) rather than the
+   placeholder box — a colored outline standing in for the placeholder's
+   background/border swap. */
+.mode-card.online-waiting .mode-card-icon {
+  outline: 3px solid rgba(224,160,40,0.85); outline-offset: 5px;
+  animation: online-pulse 1.4s ease-in-out infinite;
+}
+.mode-card.online-matched .mode-card-icon {
+  outline: 3px solid rgba(60,207,94,0.9); outline-offset: 5px;
+  animation: none;
+}
+@keyframes online-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
 }
 
 /* ── Solo-mode: hide all P2 UI ──────────────────────────────────────────── */
@@ -2744,7 +2826,18 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div class="rep-area">
     <div class="rep-label">REPUTATION</div>
     <div class="rep-wrap">
-      <div class="rep-gradient"></div>
+      <div class="rep-segments">
+        <div class="rep-seg red"><span class="rep-seg-num">1</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">2</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">3</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">4</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">5</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">6</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">7</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">8</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">9</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">10</span></div>
+      </div>
       <div class="rep-marker" id="rep-p1" style="left:50%">
         <img src="images/tracker.png" alt="▾">
       </div>
@@ -2782,7 +2875,18 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
   <div class="rep-area">
     <div class="rep-label">REPUTATION</div>
     <div class="rep-wrap">
-      <div class="rep-gradient"></div>
+      <div class="rep-segments">
+        <div class="rep-seg red"><span class="rep-seg-num">1</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">2</span></div>
+        <div class="rep-seg red"><span class="rep-seg-num">3</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">4</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">5</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">6</span></div>
+        <div class="rep-seg amber"><span class="rep-seg-num">7</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">8</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">9</span></div>
+        <div class="rep-seg green"><span class="rep-seg-num">10</span></div>
+      </div>
       <div class="rep-marker" id="rep-p2" style="left:50%">
         <img src="images/tracker.png" alt="▾">
       </div>
@@ -2979,7 +3083,6 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
         <button class="port-action-btn" id="tavern-buy-btn" onclick="buyTavernTip()">Buy tip — 2 ingots</button>
       </div>
     </div>
-    <div id="tavern-used-msg">He's already shared what he knows — come back another time.</div>
   </div>
 </div>
 
@@ -3419,6 +3522,16 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
             <img src="images/taverninterior.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:2px;">
           </div>
           <span class="ship-boarding-label" style="font-size:0.58rem;">The Tavern</span>
+        </div>
+
+        <!-- High Society invitations (Nagasaki / Rio / Madras etc.) — shown at whichever
+             port matches an unredeemed invite the player is holding, so it's hard to
+             forget you have one to use. One click attends it right away. -->
+        <div id="invite-attend-area" style="display:none; flex-direction:column; align-items:center; gap:6px;">
+          <div class="buy-item-frame" id="invite-attend-frame" onclick="attendInviteFromPort()" title="Attend the invitation" style="width:72px;height:72px;">
+            <img id="invite-attend-img" src="" style="width:100%;height:100%;object-fit:cover;border-radius:2px;">
+          </div>
+          <span class="ship-boarding-label" id="invite-attend-label" style="font-size:0.58rem;"></span>
         </div>
 
         <!-- False Bay mule — shown at the Cape when holding the brain-coral op card -->
@@ -3996,6 +4109,63 @@ const ROUTES = {
       {x:1222, y:502, name:'Batavia',    isPort:true, portImg:'images/portbat.jpeg'},         // 1
     ],
   },
+  // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 8+ ──
+  bomceydirect: {
+    id:'bomceydirect', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Ceylon",
+    facesEast:true, // galleonship.png's bow points right/east by default, unlike most other ship art — see renderShips()
+    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect'],
+    nodes:[
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
+      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 1
+    ],
+  },
+  bomceydirect_return: {
+    id:'bomceydirect_return', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Bombay",
+    facesEast:true,
+    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect_return'],
+    nodes:[
+      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 0
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
+    ],
+  },
+  // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 8+ ──
+  madbomdirect: {
+    id:'madbomdirect', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Bombay",
+    facesEast:true,
+    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect'],
+    nodes:[
+      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 0
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
+    ],
+  },
+  madbomdirect_return: {
+    id:'madbomdirect_return', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Madras",
+    facesEast:true,
+    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect_return'],
+    nodes:[
+      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
+      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 1
+    ],
+  },
+  // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 8+ ──
+  madbatdirect: {
+    id:'madbatdirect', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Batavia',
+    facesEast:true,
+    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect'],
+    nodes:[
+      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 0
+      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 1
+    ],
+  },
+  madbatdirect_return: {
+    id:'madbatdirect_return', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Madras',
+    facesEast:true,
+    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect_return'],
+    nodes:[
+      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 0
+      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 1
+    ],
+  },
   // ── Lapidary Outskirts: canal barge 1-node NE of Amsterdam ──
   lapidary: {
     id:'lapidary', shipImg:'images/keelboat.png', shipName:'Canal Barge to Lapidary',
@@ -4043,7 +4213,7 @@ const ROUTES = {
     id:'meetiyagoda_return', shipImg:'images/foshanship.png', shipName:'Dhow back to Ceylon',
     lineColor:'rgba(180,200,240,0.35)', circuit:['meetiyagoda_return'],
     nodes:[
-      {x:1126, y:455, name:'Meetiyagoda', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 0
+      {x:1113, y:459, name:'Meetiyagoda', isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 0 — pulled in close to Ceylon, ~5px hop (was ~20px)
       {x:1128, y:460, name:'Ceylon',      isPort:true, portImg:'images/portcey.jpeg'},       // 1
     ],
   },
@@ -4152,6 +4322,8 @@ const ROUTES = {
   },
 
   // ── Ratnapura Sampan: Ceylon → Ratnapura (rainbow tourmaline journey) ──
+  // Each leg pulled in to ~5px (was ~22px then ~5px — first leg used to jump much
+  // further than the second, which read as the ship suddenly leaping out to sea).
   ratnapura: {
     id:        'ratnapura',
     shipImg:   'images/foshanship.png',
@@ -4177,64 +4349,6 @@ const ROUTES = {
       {x:1117, y:457, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},
       {x:1113, y:459, name:'',          isPort:false},
       {x:1128, y:460, name:'Ceylon',    isPort:true,  portImg:'images/portcey.jpeg'},
-    ],
-  },
-
-  // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 8+ ──
-  bomceydirect: {
-    id:'bomceydirect', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Ceylon",
-    facesEast:true, // galleonship.png's bow points right/east by default, unlike most other ship art — see renderShips()
-    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect'],
-    nodes:[
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
-      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 1
-    ],
-  },
-  bomceydirect_return: {
-    id:'bomceydirect_return', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Bombay",
-    facesEast:true,
-    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect_return'],
-    nodes:[
-      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 0
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
-    ],
-  },
-  // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 8+ ──
-  madbomdirect: {
-    id:'madbomdirect', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Bombay",
-    facesEast:true,
-    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect'],
-    nodes:[
-      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 0
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
-    ],
-  },
-  madbomdirect_return: {
-    id:'madbomdirect_return', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Madras",
-    facesEast:true,
-    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect_return'],
-    nodes:[
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
-      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 1
-    ],
-  },
-  // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 8+ ──
-  madbatdirect: {
-    id:'madbatdirect', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Batavia',
-    facesEast:true,
-    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect'],
-    nodes:[
-      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 0
-      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 1
-    ],
-  },
-  madbatdirect_return: {
-    id:'madbatdirect_return', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Madras',
-    facesEast:true,
-    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect_return'],
-    nodes:[
-      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 0
-      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 1
     ],
   },
 
@@ -4357,6 +4471,7 @@ const ROUTES = {
   },
 
   // ── Bombay inland: Bombay → Dahel Gorge (tree agate), on a mule ──
+  // Both legs halved from their original length — was wandering noticeably far out.
   dahel: {
     id:'dahel', shipImg:'images/mule.png', shipName:'Mule train to the Dahel Gorge',
     lineColor:'rgba(150,120,70,0.4)', nextRoute:null, circuit:['dahel'],
@@ -4488,15 +4603,13 @@ const ROUTES = {
       {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'}
     ],
   },
-  // ── Ouro Preto (topaz journey): Rio → Ouro Preto (4 nodes, 3 hops) ──
+  // ── Ouro Preto (topaz journey): Rio → Ouro Preto (2 nodes, 1 hop) ──
   ouroupreto: {
     id:'ouroupreto', shipImg:'images/mule2.png', shipName:'Mule train to Ouro Preto',
     lineColor:'rgba(220,140,60,0.4)', smallToken:true, nextRoute:null, circuit:['ouroupreto'],
     nodes:[
       {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 0
-      {x:531,y:553, name:'',            isPort:false },                                           // 1
-      {x:534,y:543, name:'',            isPort:false },                                           // 2
-      {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 3
+      {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 1
     ],
   },
   ouroupreto_return: {
@@ -4504,9 +4617,7 @@ const ROUTES = {
     lineColor:'rgba(220,140,60,0.25)', smallToken:true, nextRoute:null, circuit:['ouroupreto_return'],
     nodes:[
       {x:537,y:533, name:'Ouro Preto',  isPort:true,  portImg:'images/imperialtopazdestination.jpg'}, // 0
-      {x:534,y:543, name:'',            isPort:false },                                           // 1
-      {x:531,y:553, name:'',            isPort:false },                                           // 2
-      {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 3
+      {x:513, y:570, name:'Rio',         isPort:true,  portImg:'images/portbat.jpeg'},            // 1
     ],
   },
   // ── Minas Gerais continuation (from Ouro Preto, for topaz travelers with amethyst card) ──
@@ -4559,7 +4670,7 @@ const ROUTES = {
     ],
   },
 
-  // ── Kongu Nadu: Madras → Kongu Nadu (ruby miner mule journey SW) ──
+  // ── Kongu Nadu: Madras → Kongu Nadu (ruby miner mule journey SW, 2 nodes, 1 hop) ──
   kongumadras: {
     id:        'kongumadras',
     shipImg:   'images/mule.png',
@@ -4570,8 +4681,7 @@ const ROUTES = {
     circuit:   ['kongumadras'],
     nodes: [
       {x:1115, y:445, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 0
-      {x:1086, y:449, name:'',           isPort:false },                                // 1
-      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 2
+      {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 1
     ],
   },
   kongumadras_return: {
@@ -4584,8 +4694,7 @@ const ROUTES = {
     circuit:   ['kongumadras_return'],
     nodes: [
       {x:1081, y:451, name:'Kongu Nadu', isPort:true,  portImg:'images/kongudest.jpeg'}, // 0
-      {x:1086, y:449, name:'',           isPort:false },                                // 1
-      {x:1115, y:445, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 2
+      {x:1115, y:445, name:'Madras',     isPort:true,  portImg:'images/portmad.jpeg'}, // 1
     ],
   },
 
@@ -4836,6 +4945,10 @@ function playerAtSea(p) {
     if (!window._mpApplyingRemote) p.shipId = null;
     return false;
   } // ship removed — clear stale reference
+  // Inland routes (mule/rowboat/cart/etc — see INLAND_ROUTES) are short land
+  // journeys, never subject to ocean hazards like storms or pirates —
+  // regardless of how far along their own route they are.
+  if (isInlandRoute(s.routeId)) return false;
   return s.nodeIndex > 0;
 }
 
@@ -7130,6 +7243,26 @@ function openPort(portName, portImg) {
     return;
   }
 
+  // ── High Society invitations — Nagasaki / Rio / Madras banquets, etc. — a small
+  // "Attend" icon appears at whichever port matches an unredeemed invite the player
+  // is holding, so it's not so easy to forget one is sitting in the retained-card
+  // strip. Works at any port, not just a fixed list, so it lives outside the
+  // per-port blocks below. ──
+  {
+    const _iaa = document.getElementById('invite-attend-area');
+    const inviteHc = (p.heldCards||[]).find(hc =>
+      (hc.heldType === 'invite' || hc.type === 'invite') && !hc.redeemed && hc.dest === portName);
+    if (_iaa) {
+      if (inviteHc) {
+        document.getElementById('invite-attend-img').src = inviteHc.img;
+        document.getElementById('invite-attend-label').textContent = `Attend in ${portName}`;
+        _iaa.style.display = 'flex';
+      } else {
+        _iaa.style.display = 'none';
+      }
+    }
+  }
+
   const dockedShips = ships.filter(s => {
     if (s._remove) return false;           // skip ships already departing
     const n = ROUTES[s.routeId]?.nodes?.[s.nodeIndex];
@@ -7518,15 +7651,6 @@ function openPort(portName, portImg) {
 
 function closePort() {
   hideRouteTooltip();
-  // Leaving/closing this port view — clear any leftover deferred-open flag for the
-  // current player. pendingPortOpen is normally consumed by dismissCard() (once the
-  // arriving player draws their card) or by the inland-arrival branch in endTurn(),
-  // but if either path gets skipped (e.g. the player boards onward again before it's
-  // consumed), it sits there orphaned and later wrongly reopens this same port out of
-  // nowhere — "the port I've just left pops up on the next step" (see the matching
-  // comment in endTurn()'s arrival handler). Safe to clear unconditionally here: by the
-  // time a real port-closing action fires, this flag has always already done its job.
-  try { const _cpP = cp(); if (_cpP) _cpP.pendingPortOpen = null; } catch (e) {}
   document.querySelectorAll('.ship-pre-selected').forEach(el => el.classList.remove('ship-pre-selected'));
   document.getElementById('port-overlay').classList.remove('open');
   // Reset postcard opacity (Bodleian delays it; all other ports should be instant)
@@ -7558,7 +7682,7 @@ function closePort() {
    'kongu-mule-area','kongu-return-area',
    'poonamallee-boat-area','poonamallee-return-area',
    'caramujeira-boat-area','caramujeira-return-area',
-   'falsebay-boat-area','falsebay-return-area'].forEach(id => {
+   'falsebay-boat-area','falsebay-return-area','invite-attend-area'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   document.getElementById('board-atlantic-area')?.classList.remove('visible');
@@ -8560,12 +8684,15 @@ function _tavernTipsAvailable() {
 function openTavern() {
   const p = cp();
   const used = !!p.tavernUsedAtCape;
-  document.getElementById('tavern-informant-area').style.display = used ? 'none' : 'flex';
-  document.getElementById('tavern-used-msg').style.display = used ? 'block' : 'none';
-  if (!used) {
-    const pick = TAVERN_INFORMANTS[Math.floor(Math.random() * TAVERN_INFORMANTS.length)];
-    document.getElementById('tavern-informant-img').src = pick;
+  if (used || !_tavernTipsAvailable()) {
+    // Nothing to offer right now — stay closed rather than pop up a popup just
+    // to say "sorry, nothing here" (that message used to live in
+    // #tavern-used-msg; simplest is to just not show the informant at all).
+    document.getElementById('tavern-overlay').classList.remove('visible');
+    return;
   }
+  const pick = TAVERN_INFORMANTS[Math.floor(Math.random() * TAVERN_INFORMANTS.length)];
+  document.getElementById('tavern-informant-img').src = pick;
   document.getElementById('tavern-overlay').classList.add('visible');
 }
 
@@ -9573,6 +9700,7 @@ function boardCapeTavern() {
   const p = cp();
   if (!p.cardDrawn) { triggerPeekBounce(); return; }
   if (p.tavernUsedAtCape) { setStatus('Already visited the tavern this stay — leave the Cape for a fresh one.'); return; }
+  if (!_tavernTipsAvailable()) { setStatus('The tavern has nothing left to offer.'); return; }
   const s = { id:nextShipId++, routeId:'cape_tavern', nodeIndex:0, unmanned:false };
   ships.push(s); p.shipId = s.id; p.disembarked = false; p.landLocation = null;
   log(`${p.name} heads off to the tavern.`);
@@ -9775,8 +9903,7 @@ document.getElementById('board-north-sea-area').addEventListener('click', () => 
     updateInventory(currentPIdx);
     log(`${p.name} pays ${cost} silver.`);
   }
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  closePort();
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;  closePort();
   if (routeId === 'north_sea') spawnNorthSeaAtLondon();
   const dest = ROUTES[routeId]?.nodes?.slice(-1)[0]?.name || 'destination';
   log(`${p.name} boards — ${dest} bound.`);
@@ -9799,8 +9926,7 @@ document.getElementById('board-atlantic-area').addEventListener('click', () => {
     updateInventory(currentPIdx);
     log(`${p.name} pays ${cost} silver for the Atlantic Packet.`);
   }
-  p.shipId = s.id; p.disembarked = false; p.landLocation = null;
-  closePort();
+  p.shipId = s.id; p.disembarked = false; p.landLocation = null;  closePort();
   log(`${p.name} boards the Atlantic Packet — Lisbon bound!`);
   renderShips(); buildSVG(); requestAnimationFrame(renderPortHotspots); updateHUD();
   setStatus('Bound for Lisbon — end your turn each round to advance south.');
@@ -9836,7 +9962,12 @@ function changeRep(playerIdx, delta) {
 
 function updateRepMarker(i) {
   const marker = document.getElementById(`rep-p${i+1}`);
-  if (marker) marker.style.left = (players[i].reputation * 10) + '%';
+  if (marker) {
+    // Center the marker within its segment (each segment is 10% wide) rather than
+    // sitting on the boundary line between two segments.
+    const seg = Math.min(10, Math.max(1, players[i].reputation));
+    marker.style.left = (seg * 10 - 5) + '%';
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -10142,10 +10273,10 @@ function renderRetainedCards(playerIdx) {
 
   const SPREAD  = 16;   // px between card left edges — half spacing, tighter row
   const waveY   = [0, -10, -4, 8, 2, -8, 5, -3];
-  const totalW  = SPREAD * (cards.length - 1) + 124;
+  const totalW  = SPREAD * (cards.length - 1) + 118;
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = `position:relative; width:${totalW}px; height:184px;`;
+  wrap.style.cssText = `position:relative; width:${totalW}px; height:175px;`;
   zone.appendChild(wrap);
 
   cards.forEach((hc, i) => {
@@ -10155,7 +10286,7 @@ function renderRetainedCards(playerIdx) {
 
     // P1: card 0 leftmost (near panel), grows right
     // P2: card 0 rightmost (near panel), grows left
-    const xPos = isP2 ? (totalW - 124 - i * SPREAD) : (i * SPREAD);
+    const xPos = isP2 ? (totalW - 118 - i * SPREAD) : (i * SPREAD);
     // P2: first card (panel-side) on top; P1: last card on top
     const zIdx = isP2 ? (10 + cards.length - i) : (10 + i);
 
@@ -10165,6 +10296,16 @@ function renderRetainedCards(playerIdx) {
     const img = document.createElement('img');
     img.src = hc.img; img.alt = el.title;
     el.appendChild(img);
+
+    // Invitations still in hand light up once the player is actually at the
+    // destination and the card is ready to redeem — otherwise it's easy to
+    // hold a redeemable invite without ever noticing it's become active.
+    if ((hc.heldType === 'invite' || hc.type === 'invite') && !hc.redeemed
+        && playerNode(players[playerIdx])?.name === hc.dest) {
+      const dot = document.createElement('div');
+      dot.className = 'ret-redeem-dot';
+      el.appendChild(dot);
+    }
 
     // Same click behaviour as held-hand cards
     el.addEventListener('click', () => {
@@ -10179,7 +10320,7 @@ function renderRetainedCards(playerIdx) {
           btn = document.createElement('button');
           btn.id = 'held-attend-btn';
           btn.className = 'port-action-btn';
-          btn.style.cssText = 'margin-top:12px;font-size:0.8rem;padding:8px 20px;';
+          btn.style.cssText = 'font-size:0.8rem;padding:8px 20px;';
           panel.appendChild(btn);
         }
         if (atDest && !hc.redeemed) {
@@ -10227,7 +10368,7 @@ function renderHeldCards(playerIdx) {
   });
 
   const count  = groups.length;
-  const spread = Math.min(24, 120 / Math.max(count, 1)); // px between fan slots — widened per user request, was min(18, 80/count)
+  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between fan slots
   const totalW = count > 1 ? spread * (count - 1) + 62 : 62;
 
   container.style.width  = totalW + 'px';
@@ -10245,7 +10386,7 @@ function renderHeldCards(playerIdx) {
       peek.className = 'held-card held-card-peek';
       peek.style.left      = (offset - d * 2) + 'px';
       peek.style.bottom    = (d * 11) + 'px';
-      peek.style.zIndex    = 10 + i;
+      peek.style.zIndex    = 10 + i * 10;
       peek.style.transform = `rotate(${rot}deg)`;
       peek.style.pointerEvents = 'none';
       const peekImg = document.createElement('img');
@@ -10261,7 +10402,7 @@ function renderHeldCards(playerIdx) {
     el.className = 'held-card';
     el.dataset.cardId = hc.id;
     el.style.left      = offset + 'px';
-    el.style.zIndex    = 10 + i + group.length; // stays above its own peeking duplicates
+    el.style.zIndex    = 10 + i * 10 + 1; // stays above its own peeking duplicates, but never above a later group
     el.style.transform = `rotate(${rot}deg)`;
     el.style.bottom    = '0';
 
@@ -10569,6 +10710,20 @@ function redeemInvite(hc, playerIdx) {
   closeHeldDetail();
 }
 
+// Click handler for the port-screen "Attend" icon (see invite-attend-area in
+// openPort()) — one click, no extra confirmation popup, same as boarding any
+// other route icon at a port.
+function attendInviteFromPort() {
+  const p = cp();
+  const portName = currentPortName;
+  const hc = (p.heldCards||[]).find(c =>
+    (c.heldType === 'invite' || c.type === 'invite') && !c.redeemed && c.dest === portName);
+  if (!hc) return;
+  redeemInvite(hc, currentPIdx);
+  const area = document.getElementById('invite-attend-area');
+  if (area) area.style.display = 'none';
+}
+
 // ════════════════════════════════════════════════
 //  LAND CARD DECK
 // ════════════════════════════════════════════════
@@ -10585,14 +10740,16 @@ const LAND_CARD_TEMPLATES = [
   { img:'images/fire.jpeg',          effect:(p,i)=>{ changeRep(i,1);  log(`${p.name}: Fire nearby! You pitch in — +1 reputation, no further actions.`); p.skipActions=true; } },
 
   // ── Specialist buyers — Haarlem conchologist (×3) and Leiden mineralogist (×3) ──
+  // heldType:'specialist' moves these to the retained-card strip under the HUD,
+  // out of the main hand fan — they're standing contacts, not one-off draws.
   ...Array(3).fill(null).map(()=> ({ img:'images/op-conchologist.jpeg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('conchologist'))) { log(`${p.name}: Conchologist card already held — returned to deck.`); return; }
-      p.heldCards.push({id:'conch_'+Date.now(),img:'images/op-conchologist.jpeg',faceUp:false,type:'opportunity',label:'Conchologist — Haarlem',dest:'Haarlem',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Conchologist in Haarlem — triple price for shells. Kept face down.`); } })),
+      p.heldCards.push({id:'conch_'+Date.now(),img:'images/op-conchologist.jpeg',faceUp:false,type:'opportunity',heldType:'specialist',label:'Conchologist — Haarlem',dest:'Haarlem',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Conchologist in Haarlem — triple price for shells. Kept face down.`); } })),
   ...Array(3).fill(null).map(()=> ({ img:'images/op-minerologist.jpeg',
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('minerologist'))) { log(`${p.name}: Mineralogist card already held — returned to deck.`); return; }
-      p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
+      p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',heldType:'specialist',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
   // ── Travel shortcuts — Country Captain (Bombay/Ceylon ×3) and Lascar Serang (Madras/Bombay ×3) ──
   // Permanent once drawn, kept for good, used infinitely — same standing-contact
   // pattern as the specialists above, but gate a direct route instead of a sale.
@@ -10648,11 +10805,13 @@ const LAND_CARD_TEMPLATES = [
       log(`${p.name} has a new companion — a street cat follows them aboard!`);
     } },
 
-  // ── Invitations (kept, face down, redeemed at destination) — 2 of 3 types ──
+  // ── Invitations (kept, face down, redeemed at destination) — 3 of 3 types ──
   { img:'images/invitenag.jpeg', isKept:true, heldType:'invite', dest:'Nagasaki', heldLabel:'Nagasaki Bugyō Invitation',
     effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Nagasaki')){log(`${p.name}: Already holds a Nagasaki invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/invitenag.jpeg')); log(`${p.name} receives an invitation to Nagasaki — keep this card!`); } },
   { img:'images/inviterio.jpeg', isKept:true, heldType:'invite', dest:'Rio', heldLabel:'Viceroy\'s Invitation',
     effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Rio')){log(`${p.name}: Already holds a Rio invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/inviterio.jpeg')); log(`${p.name} receives a Viceroy's invitation to Rio — keep this card!`); } },
+  { img:'images/invitemad.jpeg', isKept:true, heldType:'invite', dest:'Madras', heldLabel:'Nawab of Arcot\'s Invitation',
+    effect:(p,i)=>{ if((players[i].heldCards||[]).some(h=>h.type==='invite'&&h.dest==='Madras')){log(`${p.name}: Already holds a Madras invitation — card returned to pack.`);return;} giveHeldCard(i, LAND_CARD_TEMPLATES.find(c=>c.img==='images/invitemad.jpeg')); log(`${p.name} receives an invitation to the Nawab's banquet in Madras — keep this card!`); } },
   // ── Bodleian Library extra invite — 2 in the land deck (gives card if not already held) ──
   { img:'images/bodleian.jpeg', isKept:true, oneOff:true, heldType:'opportunity', dest:'Bodleian Library', heldLabel:'Bodleian Library — Invitation',
     effect:(p,i)=>{ players[i].heldCards=players[i].heldCards||[]; players[i].heldCards.push({id:'bodleian_land_'+Date.now(),img:'images/bodleian.jpeg',faceUp:true,type:'opportunity',label:'Bodleian Library — Invitation',dest:'Bodleian Library',redeemed:false,isBodleianInvite:true}); renderHeldCards(i); log(`${p.name} receives a Bodleian invitation.`); } },
@@ -10688,7 +10847,7 @@ const LAND_CARD_TEMPLATES = [
 //  port far more than out at sea.
 // ════════════════════════════════════════════════════════════════
 const BODLEIAN_ACCESS = 4; // 2 start invites + 2 mixed into the land deck
-const TIPOFF_TARGET   = Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS);
+const TIPOFF_TARGET   = Math.round(Math.max(0, OPPORTUNITY_CARDS.length - BODLEIAN_ACCESS) / 2); // halved — was crowding out real opportunity draws
 const _SEA_TIP_SRC = [
   { img:'images/tipoff8.jpeg', msg:'A senior officer tips you off — opportunity card!' },
   { img:'images/tipoff4.jpeg', msg:"The ship's clerk has useful information — opportunity card!" },
@@ -11037,8 +11196,8 @@ const PORT_ITEMS = {
     { img:'images/tulipvase.png', label:'Delft Tulip Vase',   price:2, currency:'ingots' },
     { img:'images/telescope.png', label:'Telescope',          price:5, currency:'ingots' },
     { img:'images/anatomicalmodeltorso.png', label:'Anatomical Ceroplastic Torso', price:15, currency:'ingots',
-      reqCard:'images/connection1.jpg', reqItem:'apatite',
-      reqItemLabel:'Asparagus Stone (Apatite)', reqItemNote:'A green apatite specimen is required' },
+      reqCard:'images/connection1.jpg', reqItem:'cinnabar',
+      reqItemLabel:'Cinnabar Box', reqItemNote:'A cinnabar lacquer box is required' },
   ],
   'Cape of Good Hope': [
     { img:'images/protearaw.png',  label:'King Protea',         price:5, currency:'coins' },
@@ -11205,7 +11364,7 @@ function advanceShip(s) {
       log(`${names} arrive at ${dest.name}!`);
       // Mark each passenger as freshly arrived so the port auto-opens after card draw
       players.forEach((pl,idx) => {
-        if (pl.shipId === s.id) { pl.arrivedAtPort = true; checkInviteRedemption(idx, dest.name); }
+        if (pl.shipId === s.id) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; checkInviteRedemption(idx, dest.name); }
       });
       // The Tavern (Cape of Good Hope): a fresh arrival always earns a fresh visit,
       // even if this player already used it on an earlier pass through the Cape.
@@ -11817,7 +11976,7 @@ function endTurn() {
       // Disembark ALL passengers on this ship (handles 2 players arriving simultaneously)
       players.forEach(pl => {
         if (pl.shipId === _sid) {
-          if (dest.isPort && dest.name) pl.arrivedAtPort = true;
+          if (dest.isPort && dest.name) { pl.arrivedAtPort = true; pl._arrivedAtPortName = dest.name; }
           pl.landLocation = dest;
           pl.shipId       = null;
           pl.disembarked  = true;
@@ -11952,8 +12111,15 @@ function endTurn() {
         if (document.getElementById('battle-overlay')?.classList.contains('active')) return;
         const curP = cp();
         if (!curP.arrivedAtPort) return; // only on fresh arrival, not lingering turns
-        curP.arrivedAtPort = false;       // consume the flag
         const node = playerNode(curP);
+        // Race guard: this fires after a ~1s delay, long enough for a fast player to
+        // already have clicked "board onward" before it runs. Boarding queues the next
+        // leg for the FOLLOWING endTurn() call rather than moving them immediately, so
+        // at this exact moment they can still appear to be sitting at the same port —
+        // only actually re-show the popup if that's genuinely still the port they just
+        // arrived at, not a stale flag catching up after they've already moved on.
+        if (node?.name !== curP._arrivedAtPortName) { curP.arrivedAtPort = false; return; }
+        curP.arrivedAtPort = false;       // consume the flag
         if (node?.isPort && node?.name && node?.portImg) {
           if (curP.cardDrawn) {
             // Inland — no card draw this turn, open port immediately. Also clear any
@@ -13313,13 +13479,13 @@ const ITEM_SCORES = {
     itemType:'polyhedra', shellFamily:null,    mineralType:null,   region:'europe'   },
   'amethyst':             { w:8,  c:7,  s:6,  a:8,  total:29, label:'Amethyst Geode',
     itemType:'mineral',   shellFamily:null,    mineralType:'quartz',  region:'americas' },
-  'moonstone':            { w:7,  c:8,  s:7,  a:7,  total:29, label:'Blue Moonstone',
+  'moonstone':            { w:3,  c:4,  s:3,  a:4,  total:14, label:'Blue Moonstone',
     itemType:'mineral',   shellFamily:null,    mineralType:'feldspar',region:'asia'   },
   'op-moonstone':         { w:7,  c:8,  s:7,  a:7,  total:29, label:'Blue Moonstone',
     itemType:'mineral',   shellFamily:null,    mineralType:'feldspar',region:'asia'   },
   'wenteltrap':           { w:6,  c:7,  s:8,  a:8,  total:29, label:'Precious Wenteltrap',
     itemType:'shell',     shellFamily:'wentletrap', mineralType:null, region:'asia'  },
-  'apatite':              { w:5,  c:9,  s:7,  a:7,  total:28, label:'Asparagus Stone',
+  'apatite':              { w:2,  c:3,  s:2,  a:3,  total:10, label:'Asparagus Stone',
     itemType:'mineral',   shellFamily:null,    mineralType:'phosphate',region:'europe'},
   'shell-nautiloushalf':  { w:7,  c:9,  s:5,  a:7,  total:28, label:'Nautilus — Bisected',
     itemType:'shell',     shellFamily:'nautilus', mineralType:null, region:'europe'  },
@@ -14000,21 +14166,10 @@ function promptCabinetFull(instigatorIdx) {
 }
 
 // Step 2 — queue the players (instigator first; both in a rivals game).
-// `fromRemote` is true when this call was triggered by the OTHER browser's
-// 'begin_appraisal' network message (see onSync below) — only the browser
-// where the player actually clicked "Yes, appraise" broadcasts, or both
-// sides would ping-pong the message back and forth forever. Networked play
-// never wrote gameOver/appraisal state into the synced full_state snapshot,
-// so without this broadcast the other browser never learned the game had
-// ended at all (PLAYTEST_BUGLOG.md #25).
-function beginAppraisal(instigatorIdx, fromRemote) {
-  if (_appraisalActive || gameOver) return;
+function beginAppraisal(instigatorIdx) {
   _appraisalActive = true;
   _appraisalScores = {};
   _appraisalQueue  = (NUM_PLAYERS >= 2 && gameMode !== 'collab') ? [instigatorIdx, 1 - instigatorIdx] : [instigatorIdx];
-  if (!fromRemote && typeof window.syncAction === 'function') {
-    window.syncAction('begin_appraisal', { instigatorIdx });
-  }
   _appraiseNext();
 }
 
@@ -14412,12 +14567,22 @@ function cabCalcScale() {
   const imgR = img.getBoundingClientRect();
   cabSX = imgR.width / CAB_W; cabSY = imgR.height / CAB_H;
 }
-// cabPositionSlots() vs cabBuildSlots(): the bay positions/sizes (layer rect and
-// each cell's left/top/width/height) were only ever set once, the very first time
-// the cabinet was built, and never refreshed — so the bays stayed pinned to wherever
-// they were on that very first open while their contents kept rescaling to match the
-// new window size, drifting apart the more the window size changed. Extracted so this
-// part alone can be safely re-run on every resize/reopen (see callers).
+// Position the slot layer itself and every individual cell against the cabinet
+// image's CURRENT on-screen rect, then re-render each cell's contents. Safe and
+// cheap to call as often as needed (window resize, every cabinet reopen) — unlike
+// cabBuildSlots() below, it attaches no event listeners, so calling it repeatedly
+// never duplicates a click/drag/drop handler.
+//
+// This is the actual fix for cabinet items drifting out of their bays: previously
+// only cabCalcScale() (recomputes the cabSX/cabSY scale factors) and cabRenderCell()
+// (re-renders each cell's INNER content at the new scale) were re-run on resize/
+// reopen — but the cells' own position and size (layer.style.left/top/width/height,
+// and each cell's left/top/width/height) were only ever set once, the very first
+// time the cabinet was built, and never refreshed. So the bays themselves stayed
+// pinned to wherever they were on that very first open, while their contents kept
+// rescaling to match the new window size — the two drifted apart the more the
+// window size changed from that first-open size. Recalculating both together here
+// keeps the bays locked to the actual image underneath them.
 function cabPositionSlots() {
   cabCalcScale();
   const img   = document.getElementById('cab-img');
@@ -15215,6 +15380,291 @@ function _enterCharSelect(nPlayers) {
 function chooseSolo()   { gameMode = 'solo';   _enterCharSelect(1); }
 function chooseRival()  { gameMode = 'rivals'; _enterCharSelect(2); }
 function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
+
+// ════════════════════════════════════════════════════════════════════════
+//  ONLINE LOBBY — one-click matchmaking for rivals.html
+//
+//  Manually sharing a "?room=NAME&role=host/guest" link still works (see
+//  rivals.html) — this just adds a friendlier front door: click "Play
+//  Online", pick Rivals or Collaborative on the small follow-up menu, wait
+//  for someone else to pick the SAME one, and both browsers get sent to a
+//  freshly-minted rivals.html room automatically, host/guest and game
+//  mode all assigned for you.
+//
+//  Runs over the SAME "dumb" relay rivals.html already uses (a bare
+//  websocket that groups sockets into named rooms and fans out whatever
+//  any member sends to the rest of that room) — just different, fixed
+//  room names used only for pairing, never for actual game state. Nothing
+//  server-side needed. Rivals-seekers and Collaborative-seekers queue in
+//  two entirely separate rooms (one per mode) so they can never be paired
+//  with someone who chose the other mode.
+//
+//  Pairing rule: everyone waiting in a mode's room broadcasts an id
+//  (random per attempt) and a periodic heartbeat; a stale id nobody's
+//  heard a heartbeat from in a while drops out so a closed tab can't jam
+//  the queue. Each client sorts all the ids it currently knows about
+//  (mine + everyone recently heard from) and pairs them off two at a time
+//  in that order — (1st,2nd), (3rd,4th), and so on — so more than one
+//  pair can be sorting themselves out at once. The lower id in a
+//  candidate pair PROPOSES rather than assuming the pairing is real: two
+//  different clients' views of the queue can disagree for a moment
+//  (messages don't all arrive in the same order to everyone), so a
+//  proposal can arrive at someone who's already paired up with a
+//  different partner in the meantime. That's why this is a handshake,
+//  not a unilateral decision: the receiving side accepts only if it's
+//  genuinely still free, and rejects otherwise — a rejected (or
+//  unanswered) proposer just re-evaluates the queue as it now stands and
+//  tries again, rather than ever launching a game with no one on the
+//  other end.
+//
+//  Once launched, the chosen mode travels with the pair as a "&mode="
+//  URL param on rivals.html, which auto-applies it for both browsers on
+//  arrival (see rivals.html's setupNetworkedModeSelect) — since it was
+//  already agreed here, neither side sees rivals.html's own mode-select
+//  screen at all.
+// ════════════════════════════════════════════════════════════════════════
+const LOBBY_RELAY_URL   = 'wss://coc-relay.onrender.com';
+const LOBBY_ROOM_PREFIX = 'coc-online-lobby-v1-';   // + 'rivals' | 'collab' — keeps the two queues apart
+const LOBBY_STALE_MS     = 6000;   // drop a peer we haven't heard a heartbeat from in this long
+const LOBBY_HEARTBEAT_MS = 2000;
+const LOBBY_SETTLE_MS    = 900;    // wait this long after the last change before proposing
+const LOBBY_REPLY_MS     = 1500;   // give a proposal/accept this long to be answered before retrying
+
+let _lobbyWs          = null;
+let _lobbyId          = null;
+let _lobbyPeers       = {};   // id -> last-seen timestamp (ms)
+let _lobbyState       = 'idle';   // 'idle' | 'connecting' | 'waiting' | 'proposed' | 'matched'
+let _lobbyMode        = null; // 'rivals' | 'collab' — which queue we're in
+let _lobbyRoom        = null; // LOBBY_ROOM_PREFIX + _lobbyMode
+let _lobbyProposedTo  = null; // id of the peer a 'proposed' state is currently pending with
+let _lobbyHeartbeatIv = null;
+let _lobbyStaleIv     = null;
+let _lobbySettleTO    = null;
+let _lobbyReplyTO     = null;
+let _lobbyRetries     = 0;
+
+function _lobbyDefaultTitle(mode) { return mode === 'collab' ? 'Collaborative' : 'Rival Merchants'; }
+
+// #mode-select-overlay's normal 0.9s opacity transition is tuned for its
+// one-time reveal after the intro — swapping it out for the online sub-menu
+// should feel like an instant screen change, not a slow crossfade, so this
+// briefly disables its transition for that one toggle (same trick used
+// elsewhere in the game for instant map-position snaps on resize).
+function _lobbyToggleMainMenu(show) {
+  const ms = document.getElementById('mode-select-overlay');
+  if (!ms) return;
+  ms.style.transition = 'none';
+  if (show) ms.classList.add('visible'); else ms.classList.remove('visible');
+  void ms.offsetHeight;   // force a layout flush so the instant change actually applies
+  ms.style.transition = '';
+}
+
+function openOnlineModeMenu() {
+  _lobbyToggleMainMenu(false);
+  const om = document.getElementById('online-mode-select-overlay');
+  if (om) om.classList.add('visible');
+}
+
+function closeOnlineModeMenu() {
+  if (_lobbyState !== 'idle') _lobbyCancel(null);   // quietly leave the queue, no goodbye message needed
+  const om = document.getElementById('online-mode-select-overlay');
+  if (om) om.classList.remove('visible');
+  _lobbyToggleMainMenu(true);
+}
+
+function chooseOnlineMode(mode) {
+  if (_lobbyState === 'idle') { _lobbyStart(mode); return; }
+  if (_lobbyMode === mode)    { _lobbyCancel('You left the online queue.'); return; }
+  _lobbyCancel(null);   // switch queues: leave the one we were in, join the other
+  _lobbyStart(mode);
+}
+
+function _lobbySetCardState(mode, state, title) {
+  const card  = document.getElementById('online-mode-card-' + mode);
+  const label = document.getElementById('online-mode-card-' + mode + '-title');
+  if (card) card.classList.remove('online-waiting', 'online-matched');
+  if (card && state) card.classList.add(state);
+  if (label) label.textContent = title;
+}
+
+function _lobbyStart(mode) {
+  _lobbyMode  = mode;
+  _lobbyRoom  = LOBBY_ROOM_PREFIX + mode;
+  _lobbyState = 'connecting';
+  _lobbyId    = 'p' + Math.random().toString(36).slice(2, 10);
+  _lobbyPeers = {};
+  _lobbyRetries = 0;
+  _lobbySetCardState(mode, 'online-waiting', 'Connecting…');
+  _lobbyConnect();
+}
+
+function _lobbyConnect() {
+  try {
+    _lobbyWs = new WebSocket(LOBBY_RELAY_URL);
+  } catch (e) {
+    _lobbyReconnectOrGiveUp();
+    return;
+  }
+  _lobbyWs.onopen = () => {
+    _lobbyRetries = 0;
+    _lobbyWs.send(JSON.stringify({ type: 'join_room', room: _lobbyRoom, role: 'seeker' }));
+    _lobbySend({ type: 'hello' });
+    _lobbyState = 'waiting';
+    _lobbySetCardState(_lobbyMode, 'online-waiting', 'Waiting for another player… (click to cancel)');
+    if (_lobbyHeartbeatIv) clearInterval(_lobbyHeartbeatIv);
+    _lobbyHeartbeatIv = setInterval(() => _lobbySend({ type: 'heartbeat' }), LOBBY_HEARTBEAT_MS);
+    if (_lobbyStaleIv) clearInterval(_lobbyStaleIv);
+    _lobbyStaleIv = setInterval(_lobbySweepStale, LOBBY_HEARTBEAT_MS);
+  };
+  _lobbyWs.onmessage = (e) => {
+    let d;
+    try { d = JSON.parse(e.data); } catch (err) { return; }
+    if (!d || d.room !== _lobbyRoom || d.from === _lobbyId) return;
+
+    if (d.type === 'hello' || d.type === 'heartbeat') {
+      _lobbyPeers[d.from] = Date.now();
+      if (_lobbyState === 'waiting') _lobbyScheduleEvaluate();
+      return;
+    }
+    if (d.type === 'bye') { delete _lobbyPeers[d.from]; return; }
+
+    if (d.type === 'propose' && d.to === _lobbyId) {
+      if (_lobbyState !== 'waiting') { _lobbySend({ type: 'reject', to: d.from }); return; }
+      _lobbyState = 'proposed';
+      _lobbyProposedTo = d.from;
+      _lobbySend({ type: 'accept', to: d.from });
+      _lobbySetCardState(_lobbyMode, 'online-waiting', 'Found another player — confirming…');
+      if (_lobbyReplyTO) clearTimeout(_lobbyReplyTO);
+      _lobbyReplyTO = setTimeout(() => _lobbyRevertToWaiting(), LOBBY_REPLY_MS);   // host never followed up — try again
+      return;
+    }
+    if (d.type === 'accept' && d.to === _lobbyId && _lobbyState === 'proposed' && _lobbyProposedTo === d.from) {
+      if (_lobbyReplyTO) { clearTimeout(_lobbyReplyTO); _lobbyReplyTO = null; }
+      const gameRoom = 'coc-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      _lobbySend({ type: 'assign', to: d.from, gameRoom });
+      _lobbyLaunch(gameRoom, 'host');
+      return;
+    }
+    if (d.type === 'reject' && d.to === _lobbyId && _lobbyState === 'proposed' && _lobbyProposedTo === d.from) {
+      _lobbyRevertToWaiting();
+      return;
+    }
+    if (d.type === 'assign' && d.to === _lobbyId) {
+      _lobbyLaunch(d.gameRoom, 'guest');
+      return;
+    }
+  };
+  _lobbyWs.onerror = () => { /* onclose follows; handled there */ };
+  _lobbyWs.onclose = () => {
+    if (_lobbyState === 'idle' || _lobbyState === 'matched') return; // deliberate close
+    _lobbyReconnectOrGiveUp();
+  };
+}
+
+function _lobbyReconnectOrGiveUp() {
+  _lobbyRetries++;
+  // The relay is a free-tier Render service and can take 20-30s to wake from cold —
+  // rivals.html's own game-sync connection just retries forever through that, but a
+  // silent infinite spinner on the mode-select screen reads as broken, so give it a
+  // generous ~30s (matching a real cold start) before finally saying so.
+  if (_lobbyRetries > 14) {
+    _lobbyCancel('Couldn’t reach the online lobby right now — try again in a moment.');
+    return;
+  }
+  setTimeout(() => { if (_lobbyState !== 'idle' && _lobbyState !== 'matched') _lobbyConnect(); }, 2000);
+}
+
+function _lobbySend(msg) {
+  if (!_lobbyWs || _lobbyWs.readyState !== WebSocket.OPEN) return;
+  msg.room = _lobbyRoom;
+  msg.from = _lobbyId;
+  _lobbyWs.send(JSON.stringify(msg));
+}
+
+function _lobbySweepStale() {
+  const now = Date.now();
+  let changed = false;
+  Object.keys(_lobbyPeers).forEach(id => {
+    if (now - _lobbyPeers[id] > LOBBY_STALE_MS) {
+      delete _lobbyPeers[id];
+      changed = true;
+      if (_lobbyState === 'proposed' && _lobbyProposedTo === id) _lobbyRevertToWaiting(); // partner vanished mid-handshake
+    }
+  });
+  if (changed && _lobbyState === 'waiting') _lobbyScheduleEvaluate();
+}
+
+function _lobbyRevertToWaiting() {
+  if (_lobbyReplyTO) { clearTimeout(_lobbyReplyTO); _lobbyReplyTO = null; }
+  _lobbyState = 'waiting';
+  _lobbyProposedTo = null;
+  _lobbySetCardState(_lobbyMode, 'online-waiting', 'Waiting for another player… (click to cancel)');
+  _lobbyScheduleEvaluate();
+}
+
+function _lobbyScheduleEvaluate() {
+  if (_lobbySettleTO) clearTimeout(_lobbySettleTO);
+  _lobbySettleTO = setTimeout(_lobbyEvaluate, LOBBY_SETTLE_MS);
+}
+
+function _lobbyEvaluate() {
+  if (_lobbyState !== 'waiting') return;   // already mid-handshake or matched — let that resolve first
+  const ids = Object.keys(_lobbyPeers).concat([_lobbyId]).sort();
+  const myIdx = ids.indexOf(_lobbyId);
+  const pairStart = myIdx - (myIdx % 2);
+  if (pairStart + 1 >= ids.length) return;   // odd one out this round — keep waiting
+  const proposerId = ids[pairStart], otherId = ids[pairStart + 1];
+  if (proposerId !== _lobbyId) return;       // the OTHER side of this candidate pair proposes, not me — wait
+  _lobbyState = 'proposed';
+  _lobbyProposedTo = otherId;
+  _lobbySend({ type: 'propose', to: otherId });
+  _lobbySetCardState(_lobbyMode, 'online-waiting', 'Found another player — confirming…');
+  if (_lobbyReplyTO) clearTimeout(_lobbyReplyTO);
+  _lobbyReplyTO = setTimeout(() => _lobbyRevertToWaiting(), LOBBY_REPLY_MS);   // no accept/reject came back — try again
+}
+
+function _lobbyLaunch(gameRoom, role) {
+  if (_lobbyState === 'matched') return;   // already acted on one assignment — ignore any more
+  _lobbyState = 'matched';
+  const mode = _lobbyMode;
+  _lobbySend({ type: 'bye' });
+  _lobbyStopTimers();
+  _lobbySetCardState(mode, 'online-matched', 'Matched! Launching…');
+  setTimeout(() => {
+    window.location.href = 'rivals.html?room=' + encodeURIComponent(gameRoom) + '&role=' + role + '&mode=' + mode;
+  }, 260);
+}
+
+function _lobbyStopTimers() {
+  if (_lobbyHeartbeatIv) { clearInterval(_lobbyHeartbeatIv); _lobbyHeartbeatIv = null; }
+  if (_lobbyStaleIv)     { clearInterval(_lobbyStaleIv);     _lobbyStaleIv     = null; }
+  if (_lobbySettleTO)    { clearTimeout(_lobbySettleTO);     _lobbySettleTO    = null; }
+  if (_lobbyReplyTO)     { clearTimeout(_lobbyReplyTO);      _lobbyReplyTO     = null; }
+}
+
+function _lobbyCancel(message) {
+  if (_lobbyState !== 'idle') _lobbySend({ type: 'bye' });
+  _lobbyStopTimers();
+  if (_lobbyWs) { try { _lobbyWs.onclose = null; _lobbyWs.close(); } catch (e) {} _lobbyWs = null; }
+  _lobbyState = 'idle';
+  _lobbyProposedTo = null;
+  _lobbyPeers = {};
+  const mode = _lobbyMode;
+  _lobbyMode = null;
+  _lobbyRoom = null;
+  if (!mode) return;   // never actually joined a queue — nothing to reset visually
+  if (message) {
+    // Briefly show why we stopped (e.g. gave up reconnecting), then settle back to normal.
+    _lobbySetCardState(mode, null, message);
+    setTimeout(() => { _lobbySetCardState(mode, null, _lobbyDefaultTitle(mode)); }, 2600);
+  } else {
+    _lobbySetCardState(mode, null, _lobbyDefaultTitle(mode));
+  }
+}
+
+window.addEventListener('beforeunload', () => {
+  if (_lobbyState !== 'idle' && _lobbyState !== 'matched') { try { _lobbySend({ type: 'bye' }); } catch (e) {} }
+});
 </script>
 
 <!-- Route node debugger toggle -->
@@ -15295,11 +15745,36 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
       <img class="mode-card-icon" src="images/collabicon.jpg" alt="">
       <div class="mode-card-title">Collaborative</div>
     </div>
+    <div class="mode-card" id="mode-card-online" onclick="openOnlineModeMenu()">
+      <img class="mode-card-icon" src="images/onlineicon.jpg" alt="">
+      <div class="mode-card-title" id="mode-card-online-title">Play Online</div>
+    </div>
+  </div>
+  <div class="mode-cards-secondary">
     <div class="mode-card" onclick="startTutorial()">
       <img class="mode-card-icon" src="images/howtoplayicon.png" alt="">
       <div class="mode-card-title">How to Play</div>
     </div>
   </div>
+</div>
+
+<!-- ══ ONLINE MODE SELECT — pick Rivals or Collaborative, then wait for a
+     second player to pick the same one. First click on a card turns it
+     amber and joins that mode's queue; as soon as another browser picks
+     the same card it turns green and both are launched together. ══ -->
+<div id="online-mode-select-overlay">
+  <div class="mode-select-title">Play Online — Choose a Mode</div>
+  <div class="mode-cards">
+    <div class="mode-card" id="online-mode-card-rivals" onclick="chooseOnlineMode('rivals')">
+      <img class="mode-card-icon" src="images/rivalsicon.png" alt="">
+      <div class="mode-card-title" id="online-mode-card-rivals-title">Rival Merchants</div>
+    </div>
+    <div class="mode-card" id="online-mode-card-collab" onclick="chooseOnlineMode('collab')">
+      <img class="mode-card-icon" src="images/collabicon.jpg" alt="">
+      <div class="mode-card-title" id="online-mode-card-collab-title">Collaborative</div>
+    </div>
+  </div>
+  <div id="online-mode-back" onclick="closeOnlineModeMenu()">← Back</div>
 </div>
 
 <!-- ══ SHIPWRECK SEQUENCE ══════════════════════════════════════════════════ -->
@@ -15544,7 +16019,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   const netChosen = { mineDone: false, theirsDone: false };
   let _originalBeginVoyage = null;
   let _voyageReallyStarted = false;
-  let _charRequestInterval = null;
 
   function showNetMsg(text) {
     let el = document.getElementById('mp-netmsg');
@@ -15572,67 +16046,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     const oppHeld = document.getElementById(isHost ? 'held-p2' : 'held-p1');
     if (oppHeld) oppHeld.style.display = 'none';
   }
-
-  // ── networked mode select — shown after the intro plays out, same beat as
-  // solo play's Solo/Rivals/Collaborative picker, but trimmed to just the two
-  // options that make sense over the network (no Solo, no tutorial). Whichever
-  // browser clicks first locks the mode for BOTH sides — the other browser
-  // receives it via the 'mode_select' sync below instead of picking its own. ──
-  let _netModeApplied = false;
-  let _modeRequestInterval = null;
-  function setupNetworkedModeSelect() {
-    // Arrived here already paired up by index.html's online lobby, which only
-    // ever matches two seekers who picked the SAME mode — so both browsers
-    // carry an identical "&mode=" and there's nothing left to ask either
-    // player about. Apply it immediately and skip the mode-select screen
-    // (and its request_mode catch-up polling) entirely.
-    const urlMode = qs.get('mode');
-    if (urlMode === 'rivals' || urlMode === 'collab') {
-      _applyNetworkedMode(urlMode, isHost);
-      return;
-    }
-    const ms = document.getElementById('mode-select-overlay');
-    if (!ms) { setupNetworkedCharSelect(); return; }
-    const soloCard = ms.querySelector('.mode-card[onclick="chooseSolo()"]');
-    const tutCard  = ms.querySelector('.mode-card[onclick="startTutorial()"]');
-    if (soloCard) soloCard.style.display = 'none';
-    if (tutCard)  tutCard.style.display  = 'none';
-    // The shared intro script (identical to index.html's) handles the actual
-    // preload + reveal timing — it un-hides #mode-select-overlay once ready.
-    // Only the click behavior of the two remaining cards changes, below.
-
-    // Catch-up for a late-joining browser: if the OTHER side already picked a
-    // mode before this one even connected (e.g. one player clicks Rivals
-    // seconds after opening their link, before the other has loaded theirs at
-    // all), that original mode_select broadcast is long gone — nothing resends
-    // it on its own. So, same pattern as the guest's request_state retry for
-    // full_state below, ask for it: the side that already chose replies with
-    // its own mode_select again the moment it sees the request.
-    let retries = 0;
-    _modeRequestInterval = setInterval(() => {
-      if (_netModeApplied) { clearInterval(_modeRequestInterval); _modeRequestInterval = null; return; }
-      if (retries++ >= 30) { clearInterval(_modeRequestInterval); _modeRequestInterval = null; return; } // ~60s, then give up quietly — a real click still works fine
-      window.syncAction('request_mode', {});
-    }, 2000);
-  }
-
-  function _applyNetworkedMode(mode, broadcast) {
-    if (_netModeApplied) return;
-    _netModeApplied = true;
-    if (_modeRequestInterval) { clearInterval(_modeRequestInterval); _modeRequestInterval = null; }
-    gameMode = mode;
-    const ms = document.getElementById('mode-select-overlay');
-    if (ms) { ms.style.transition = 'opacity 0.5s ease'; ms.style.opacity = '0'; setTimeout(() => ms.remove(), 550); }
-    _retireIntroOverlay();
-    if (broadcast) window.syncAction('mode_select', { mode });
-    setupNetworkedCharSelect();
-  }
-
-  // Override the solo/pass-and-play mode switches — clicking either remaining
-  // card now locks that mode in for both browsers instead of just switching
-  // the local player count the way it does in solo/pass-and-play play.
-  window.chooseRival  = function() { _applyNetworkedMode('rivals', true); };
-  window.chooseCollab = function() { _applyNetworkedMode('collab', true); };
 
   function setupNetworkedCharSelect() {
     const ms = document.getElementById('mode-select-overlay');
@@ -15666,33 +16079,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
         btn.style.padding = '0';
       }
     });
-
-    // Catch-up for a late-joining/late-connecting browser: the online lobby's
-    // instant "&mode=" auto-apply (see setupNetworkedModeSelect above) means
-    // both sides can reach this screen — and one impatient player can confirm
-    // their character — within a second or two of the page loading, well
-    // before the old ~100s intro-scroll buffer used to guarantee both relay
-    // connections were fully up and had joined the room. A char_select
-    // broadcast sent before the other side has joined the room is gone for
-    // good on this "dumb" relay (nothing replays it), and there was no
-    // re-ask for it — unlike mode_select/full_state, which already have one.
-    // Same pattern here: poll for it until an answer arrives.
-    let charRetries = 0;
-    if (_charRequestInterval) clearInterval(_charRequestInterval);
-    _charRequestInterval = setInterval(() => {
-      if (netChosen.theirsDone) { clearInterval(_charRequestInterval); _charRequestInterval = null; return; }
-      if (charRetries++ >= 30) { clearInterval(_charRequestInterval); _charRequestInterval = null; return; } // ~60s, then give up quietly
-      window.syncAction('request_char_select', {});
-    }, 2000);
-  }
-
-  function _sendMyCharSelect() {
-    const myScreenIdx = isHost ? 0 : 1;
-    const cm = chosenMerchant[myScreenIdx];
-    if (!cm) return;   // haven't confirmed (or picked) yet — nothing to send
-    const nameEl = document.getElementById(isHost ? 'char-name-p1' : 'char-name-p2');
-    const myName = (nameEl && nameEl.value.trim()) || (isHost ? 'Player 1' : 'Player 2');
-    window.syncAction('char_select', { idx: myScreenIdx, src: cm.src, bx: cm.bx, by: cm.by, mIdx: cm.idx, name: myName });
   }
 
   function localConfirm() {
@@ -15705,7 +16091,11 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     const warn = document.getElementById('char-warning');
     if (warn) warn.textContent = '';
 
-    _sendMyCharSelect();
+    const nameEl = document.getElementById(isHost ? 'char-name-p1' : 'char-name-p2');
+    const myName = (nameEl && nameEl.value.trim()) || (isHost ? 'Player 1' : 'Player 2');
+    const cm = chosenMerchant[myScreenIdx];
+
+    window.syncAction('char_select', { idx: myScreenIdx, src: cm.src, bx: cm.bx, by: cm.by, mIdx: cm.idx, name: myName });
 
     const myScreenEl = document.getElementById(isHost ? 'char-screen-1' : 'char-screen-2');
     if (myScreenEl) { myScreenEl.style.pointerEvents = 'none'; myScreenEl.style.opacity = '0.4'; }
@@ -15744,8 +16134,8 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     _originalBeginVoyage();
   };
 
-  document.addEventListener('DOMContentLoaded', setupNetworkedModeSelect);
-  if (document.readyState !== 'loading') setupNetworkedModeSelect();
+  document.addEventListener('DOMContentLoaded', setupNetworkedCharSelect);
+  if (document.readyState !== 'loading') setupNetworkedCharSelect();
 
   // ── gather full state ───────────────────────────────────────────
   function getFullState() {
@@ -15842,46 +16232,19 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
   };
 
   window.onSync = function(d) {
-    if (d.type === 'mode_select') {
-      _applyNetworkedMode(d.data.mode, false);
-      return;
-    }
-    if (d.type === 'request_mode') {
-      // A late-joining browser is asking whether a mode's already been chosen.
-      // Only answer if this side genuinely settled one — otherwise both sides
-      // are still waiting and there's nothing to hand back yet.
-      if (_netModeApplied) window.syncAction('mode_select', { mode: gameMode });
-      return;
-    }
     if (d.type === 'char_select') {
       const idx = d.data.idx;
       chosenMerchant[idx] = { src: d.data.src, bx: d.data.bx, by: d.data.by, idx: d.data.mIdx };
       const nameInput = document.getElementById(idx === 0 ? 'char-name-p1' : 'char-name-p2');
       if (nameInput) nameInput.value = d.data.name;
       netChosen.theirsDone = true;
-      if (_charRequestInterval) { clearInterval(_charRequestInterval); _charRequestInterval = null; }
       if (netChosen.mineDone) showNetMsg('Starting the voyage…');
       tryFinishSelect();
-      return;
-    }
-    if (d.type === 'request_char_select') {
-      // The other side hasn't seen our pick yet (e.g. our original char_select
-      // broadcast went out before they'd joined the room) — resend it if we've
-      // actually confirmed one; if we haven't picked yet either, there's
-      // nothing to answer with, they'll just ask again in a couple seconds.
-      if (netChosen.mineDone) _sendMyCharSelect();
       return;
     }
     if (d.type === 'request_state') {
       console.log('[MP] received request_state, isHost=' + isHost + ', voyageStarted=' + _voyageReallyStarted);
       if (isHost && _voyageReallyStarted) window.syncFullState();
-      return;
-    }
-    if (d.type === 'begin_appraisal') {
-      // The other browser's player clicked "Yes, appraise" — run our own local
-      // appraisal too, computed from the same already-synced cabAllSlots/players,
-      // so this side also learns the game ended (see beginAppraisal above).
-      if (typeof beginAppraisal === 'function') beginAppraisal(d.data.instigatorIdx, true);
       return;
     }
     if (d.type === 'full_state') {
@@ -15918,19 +16281,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (myTurn && players[myPlayerIdx] && players[myPlayerIdx]._bodleianArrivalPending) {
       players[myPlayerIdx]._bodleianArrivalPending = false;
       setTimeout(() => { try { openPort('Bodleian Library', 'images/bodleiandestination.jpg'); } catch(e) {} }, 400);
-    }
-    // Same catch-up, for the Tavern: its arrival was flagged pending because the
-    // ship that carried this player there was actually advanced on the OTHER
-    // player's browser (via their End Turn). Without this, the flag just sits
-    // there forever and the tavern silently never opens for this player online.
-    if (myTurn && players[myPlayerIdx] && players[myPlayerIdx]._tavernArrivalPending) {
-      players[myPlayerIdx]._tavernArrivalPending = false;
-      setTimeout(() => {
-        try {
-          openPort('Cape of Good Hope', PORT_IMAGES['Cape of Good Hope']);
-          openTavern();
-        } catch (e) { console.error('Tavern catch-up error:', e); }
-      }, 400);
     }
     // Same catch-up, generalized: any other port arrival that was deferred via
     // pendingPortOpen but has no card-draw this turn to trigger dismissCard's
@@ -16011,6 +16361,7 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
 let _tutSteps = [];
 let _tutIdx = 0;
 let _tutActive = false;
+let _tutSavedPreviewRouteId = null;
 
 function startTutorial() {
   _tutActive = true;
@@ -16115,11 +16466,17 @@ function _tutRender(step) {
   box.classList.toggle('tut-box-right', step.boxPos === 'right');
   box.classList.toggle('tut-box-left', step.boxPos === 'left');
   box.classList.toggle('tut-box-nudge-left', step.boxPos === 'nudge-left');
-  if (!step.boxPos || step.boxPos === 'nudge-left') {
+  // 'shift-left-20' is the same bottom-centre default, just nudged 20px further
+  // left (used at the Cape of Good Hope so the box clears the port icons); 'custom'
+  // opts out of default positioning entirely — the step's own action places the
+  // box itself (e.g. below an enlarged card it's showing).
+  if (!step.boxPos || step.boxPos === 'nudge-left' || step.boxPos === 'shift-left-20') {
     box.style.left = step.boxPos === 'nudge-left' ? '35%' : '50%';
     box.style.bottom = '26px';
     box.style.top = 'auto';
-    box.style.transform = 'translateX(-50%)';
+    box.style.transform = step.boxPos === 'shift-left-20'
+      ? 'translateX(calc(-50% - 20px))'
+      : 'translateX(-50%)';
   }
 
   if (step.callouts) step.callouts();
@@ -17123,20 +17480,63 @@ function _tutBuildSteps() {
     },
     {
       title: 'A Guest Aboard',
-      text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route. Go ahead and sail onto the Cape of Good Hope.',
+      text: 'As you are a guest onboard the merchant ships you must travel along their routes, you can disembark at ports but normally will have to continue along the chosen route.',
       target: () => null,
       action: async () => {
         // Same full-map overview the spacebar triggers — shown while this text is
         // being read, so all the routes are visible for what it's describing.
-        const preOverviewPreview = previewRouteId;
+        // Left showing as-is when this step ends — the next step continues on
+        // the same overview view, no restore happens until that step is done.
+        _tutSavedPreviewRouteId = previewRouteId;
         previewRouteId = OVERVIEW_ROUTES;
         buildSVG();
         zoomOut();
+      },
+    },
+    {
+      title: 'A Guest Aboard',
+      text: 'As your network and reputation grows, local traders will begin offering you discrete passage, granting you greater freedom of movement. Go ahead and sail onto the Cape of Good Hope.',
+      target: () => null,
+      boxPos: 'custom',
+      action: async () => {
+        // Show an example of the discreet-passage shortcut card, at the same
+        // size as a normal in-game card draw (#card-display's own min(500px,86vw)
+        // width, that card art's own 2:3 aspect ratio) — and drop this step's
+        // narration box below it instead of at its usual spot at the bottom.
+        const gap = 20, bottomMargin = 20, cardTop = window.innerHeight * 0.06;
+        const tutBoxForCard = document.getElementById('tut-box');
+        // Measure the box's own real rendered height (it already has this step's
+        // title/text in it by now) rather than guessing a fixed reserve, so the
+        // card only ever shrinks as much as this box genuinely needs below it.
+        const boxH = tutBoxForCard ? tutBoxForCard.offsetHeight : 160;
+        const maxCardH = Math.max(160, window.innerHeight - cardTop - gap - boxH - bottomMargin);
+        let cardW = Math.min(500, window.innerWidth * 0.86);
+        let cardH = cardW * 1.5;
+        if (cardH > maxCardH) { cardH = maxCardH; cardW = cardH / 1.5; }
+
+        const cardImg = document.createElement('img');
+        cardImg.id = 'tut-shortcut-card-example';
+        cardImg.src = 'images/shrtcutbombayceylon.jpg';
+        cardImg.style.cssText = `
+          position:fixed; z-index:899999; top:${cardTop}px; left:50%; transform:translateX(-50%);
+          width:${cardW}px; height:${cardH}px; object-fit:contain; border-radius:4px;
+          box-shadow:0 8px 40px rgba(0,0,0,0.95);`;
+        document.body.appendChild(cardImg);
+
+        if (tutBoxForCard) {
+          tutBoxForCard.style.left = '50%';
+          tutBoxForCard.style.top = (cardTop + cardH + gap) + 'px';
+          tutBoxForCard.style.bottom = 'auto';
+          tutBoxForCard.style.transform = 'translateX(-50%)';
+        }
 
         await _tutWaitForNext();
 
+        cardImg.remove();
+        if (tutBoxForCard) { tutBoxForCard.style.top = ''; tutBoxForCard.style.bottom = ''; tutBoxForCard.style.transform = ''; }
+
         // Back to the regular close-up play view before continuing.
-        previewRouteId = preOverviewPreview;
+        previewRouteId = _tutSavedPreviewRouteId;
         buildSVG();
         zoomToCurrent();
 
@@ -17183,16 +17583,25 @@ function _tutBuildSteps() {
       title: 'Buying at Ports',
       text: 'You do not need to officially disembark to buy port items, only to travel inland.',
       target: () => null,
+      boxPos: 'shift-left-20',
     },
     {
       title: 'The Busiest Port',
       text: 'The Cape of Good Hope is the crossroads of all ships heading east \u2014 here you may change ship for different routes, or switch direction and backtrack.',
       target: () => null,
+      boxPos: 'shift-left-20',
+    },
+    {
+      title: 'The Tavern',
+      text: 'At the Cape of Good Hope there is a bustling tavern where traders from all over the world converge \u2014 you may disembark and spend one turn here, paying a fellow merchant 2 ingots for information.',
+      target: () => document.querySelector('#cape-tavern-area .buy-item-frame'),
+      boxPos: 'shift-left-20',
     },
     {
       title: 'Moving On',
       text: 'If you do not wish to change ship or buy any port items, simply close the port windows and end turn to continue on your chosen route.',
       target: () => null,
+      boxPos: 'shift-left-20',
       action: async () => {
         // This is now the tutorial's genuine last step, so the button already
         // reads "Finish ✓" rather than "Next →" — clicking it flows straight

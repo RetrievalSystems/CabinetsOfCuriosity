@@ -7651,6 +7651,15 @@ function openPort(portName, portImg) {
 
 function closePort() {
   hideRouteTooltip();
+  // Leaving/closing this port view — clear any leftover deferred-open flag for the
+  // current player. pendingPortOpen is normally consumed by dismissCard() (once the
+  // arriving player draws their card) or by the inland-arrival branch in endTurn(),
+  // but if either path gets skipped (e.g. the player boards onward again before it's
+  // consumed), it sits there orphaned and later wrongly reopens this same port out of
+  // nowhere — "the port I've just left pops up on the next step" (see the matching
+  // comment in endTurn()'s arrival handler). Safe to clear unconditionally here: by the
+  // time a real port-closing action fires, this flag has always already done its job.
+  try { const _cpP = cp(); if (_cpP) _cpP.pendingPortOpen = null; } catch (e) {}
   document.querySelectorAll('.ship-pre-selected').forEach(el => el.classList.remove('ship-pre-selected'));
   document.getElementById('port-overlay').classList.remove('open');
   // Reset postcard opacity (Bodleian delays it; all other ports should be instant)
@@ -10368,7 +10377,7 @@ function renderHeldCards(playerIdx) {
   });
 
   const count  = groups.length;
-  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between fan slots
+  const spread = Math.min(24, 120 / Math.max(count, 1)); // px between fan slots — widened per user request, was min(18, 80/count)
   const totalW = count > 1 ? spread * (count - 1) + 62 : 62;
 
   container.style.width  = totalW + 'px';
@@ -14166,10 +14175,21 @@ function promptCabinetFull(instigatorIdx) {
 }
 
 // Step 2 — queue the players (instigator first; both in a rivals game).
-function beginAppraisal(instigatorIdx) {
+// `fromRemote` is true when this call was triggered by the OTHER browser's
+// 'begin_appraisal' network message (see onSync below) — only the browser
+// where the player actually clicked "Yes, appraise" broadcasts, or both
+// sides would ping-pong the message back and forth forever. Networked play
+// never wrote gameOver/appraisal state into the synced full_state snapshot,
+// so without this broadcast the other browser never learned the game had
+// ended at all (PLAYTEST_BUGLOG.md #25).
+function beginAppraisal(instigatorIdx, fromRemote) {
+  if (_appraisalActive || gameOver) return;
   _appraisalActive = true;
   _appraisalScores = {};
   _appraisalQueue  = (NUM_PLAYERS >= 2 && gameMode !== 'collab') ? [instigatorIdx, 1 - instigatorIdx] : [instigatorIdx];
+  if (!fromRemote && typeof window.syncAction === 'function') {
+    window.syncAction('begin_appraisal', { instigatorIdx });
+  }
   _appraiseNext();
 }
 
@@ -16240,6 +16260,13 @@ window.addEventListener('beforeunload', () => {
       netChosen.theirsDone = true;
       if (netChosen.mineDone) showNetMsg('Starting the voyage…');
       tryFinishSelect();
+      return;
+    }
+    if (d.type === 'begin_appraisal') {
+      // The other browser's player clicked "Yes, appraise" — run our own local
+      // appraisal too, computed from the same already-synced cabAllSlots/players,
+      // so this side also learns the game ended (see beginAppraisal above).
+      if (typeof beginAppraisal === 'function') beginAppraisal(d.data.instigatorIdx, true);
       return;
     }
     if (d.type === 'request_state') {

@@ -1080,35 +1080,19 @@ input, textarea { -webkit-user-select: text; user-select: text; }  /* keep any t
 }
 
 #btn-end {
-  padding: 0;
-  border: none;
-  background: none;
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  padding: 6px 18px;
+  border: 1px solid #6b4416;
+  background: linear-gradient(160deg, #2a1a08, #1a0e04);
+  color: #e8c078;
   cursor: pointer;
-  line-height: 0;
-  transition: transform 0.15s, filter 0.15s;
+  border-radius: 2px;
+  transition: background 0.2s, border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
-#btn-end img { display: block; height: 34px; width: auto; pointer-events: none; }
-#btn-end:hover   { filter: brightness(1.15); }
-#btn-end:active  { transform: scale(0.96); }
-#btn-end:disabled { cursor: default; filter: grayscale(0.5) brightness(0.75); }
-#btn-end:disabled:hover { filter: grayscale(0.5) brightness(0.75); }
-
-/* Small, unobtrusive escape hatch for a battle that visually resolved but left the
-   game refusing End Turn — see resyncPirateState(). Faint until hovered so it never
-   competes with the real controls in normal play. */
-#btn-resync {
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 19px;
-  line-height: 1;
-  color: #c8b48a;
-  opacity: 0.4;
-  transition: opacity 0.15s, transform 0.5s;
-}
-#btn-resync:hover  { opacity: 0.95; }
-#btn-resync:active { transform: rotate(200deg); }
+#btn-end:hover { background: linear-gradient(160deg,#3d2510,#2a1a08); border-color:#c8923a; }
 
 #status-msg {
   font-family: 'IM Fell English', serif;
@@ -2165,7 +2149,7 @@ body:has(#cab-overlay.open) #cabinet-btn { display: none !important; }
 /* ── Retained card zones — below player panels, horizontal wave row ─────── */
 .retained-zone {
   position: fixed;
-  top: 338px;           /* fallback only — JS pins this to the real panel bottom, see syncRetainedZonePositions() */
+  top: 320px;           /* 10px lower than before, +15px to stop card tops clipping */
   z-index: 29;
   display: flex;
   flex-direction: row;
@@ -2895,8 +2879,7 @@ body.solo-mode #ast-bay-p1 { display: none !important; }  /* P1's bay is the RIG
       </div>
     </div>
     <div id="action-row">
-      <button id="btn-end" onclick="endTurn()"><img src="images/endturnplaque.png" alt="End Turn"></button>
-      <button id="btn-resync" onclick="resyncPirateState()" title="Turn stuck after a pirate/ghost-ship battle? Click to resync.">⟳</button>
+      <button id="btn-end" onclick="endTurn()">End Turn</button>
       <div id="status-msg">You are in London.<br>Click the port to enter.</div>
     </div>
   </div>
@@ -4147,7 +4130,7 @@ const ROUTES = {
     circuit:   ['meetiyagoda'],
     nodes: [
       {x:1128, y:460, name:'Ceylon',       isPort:true, portImg:'images/portcey.jpeg'},        // 0 — Galle
-      {x:1113, y:459, name:'Meetiyagoda',  isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 1 — inland gem mines, ~5px hop (was ~20px)
+      {x:1126, y:455, name:'Meetiyagoda',  isPort:true, portImg:'images/cantontofoshan.jpeg'}, // 1 — inland gem mines
     ],
   },
 
@@ -4161,8 +4144,8 @@ const ROUTES = {
     circuit:   ['ratnapura'],
     nodes: [
       {x:1128, y:460, name:'Ceylon',    isPort:true,  portImg:'images/portcey.jpeg'},       // 0
-      {x:1113, y:459, name:'',          isPort:false},                                        // 1
-      {x:1117, y:457, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},       // 2
+      {x:1129, y:456, name:'',          isPort:false},                                        // 1
+      {x:1131, y:452, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},       // 2
     ],
   },
 
@@ -4174,67 +4157,9 @@ const ROUTES = {
     nextRoute: null,
     circuit:   ['ratnapura_return'],
     nodes: [
-      {x:1117, y:457, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},
-      {x:1113, y:459, name:'',          isPort:false},
+      {x:1131, y:452, name:'Ratnapura', isPort:true,  portImg:'images/ratnapura.jpg'},
+      {x:1129, y:456, name:'',          isPort:false},
       {x:1128, y:460, name:'Ceylon',    isPort:true,  portImg:'images/portcey.jpeg'},
-    ],
-  },
-
-  // ── Country Captain shortcut: Bombay ⇄ Ceylon direct — requires the shortcut card + reputation 8+ ──
-  bomceydirect: {
-    id:'bomceydirect', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Ceylon",
-    facesEast:true, // galleonship.png's bow points right/east by default, unlike most other ship art — see renderShips()
-    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect'],
-    nodes:[
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
-      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 1
-    ],
-  },
-  bomceydirect_return: {
-    id:'bomceydirect_return', shipImg:'images/galleonship.png', shipName:"Country Captain's boat to Bombay",
-    facesEast:true,
-    lineColor:'rgba(120,170,200,0.55)', circuit:['bomceydirect_return'],
-    nodes:[
-      {x:1128, y:460, name:'Ceylon', isPort:true, portImg:'images/portcey.jpeg'},  // 0
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
-    ],
-  },
-  // ── Lascar Serang shortcut: Madras ⇄ Bombay direct — requires the shortcut card + reputation 8+ ──
-  madbomdirect: {
-    id:'madbomdirect', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Bombay",
-    facesEast:true,
-    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect'],
-    nodes:[
-      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 0
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 1
-    ],
-  },
-  madbomdirect_return: {
-    id:'madbomdirect_return', shipImg:'images/galleonship.png', shipName:"Lascar Serang's boat to Madras",
-    facesEast:true,
-    lineColor:'rgba(200,150,120,0.55)', circuit:['madbomdirect_return'],
-    nodes:[
-      {x:1093, y:419, name:'Bombay', isPort:true, portImg:'images/portbom.jpeg'},  // 0
-      {x:1115, y:445, name:'Madras', isPort:true, portImg:'images/portmad.jpeg'},  // 1
-    ],
-  },
-  // ── Regional crew shortcut: Madras ⇄ Batavia direct — requires the shortcut card + reputation 8+ ──
-  madbatdirect: {
-    id:'madbatdirect', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Batavia',
-    facesEast:true,
-    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect'],
-    nodes:[
-      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 0
-      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 1
-    ],
-  },
-  madbatdirect_return: {
-    id:'madbatdirect_return', shipImg:'images/galleonship.png', shipName:'Regional crew — textile run to Madras',
-    facesEast:true,
-    lineColor:'rgba(160,140,90,0.55)', circuit:['madbatdirect_return'],
-    nodes:[
-      {x:1222, y:502, name:'Batavia', isPort:true, portImg:'images/portbat.jpeg'},  // 0
-      {x:1115, y:445, name:'Madras',  isPort:true, portImg:'images/portmad.jpeg'},  // 1
     ],
   },
 
@@ -4362,36 +4287,35 @@ const ROUTES = {
     lineColor:'rgba(150,120,70,0.4)', nextRoute:null, circuit:['dahel'],
     nodes: [
       {x:1093, y:419, name:'Bombay',      isPort:true,  portImg:'images/portbom.jpeg'},      // 0
-      {x:1073, y:424, name:'',            isPort:false},                                      // 1
-      {x:1074, y:423, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 2
+      {x:1071, y:426, name:'',            isPort:false},                                      // 1
+      {x:1073, y:424, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 2
     ],
   },
   dahel_return: {
     id:'dahel_return', shipImg:'images/mule.png', shipName:'Mule train back to Bombay',
     lineColor:'rgba(150,120,70,0.3)', nextRoute:null, circuit:['dahel_return'],
     nodes: [
-      {x:1074, y:423, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 0
-      {x:1073, y:424, name:'',            isPort:false},                                      // 1
+      {x:1073, y:424, name:'Dahel Gorge', isPort:true,  portImg:'images/treeagatedest.jpg'}, // 0
+      {x:1071, y:426, name:'',            isPort:false},                                      // 1
       {x:1093, y:419, name:'Bombay',      isPort:true,  portImg:'images/portbom.jpeg'},      // 2
     ],
   },
   // ── Bombay inland: Bombay → Cambay (mother-of-pearl casket), north into Gujarat, on a mule ──
-  // Both legs halved from their original length — was wandering noticeably far out.
   cambay: {
     id:'cambay', shipImg:'images/mule.png', shipName:'Mule train to Cambay',
     lineColor:'rgba(150,120,70,0.4)', nextRoute:null, circuit:['cambay'],
     nodes: [
       {x:1093, y:419, name:'Bombay', isPort:true,  portImg:'images/portbom.jpeg'}, // 0
-      {x:1071, y:422, name:'',       isPort:false},                                // 1
-      {x:1070, y:418, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 2
+      {x:1067, y:421, name:'',       isPort:false},                                // 1
+      {x:1065, y:414, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 2
     ],
   },
   cambay_return: {
     id:'cambay_return', shipImg:'images/mule.png', shipName:'Mule train back to Bombay',
     lineColor:'rgba(150,120,70,0.3)', nextRoute:null, circuit:['cambay_return'],
     nodes: [
-      {x:1070, y:418, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 0
-      {x:1071, y:422, name:'',       isPort:false},                                // 1
+      {x:1065, y:414, name:'Cambay', isPort:true,  portImg:'images/cambay.png'},   // 0
+      {x:1067, y:421, name:'',       isPort:false},                                // 1
       {x:1093, y:419, name:'Bombay', isPort:true,  portImg:'images/portbom.jpeg'}, // 2
     ],
   },
@@ -5710,22 +5634,9 @@ function boardRouteFromNode(routeId, portName) {
 // Origin/destination ports (London, Amsterdam, Canton etc.) are unchanged.
 const PORT_EXTRA_ROUTES = {
   'Cape of Good Hope': ['bei','bei_return','voc','voc_return'],
-  'Bombay':            ['bei_return', 'bomceydirect', 'madbomdirect_return'],
-  'Madras':            ['bei_return', 'madbomdirect', 'madbatdirect'],
-  'Ceylon':            ['voc_return', 'bomceydirect_return'],
-  'Batavia':           ['madbatdirect_return'],
-};
-
-// Extra requirements for a route beyond simply being at the right port — used by
-// the three travel-shortcut cards, which need both the standing contact (a specific
-// held card) and reputation 8+ before the option appears at all.
-const ROUTE_REQUIREMENTS = {
-  bomceydirect:         { cardFragment: 'shrtcutbombayceylon', minRep: 8 },
-  bomceydirect_return:  { cardFragment: 'shrtcutbombayceylon', minRep: 8 },
-  madbomdirect:         { cardFragment: 'shrtcutmadrasbombay', minRep: 8 },
-  madbomdirect_return:  { cardFragment: 'shrtcutmadrasbombay', minRep: 8 },
-  madbatdirect:         { cardFragment: 'shrtcutmadrasbatavia', minRep: 8 },
-  madbatdirect_return:  { cardFragment: 'shrtcutmadrasbatavia', minRep: 8 },
+  'Bombay':            ['bei_return'],
+  'Madras':            ['bei_return'],
+  'Ceylon':            ['voc_return'],
 };
 
 function renderPortDepartures(portName) {
@@ -5745,14 +5656,6 @@ function renderPortDepartures(portName) {
 
     const nodeIdx = route.nodes.findIndex(n => n.name === portName);
     if (nodeIdx < 0 || nodeIdx >= route.nodes.length - 1) return; // not on route or at end
-
-    // Gated shortcuts (travel-shortcut cards): only appear if the player holds
-    // the standing contact's card AND meets the reputation threshold.
-    const req = ROUTE_REQUIREMENTS[routeId];
-    if (req) {
-      const hasCard = (p.heldCards||[]).some(hc => hc.img && hc.img.includes(req.cardFragment));
-      if (!hasCard || (p.reputation||0) < req.minRep) return;
-    }
 
     // Skip if player is already on this exact ship
     const routeShip = ships.find(sh => sh.routeId === routeId);
@@ -6076,55 +5979,21 @@ function spinGhostShipDial(pIdx) {
 function mirrorPirateToCrewmate(activePIdx) {
   const shipId = players[activePIdx]?.shipId;
   if (!shipId) return;
-  const active = pirateState[activePIdx];
   players.forEach((pl, idx) => {
     if (idx === activePIdx || pl.shipId !== shipId) return;
-    // The caller (a pirate-sighting draw, or a battle spin resolving) just updated
-    // the ACTIVE player's own pirateState — that is always the fresh, authoritative
-    // copy for this event, so simply mirror it onto every crewmate sharing the ship.
-    // (This used to also copy backwards — pulling the crewmate's OLDER state onto
-    // the active player — whenever the crewmate's inBattle flag hadn't caught up
-    // yet. But the crewmate is always exactly one mirror-call behind, so that was
-    // true on literally every battle: the very spin that finally clears the
-    // pirates. That silently re-armed inBattle on the player who'd just resolved
-    // it, so End Turn kept refusing with no visible battle left onscreen to fight.)
-    pirateState[idx] = JSON.parse(JSON.stringify(active));
-  });
-}
-
-// Manual escape hatch (small "⟳" button next to End Turn): clears any pirate battle
-// or ghost-ship spin flag that's left a player stuck — astrolabe visually settled,
-// but some `inBattle`/`ghostShipSpin`/`spinning` flag still set behind the scenes,
-// so End Turn keeps refusing with nothing left onscreen to actually fight. Safe to
-// click any time: if nothing is actually stuck, this is a complete no-op.
-function resyncPirateState() {
-  let anyStuck = false;
-  pirateState.forEach((s, i) => {
-    if (!s) return;
-    if (s.inBattle || s.ghostShipSpin) {
-      anyStuck = true;
-      if (s.inBattle) {
-        s.steps    = 0;                                   // battle's over — sighting progress resets same as a clean clear
-        s.wheelRot = Math.ceil((s.wheelRot || 0) / 360) * 360; // snap wheel to resting position
-      }
-      s.inBattle      = false;
-      s.ghostShipSpin = false;
+    const active = pirateState[activePIdx];
+    const mate   = pirateState[idx];
+    // Crewmates on the same ship face one shared danger level. Normally the
+    // player who just drew the card is authoritative, but if a crewmate's
+    // state is somehow further along — e.g. they boarded through a path that
+    // missed syncing, or joined mid-battle — never let that regress them.
+    // Always keep whichever side is closer to (or already in) a battle.
+    if (mate && !active.inBattle && (mate.inBattle || mate.steps > active.steps)) {
+      pirateState[activePIdx] = JSON.parse(JSON.stringify(mate));
+    } else {
+      pirateState[idx] = JSON.parse(JSON.stringify(active));
     }
-    if (s.spinning) anyStuck = true;
-    s.spinning       = false;
-    s.clearStepsDone = 0;
-    document.getElementById('ast-stack-p' + i)?.classList.remove('ast-battle', 'ast-clearing');
-    document.getElementById('ast-dial-p'   + i)?.classList.remove('visible');
-    unzoomAstrolabe(i);
-    renderAstrolabe(i, true);
   });
-  setBattleOverlay(false);
-  if (anyStuck) {
-    setStatus('🔄 Battle state resynced — try End Turn again.');
-    log('Pirate/ghost-ship battle state manually resynced.');
-  } else {
-    setStatus('🔄 Nothing was stuck.');
-  }
 }
 
 // Sync pirateState when a player boards a ship already crewed by another player.
@@ -6407,38 +6276,23 @@ window.addEventListener('resize', () => {
   const oldCenterVY = (_lastWinH/2  - currentZoomTy) / currentZoomScale;
   currentZoomTx = Math.round(window.innerWidth/2  - oldCenterVX * currentZoomScale);
   currentZoomTy = Math.round(window.innerHeight/2 - oldCenterVY * currentZoomScale);
-  // Snap instantly rather than sliding through the normal 0.7s zoom transition. That
-  // transition is meant for an intentional pan/zoom (arriving somewhere, a turn
-  // changing) — but 'resize' fires repeatedly while a window is actively being
-  // dragged, so reusing it here meant the map and every dot on it were constantly
-  // chasing a receding target and never visually caught up until a good 0.7s after
-  // the user let go of the window edge. That's what read as "misplaced" — the final,
-  // settled position was always correct, it just took a while to get there.
-  const _portDotsEl = document.getElementById('port-dots');
-  viewport.style.transition = 'none';
-  if (_portDotsEl) _portDotsEl.style.transition = 'none';
   viewport.style.transform = `translate(${currentZoomTx}px,${currentZoomTy}px) scale(${currentZoomScale})`;
   _syncPortDots();
-  viewport.offsetHeight; // force layout so the transition:none actually applies to this change
-  viewport.style.transition = '';
-  if (_portDotsEl) _portDotsEl.style.transition = '';
   _lastWinW = window.innerWidth;
   _lastWinH = window.innerHeight;
   buildSVG(); renderShips(); renderStormTokens(); requestAnimationFrame(renderPortHotspots);
-  // The cabinet had the exact same class of bug, entirely separately — cabPositionSlots()
-  // (see its own comment) re-locks every bay AND its contents to the cabinet image's
-  // current on-screen rect. Only refresh if the cabinet has actually been built at least
-  // once (no DOM to reposition otherwise).
+  // The cabinet has the exact same class of bug, entirely separately — cabSX/cabSY are
+  // calculated once from the cabinet image's actual rendered size and never refreshed on
+  // resize, so items drift out of their bays (worse toward the bottom, furthest from the
+  // scale's origin) the same way the map's ports did. Only refresh if the cabinet has
+  // actually been built at least once.
   if (typeof cabBuilt !== 'undefined' && cabBuilt) {
     try {
-      cabPositionSlots();
+      cabCalcScale();
+      CAB_SLOT_DEFS.forEach(def => cabRenderCell(def));
       cabRefreshInventory(cabActivePIdx);
     } catch (e) {}
   }
-  // Same idea as the cabinet/port-dot fixes above — keep the retained-card strip
-  // (invites, cats, free passes, etc.) locked to wherever the player panel's
-  // bottom edge actually is right now, rather than a fixed guess.
-  try { syncRetainedZonePositions(); } catch (e) {}
 });
 
 // ════════════════════════════════════════════════
@@ -6895,20 +6749,17 @@ function renderShips() {
     img.style.left = (sx + off.x) + 'px';
     img.style.top  = (sy + off.y) + 'px';
 
-    // Face the ship toward its actual direction of travel. Most ship art's natural
-    // orientation faces west, so heading east needs a horizontal flip — except a
-    // route can set facesEast:true (e.g. galleonship.png, used by the three travel
-    // shortcuts, whose bow points right/east by default) to invert that baseline.
-    // Compare against the previous render's position rather than route geometry,
-    // since that's simplest and correctly handles reversed/return legs too. No
+    // Face the ship toward its actual direction of travel. The artwork's natural
+    // orientation faces west, so heading east needs a horizontal flip. Compare
+    // against the previous render's position rather than route geometry, since
+    // that's simplest and correctly handles reversed/return legs too. No
     // horizontal movement (e.g. first render, or a vertical-only leg) keeps
     // whatever facing was already set, rather than flickering.
     const prevSx = img.dataset.prevSx !== undefined ? parseFloat(img.dataset.prevSx) : sx;
     if (sx > prevSx + 0.5) img.dataset.facing = 'east';
     else if (sx < prevSx - 0.5) img.dataset.facing = 'west';
     img.dataset.prevSx = sx;
-    const baseFlip = img.dataset.facing === 'east' ? -1 : 1;
-    const flip = route.facesEast ? -baseFlip : baseFlip;
+    const flip = img.dataset.facing === 'east' ? -1 : 1;
     img.style.transform = `translate(-50%,-50%) scaleX(${flip})`;
   });
 
@@ -6993,12 +6844,7 @@ function updateHUD() {
   document.getElementById('deck-land').classList.toggle('disabled', useSea  || p.cardDrawn);
   document.getElementById('deck-sea').classList.toggle('disabled',  !useSea || p.cardDrawn);
   updateDeckPeek();
-  const _btnEnd = document.getElementById('btn-end');
-  _btnEnd.disabled = !!aiPlayers[currentPIdx];  // clickable on your turn so a premature click jumps the peek; endTurn() enforces the draw
-  // Stay hidden until the current player has actually drawn their card for the
-  // turn — inland treks pre-mark cardDrawn=true (no card to draw), so they
-  // reveal it immediately; every other turn waits for the real draw.
-  _btnEnd.style.display = p.cardDrawn ? '' : 'none';
+  document.getElementById('btn-end').disabled = !!aiPlayers[currentPIdx];  // clickable on your turn so a premature click jumps the peek; endTurn() enforces the draw
   updateTradeBtns();
 }
 
@@ -7475,9 +7321,7 @@ function openPort(portName, portImg) {
     if (hasCoralCard) document.getElementById('falsebay-boat-area').style.display = 'flex';
     // The Tavern — available at the Cape once per stay; hidden once used until
     // the player actually leaves (a fresh arrival back at the Cape resets the flag).
-    // Also hidden once the opportunity deck itself has run dry — no point offering
-    // a trip to an informant who has nothing left to sell.
-    if (!p.tavernUsedAtCape && _tavernTipsAvailable()) {
+    if (!p.tavernUsedAtCape) {
       document.getElementById('cape-tavern-area').style.display = 'flex';
     }
   }
@@ -7518,15 +7362,6 @@ function openPort(portName, portImg) {
 
 function closePort() {
   hideRouteTooltip();
-  // Leaving/closing this port view — clear any leftover deferred-open flag for the
-  // current player. pendingPortOpen is normally consumed by dismissCard() (once the
-  // arriving player draws their card) or by the inland-arrival branch in endTurn(),
-  // but if either path gets skipped (e.g. the player boards onward again before it's
-  // consumed), it sits there orphaned and later wrongly reopens this same port out of
-  // nowhere — "the port I've just left pops up on the next step" (see the matching
-  // comment in endTurn()'s arrival handler). Safe to clear unconditionally here: by the
-  // time a real port-closing action fires, this flag has always already done its job.
-  try { const _cpP = cp(); if (_cpP) _cpP.pendingPortOpen = null; } catch (e) {}
   document.querySelectorAll('.ship-pre-selected').forEach(el => el.classList.remove('ship-pre-selected'));
   document.getElementById('port-overlay').classList.remove('open');
   // Reset postcard opacity (Bodleian delays it; all other ports should be instant)
@@ -8551,12 +8386,6 @@ function returnLondonCart() {
 // "Cape of Good Hope" arrival block in advanceShip), so a later pass-through gets
 // a fresh visit again. ──
 const TAVERN_INFORMANTS = ['images/taverninformant.jpeg', 'images/taverninformant2.jpeg', 'images/taverninformant3.jpeg'];
-// Whether there's actually a tip worth selling right now — an empty opportunity
-// deck means the tavern has nothing left to offer, so it shouldn't be offered
-// as an option at all (see the Cape of Good Hope block in openPort()).
-function _tavernTipsAvailable() {
-  return oppDeck.length > 0;
-}
 function openTavern() {
   const p = cp();
   const used = !!p.tavernUsedAtCape;
@@ -8595,26 +8424,16 @@ function buyTavernTip() {
   drawOpportunityCard(currentPIdx, (outcome) => {
     if (outcome && outcome.dud) {
       // The tip turned out to be worthless (deck empty, or a stale singular-item lead) —
-      // the player paid for nothing, so make them whole and let them try again RIGHT HERE.
-      // Important: this must reopen the tavern popup directly (openTavern()) rather than
-      // re-showing the cape-tavern-area icon on the port screen behind it — that icon's
-      // only job is boardCapeTavern(), a brand new one-turn boat trip out to the Tavern.
-      // Re-showing it here used to look like a "try again" button but actually forced the
-      // player to spend their whole turn re-boarding a boat just to get back to where they
-      // were already standing, with no chance to buy a second tip until the turn after.
+      // the player paid for nothing, so make them whole and let them try again.
       p.silver = _preSilver;
       p.ingots = _preIngots;
       p.tavernUsedAtCape = false;
+      if (_cta) _cta.style.display = 'flex';
       log(`${p.name}'s tip turns out to be stale — the merchant refunds the 2 ingots.`);
       updateInventory(currentPIdx);
-      // Reopen right away so they can try again — unless that stale draw was
-      // the deck's very last card, in which case there's genuinely nothing
-      // left to sell; openTavern() itself will quietly stay closed for that.
-      openTavern();
-      return;
     }
-    closeTavern();
   });
+  closeTavern();
 }
 
 // Bodleian: hovering a face-up choice blows it up full-screen so the text is readable,
@@ -9995,13 +9814,7 @@ const SEA_CARD_TEMPLATES = [
   ...Array(2).fill(null).map(()=> mkCard('images/seagulls2.jpeg', (p,i)=>{ log(`${p.name}: "The sea washes away all the woes."`); })),
   // ── Dominoes win ×2, loss ×2 ──
   ...[1,2].map(()=> mkCard('images/dominoeswin.jpeg',  (p,i)=>{ players[i].silver=(players[i].silver||0)+5; updateInventory(i); log(`${p.name}: Dominoes! The bones fall your way — +5 silver.`); })),
-  ...[1,2].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{
-    // Can't cover the 3-silver debt outright? Take the hit on reputation instead —
-    // enacted quietly, no log line for this specific outcome (per design request).
-    if ((players[i].silver||0) < 3) { changeRep(i,-2); updateInventory(i); return; }
-    players[i].silver -= 3;
-    updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`);
-  })),
+  ...[1,2].map(()=> mkCard('images/dominoesloss.jpeg', (p,i)=>{ players[i].silver=Math.max(0,(players[i].silver||0)-3); updateInventory(i); log(`${p.name}: Dominoes! Not your night — -3 silver.`); })),
   // ── Purchasable items (one-offs) ──
   mkCard('images/sailiorscrimshaw.jpeg', (p,i)=>{ log(`${p.name}: A sailor offers fine scrimshaw.`); },
     { isBuy:true, oneOff:true, buyImg:'images/scrimshaw.png', buyName:'Whale Tooth Scrimshaw', buyPrice:4 }),
@@ -10108,33 +9921,16 @@ function giveHeldCard(playerIdx, card) {
 
 function isRetainedCard(hc) {
   // These cards live in the portrait strip below the HUD, not in the hand fan
-  return hc.heldType === 'invite'     || hc.type === 'invite'     ||
-         hc.heldType === 'cat'        || hc.type === 'cat'        ||
-         hc.heldType === 'freepass'   || hc.type === 'freepass'   ||
-         hc.heldType === 'pox'        || hc.type === 'pox'        ||
-         hc.heldType === 'specialist' || hc.heldType === 'shortcut';
-}
-
-// Pin the retained-card strip just below the player panel's ACTUAL bottom edge,
-// measured live, rather than trusting a hand-tuned pixel guess — that guess
-// (previously a hardcoded top:320px in CSS) has quietly gone stale before,
-// leaving the cards overlapping the panel instead of sitting cleanly under it.
-// Called on every card render (below) and after a resize (see the window
-// 'resize' listener) so it can never drift out of sync again.
-function syncRetainedZonePositions() {
-  ['1','2'].forEach(n => {
-    const panel = document.getElementById(`panel-p${n}`);
-    const zone  = document.getElementById(`retained-zone-p${n}`);
-    if (!panel || !zone) return;
-    zone.style.top = (panel.getBoundingClientRect().bottom + 6) + 'px';
-  });
+  return hc.heldType === 'invite'   || hc.type === 'invite'   ||
+         hc.heldType === 'cat'      || hc.type === 'cat'      ||
+         hc.heldType === 'freepass' || hc.type === 'freepass' ||
+         hc.heldType === 'pox'      || hc.type === 'pox';
 }
 
 function renderRetainedCards(playerIdx) {
   const zone = document.getElementById(`retained-zone-p${playerIdx + 1}`);
   if (!zone) return;
   zone.innerHTML = '';
-  syncRetainedZonePositions();
 
   const isP2    = (playerIdx === 1);
   const cards   = (players[playerIdx]?.heldCards || []).filter(isRetainedCard);
@@ -10227,7 +10023,7 @@ function renderHeldCards(playerIdx) {
   });
 
   const count  = groups.length;
-  const spread = Math.min(24, 120 / Math.max(count, 1)); // px between fan slots — widened per user request, was min(18, 80/count)
+  const spread = Math.min(18, 80 / Math.max(count, 1)); // px between fan slots
   const totalW = count > 1 ? spread * (count - 1) + 62 : 62;
 
   container.style.width  = totalW + 'px';
@@ -10593,22 +10389,6 @@ const LAND_CARD_TEMPLATES = [
     effect:(p,i)=>{ p.heldCards=p.heldCards||[];
       if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('minerologist'))) { log(`${p.name}: Mineralogist card already held — returned to deck.`); return; }
       p.heldCards.push({id:'miner_'+Date.now(),img:'images/op-minerologist.jpeg',faceUp:false,type:'opportunity',label:'Mineralogist — Leiden',dest:'Leiden',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: Mineralogist in Leiden — double price for specimens. Kept face down.`); } })),
-  // ── Travel shortcuts — Country Captain (Bombay/Ceylon ×3) and Lascar Serang (Madras/Bombay ×3) ──
-  // Permanent once drawn, kept for good, used infinitely — same standing-contact
-  // pattern as the specialists above, but gate a direct route instead of a sale.
-  // Both require reputation 8+ (checked at boarding time in renderPortDepartures).
-  ...Array(2).fill(null).map(()=> ({ img:'images/shrtcutbombayceylon.jpg',
-    effect:(p,i)=>{ p.heldCards=p.heldCards||[];
-      if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutbombayceylon'))) { log(`${p.name}: Country Captain's acquaintance already held — returned to deck.`); return; }
-      p.heldCards.push({id:'ccshortcut_'+Date.now(),img:'images/shrtcutbombayceylon.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Country Captain — Bombay ⇄ Ceylon',dest:'Bombay',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: an independent Country Captain — direct passage between Bombay and Ceylon, reputation 8+ required. Kept face down.`); } })),
-  ...Array(2).fill(null).map(()=> ({ img:'images/shrtcutmadrasbombay.jpg',
-    effect:(p,i)=>{ p.heldCards=p.heldCards||[];
-      if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutmadrasbombay'))) { log(`${p.name}: Lascar Serang's name already held — returned to deck.`); return; }
-      p.heldCards.push({id:'lsshortcut_'+Date.now(),img:'images/shrtcutmadrasbombay.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Lascar Serang — Madras ⇄ Bombay',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: the name of a Lascar Serang — direct passage between Madras and Bombay, reputation 8+ required. Kept face down.`); } })),
-  ...Array(2).fill(null).map(()=> ({ img:'images/shrtcutmadrasbatavia.jpg',
-    effect:(p,i)=>{ p.heldCards=p.heldCards||[];
-      if ((p.heldCards).some(hc=>hc.img&&hc.img.includes('shrtcutmadrasbatavia'))) { log(`${p.name}: Regional crew contact already held — returned to deck.`); return; }
-      p.heldCards.push({id:'mbshortcut_'+Date.now(),img:'images/shrtcutmadrasbatavia.jpg',faceUp:false,type:'opportunity',heldType:'shortcut',label:'Regional Crew — Madras ⇄ Batavia',dest:'Madras',redeemed:false}); renderHeldCards(i); log(`${p.name} draws: a veteran regional crew running textiles — direct passage between Madras and Batavia, reputation 8+ required. Kept face down.`); } })),
   // ── Atlantic Waterspout — kept: S, SW, SE, W ──
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
   { img:'images/wss.jpeg',  effect:(p,i)=>{ log(`${p.name}: Reports of a waterspout — it moves S.`);  advanceStormToken('atlantic','S');  } },
@@ -10772,7 +10552,7 @@ function purchaseItem() {
     passItem(); return;
   }
   players[i].items  = players[i].items || [];
-  const _base = (card.buyImg||'').replace(/^.*\//,'').replace(/\.\w+$/,''); players[i].items.push({ id: _base+'_card_'+Date.now(), name: card.buyName, label: card.buyName, img: card.buyImg, price: card.buyPrice||0, priceCurrency: usesIngots ? 'ingots' : 'coins', type:'goods' });
+  const _base = (card.buyImg||'').replace(/^.*\//,'').replace(/\.\w+$/,''); players[i].items.push({ id: _base+'_card_'+Date.now(), name: card.buyName, label: card.buyName, img: card.buyImg, price: 0, type:'goods' });
   updateInventory(i);
   log(`${p.name} buys ${card.buyName} for ${card.buyPrice} ${usesIngots ? 'ingots' : 'silver'}.`);
   passItem();
@@ -11145,18 +10925,7 @@ const PORT_ITEMS = {
 //  at round-end for unmanned ships
 // ════════════════════════════════════════════════
 function advanceShip(s) {
-  // sierras/ouroupreto/minas_cont/kongumadras/poonamallee (+ _return legs) added here:
-  // they're 3-4 node treks with unnamed waypoints and no stopCard conditional stop, so
-  // (like haarlem/leiden/etc. above) they're fully owned by the ALL_INLAND loop in
-  // endTurn() — that loop already advances them 1 hop/turn and disembarks correctly on
-  // arrival. Without this exclusion, THIS function's own "Advance incoming player's
-  // ship" call in endTurn() was ALSO advancing the same ship on the same turn transition
-  // right after ALL_INLAND already moved it once — a real reported bug (Rio→Ouro
-  // Preto→Minas Gerais completing in a single turn instead of two) caused by both
-  // systems moving the same ship. minasgerais/minasgerais_return are deliberately NOT
-  // here — that route's conditional Ouro Preto topaz stop (stopCard) is only checked by
-  // THIS function, so it must stay excluded from ALL_INLAND instead (see endTurn()).
-  if (!s || ['foshan','haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','dahel_return','cambay','cambay_return','violettrip','rhine','rhine_return','foshan_return','meetiyagoda_return','ratnapura_return','bataviacove_return','abrolhos_return','goto_return','violettrip_return','ancol','ancol_return','lapidary','lapidary_return','delft','delft_return','whitecloudmtn','whitecloudmtn_return','sierras','sierras_return','ouroupreto','ouroupreto_return','minas_cont','minas_cont_return','kongumadras','kongumadras_return','poonamallee','poonamallee_return'].includes(s.routeId)) return;
+  if (!s || ['foshan','haarlem','haarlem_return','leiden','leiden_return','haarlem_delft','haarlem_delft_return','leiden_delft','leiden_delft_return','meetiyagoda','ratnapura','ratnapura_return','bataviacove','abrolhos','goto','dahel','dahel_return','cambay','cambay_return','violettrip','rhine','rhine_return','foshan_return','meetiyagoda_return','ratnapura_return','bataviacove_return','abrolhos_return','goto_return','violettrip_return','ancol','ancol_return','lapidary','lapidary_return','delft','delft_return','whitecloudmtn','whitecloudmtn_return'].includes(s.routeId)) return;
   const r     = ROUTES[s.routeId];
   if (!r) return;
   const nodes = r.nodes;
@@ -11405,18 +11174,6 @@ function advanceShip(s) {
         s._remove = true;
         if (!ships.some(sh=>sh.routeId==='voc_return'&&sh.nodeIndex===0))
           ships.push({id:nextShipId++,routeId:'voc_return',nodeIndex:0,unmanned:false});
-      }
-      // ── Shortcut routes (Country Captain / Lascar Serang / Regional Crew) —
-      // each is a single direct hop with no chained return leg (the return is a
-      // separate route the player boards later from the arrival port), so unlike
-      // the main sea routes nothing above ever marked these for removal — the
-      // ship sprite was being left behind on the map forever once the player
-      // disembarked. Disembark and remove it here, same as every other arrival.
-      if (['bomceydirect','bomceydirect_return','madbomdirect','madbomdirect_return','madbatdirect','madbatdirect_return'].includes(s.routeId)) {
-        const finalNode = nodes[nodes.length - 1];
-        players.filter(pl=>pl.shipId===s.id).forEach(pl=>{pl.shipId=null;pl.disembarked=true;pl.landLocation=finalNode;});
-        log(`${names} arrive at ${finalNode.name} — the shortcut voyage is complete.`);
-        s._remove = true;
       }
     }
   } else {
@@ -11765,10 +11522,7 @@ function endTurn() {
     'ancol','ancol_return','lapidary','lapidary_return','delft','delft_return',
     'whitecloudmtn','whitecloudmtn_return',
     'sierras','sierras_return',
-    // minasgerais/minasgerais_return deliberately NOT here — that route's conditional
-    // Ouro Preto topaz stop (stopCard) is only checked in advanceShip(), so it must stay
-    // that function's sole responsibility (see the matching note there) rather than also
-    // being advanced here, which caused a real double-hop-per-turn bug.
+    'minasgerais','minasgerais_return',
     'ouroupreto','ouroupreto_return','minas_cont','minas_cont_return',
     'kongumadras','kongumadras_return','poonamallee','poonamallee_return','caramujeira','caramujeira_return','falsebay','falsebay_return',
   ];
@@ -14000,21 +13754,10 @@ function promptCabinetFull(instigatorIdx) {
 }
 
 // Step 2 — queue the players (instigator first; both in a rivals game).
-// `fromRemote` is true when this call was triggered by the OTHER browser's
-// 'begin_appraisal' network message (see onSync below) — only the browser
-// where the player actually clicked "Yes, appraise" broadcasts, or both
-// sides would ping-pong the message back and forth forever. Networked play
-// never wrote gameOver/appraisal state into the synced full_state snapshot,
-// so without this broadcast the other browser never learned the game had
-// ended at all (PLAYTEST_BUGLOG.md #25).
-function beginAppraisal(instigatorIdx, fromRemote) {
-  if (_appraisalActive || gameOver) return;
+function beginAppraisal(instigatorIdx) {
   _appraisalActive = true;
   _appraisalScores = {};
   _appraisalQueue  = (NUM_PLAYERS >= 2 && gameMode !== 'collab') ? [instigatorIdx, 1 - instigatorIdx] : [instigatorIdx];
-  if (!fromRemote && typeof window.syncAction === 'function') {
-    window.syncAction('begin_appraisal', { instigatorIdx });
-  }
   _appraiseNext();
 }
 
@@ -14258,10 +14001,9 @@ function openCabinet() {
     const doB = () => { cabCalcScale(); cabBuildSlots(); cabBuilt = true; cabRefreshInventory(cabActivePIdx); };
     if(img.complete) doB(); else img.addEventListener('load', doB, {once:true});
   } else {
-    // Slot DOM already exists — re-position it against the image's current rect
-    // (in case a resize happened while the cabinet was closed) and re-render with
-    // this player's state.
-    cabPositionSlots();
+    // Slot DOM already exists — just re-render with this player's state
+    cabCalcScale();
+    CAB_SLOT_DEFS.forEach(def => cabRenderCell(def));
     cabRefreshInventory(cabActivePIdx);
     cabRefreshStorage();
   }
@@ -14412,13 +14154,7 @@ function cabCalcScale() {
   const imgR = img.getBoundingClientRect();
   cabSX = imgR.width / CAB_W; cabSY = imgR.height / CAB_H;
 }
-// cabPositionSlots() vs cabBuildSlots(): the bay positions/sizes (layer rect and
-// each cell's left/top/width/height) were only ever set once, the very first time
-// the cabinet was built, and never refreshed — so the bays stayed pinned to wherever
-// they were on that very first open while their contents kept rescaling to match the
-// new window size, drifting apart the more the window size changed. Extracted so this
-// part alone can be safely re-run on every resize/reopen (see callers).
-function cabPositionSlots() {
+function cabBuildSlots() {
   cabCalcScale();
   const img   = document.getElementById('cab-img');
   const layer = document.getElementById('cab-slot-layer');
@@ -14440,11 +14176,7 @@ function cabPositionSlots() {
     cell.style.height = Math.round((def.y2-def.y1)*cabSY)+'px';
     layer.appendChild(cell); cabRenderCell(def);
   });
-}
-function cabBuildSlots() {
-  cabPositionSlots();
-  // Ghost track + return-zone wiring — one-time only (see cabPositionSlots() above
-  // for the part that's safe to re-run on every resize/reopen instead)
+  // Ghost track + return-zone wiring
   const cabOv = document.getElementById('cab-overlay');
   cabOv.addEventListener('dragover', e => {
     const g = document.getElementById('cab-ghost');
@@ -15049,18 +14781,6 @@ function cabClearHighlights() {
     var ov = document.getElementById('intro-overlay');
     if (!ov) { bye(); return; }
 
-    // IMPORTANT: _imgBlob (the in-memory blob-URL cache that makes every <img>.src
-    // assignment transparently immune to GitHub Pages' short HTTP cache expiring
-    // mid-game — see its own comment further up the file) lives ONLY in page
-    // memory. A reload wipes it clean no matter what any sessionStorage flag says.
-    // So both "skip the intro" cases below must still kick off the real
-    // fetch-and-blob-cache sweep in the background even though they skip the
-    // VISUAL doors/scroll wait — otherwise every image on a repeat load falls
-    // back to a plain network request, and once GitHub Pages' cache window
-    // passes mid-session, ports go cold and pictures stutter/pop in again. This
-    // is exactly what going straight to bye() with no preload() call used to do.
-    function _bgPreload() { preload(gatherImages(), function () {}, function () {}); }
-
     // A player who chose "Start Fresh" or "End Tutorial" already sat through
     // this whole sequence once — skip straight to the game-choice screen on
     // this particular reload rather than making them wait through it again.
@@ -15068,21 +14788,9 @@ function cabClearHighlights() {
     // loading chrome — same as the normal flow, just without sitting through it.
     if (sessionStorage.getItem('coc_skipIntro') === '1') {
       sessionStorage.removeItem('coc_skipIntro');
-      _bgPreload();
       bye();
       return;
     }
-
-    // Already ran a full preload once this browser session (flag is set below,
-    // right when the loading bar reaches 100%). The player still gets the same
-    // cabinet doors/title/scroll scene as a fresh load — that's presentation,
-    // not just a progress bar — the only difference is loading is already
-    // known to be done, so a click works immediately instead of only once the
-    // scroll finishes its own ~100s climb (see imagesReady below). The real
-    // fetch-and-blob-cache sweep still runs quietly in the background either
-    // way, same reason as _bgPreload() above: _imgBlob is wiped by this very
-    // reload no matter what this flag says.
-    var alreadyPreloaded = sessionStorage.getItem('coc_preloaded') === '1';
 
     var titleWrap = document.getElementById('intro-title-wrap');
     var scroll    = document.getElementById('intro-scroll');
@@ -15092,26 +14800,14 @@ function cabClearHighlights() {
     var total  = urls.length, done = 0;
     var startT = Date.now();
     var MIN_FILL = 4000;   // floor that smooths the bar fill; real load may take longer
-    // imagesReady tracks ONLY whether every image has actually finished loading —
-    // deliberately independent of the scroll's own long climb off-screen (that
-    // duration is intentional, giving players time to read it, not a loading
-    // wait). scrollDone tracks the scroll animation separately. The game only
-    // auto-advances once BOTH are true — same pacing as before — but a click is
-    // let through as soon as imagesReady alone is true, so an impatient (or
-    // fast-reading) player is never blocked once there's genuinely nothing left
-    // to wait for; a click while images are still loading does nothing. Already
-    // preloaded this session? Then imagesReady starts true — a click works from
-    // the very first frame, even though the scroll/doors still play out normally
-    // for anyone who doesn't click.
-    var imagesReady = alreadyPreloaded, scrollDone = false, dismissing = false;
+    var ready = false, scrollDone = false, dismissing = false;
 
     preload(urls, function(d, t) { done = d; total = t; }, function() {});
-    if (alreadyPreloaded && fill) fill.style.width = '100%';
 
     // Bar reflects real load progress (floored by a short minimum so it animates
     // smoothly rather than snapping to full on a warm cache).
     function tick() {
-      if (imagesReady) return;
+      if (ready) return;
       var loadFrac = total ? done / total : 1;
       var timeFrac = Math.min(1, (Date.now() - startT) / MIN_FILL);
       if (fill) fill.style.width = (Math.min(loadFrac, timeFrac) * 100).toFixed(1) + '%';
@@ -15119,51 +14815,32 @@ function cabClearHighlights() {
     }
     requestAnimationFrame(tick);
 
-    // Leave once both the images are ready AND the scroll has finished its own
-    // journey (or the player clicked through early — see the click handler).
-    function maybeAutoLeave() {
-      if (dismissing || !imagesReady || !scrollDone) return;
-      dismissing = true;
-      setTimeout(bye, 400);
+    // Hold on the doors (bar visible) until the very last image has loaded, then
+    // fade the doors and begin. Honours \"wait for all images\".
+    function finishWhenLoaded() {
+      if (ready) return;
+      if (done >= total) { ready = true; if (fill) fill.style.width = '100%'; setTimeout(bye, 400); return; }
+      setTimeout(finishWhenLoaded, 150);
     }
 
-    // Polls for real image-load completion — starts right away, not gated behind
-    // the scroll animation, so imagesReady can become true well before the scroll
-    // finishes climbing (that's the whole point: a click can then skip the rest
-    // of the scroll's journey immediately instead of waiting the full ~100s).
-    function pollImages() {
-      if (imagesReady) return;
-      if (done >= total) {
-        imagesReady = true;
-        if (fill) fill.style.width = '100%';
-        try { sessionStorage.setItem('coc_preloaded', '1'); } catch (e) {}  // skip the pass on the next reload this session
-        maybeAutoLeave();
-        return;
-      }
-      setTimeout(pollImages, 150);
-    }
-    if (!alreadyPreloaded) setTimeout(pollImages, 150);
-
-    // Click anywhere to skip straight to the game — but only once every image
-    // has actually finished loading; before that there's nothing to skip to
-    // yet, so a click while still loading does nothing (the scroll just keeps
-    // making its own way up regardless).
+    // Click anywhere to skip straight to the game — but only once loading has
+    // actually finished; before that there's nothing to skip to yet, so the
+    // scroll just keeps making its way up regardless of a click.
     ov.style.cursor = 'pointer';
     ov.addEventListener('click', function() {
-      if (!imagesReady || dismissing) return;
+      if (!ready || dismissing) return;
       dismissing = true;
       bye();
     });
 
     // Once the scroll finishes its own journey off the top of the screen,
-    // either the images are already loaded (go straight in) or they aren't yet
-    // (maybeAutoLeave quietly does nothing here — pollImages will call it again
-    // the moment loading actually finishes).
+    // either the game's already loaded (go straight in) or it isn't yet
+    // (finishWhenLoaded quietly waits, then goes as soon as it is).
     if (scroll) {
       scroll.addEventListener('transitionend', function(e) {
         if (e.propertyName !== 'top' || scrollDone || dismissing) return;
         scrollDone = true;
-        maybeAutoLeave();
+        finishWhenLoaded();
       });
     }
 
@@ -15179,7 +14856,7 @@ function cabClearHighlights() {
         });
       }, 3900);
     } else {
-      setTimeout(function() { scrollDone = true; maybeAutoLeave(); }, 4200);   // no scroll element — don't trap the player
+      setTimeout(finishWhenLoaded, 4200);   // no scroll element — don't trap the player
     }
   }
 
@@ -15875,13 +15552,6 @@ function chooseCollab() { gameMode = 'collab'; _enterCharSelect(2); }
     if (d.type === 'request_state') {
       console.log('[MP] received request_state, isHost=' + isHost + ', voyageStarted=' + _voyageReallyStarted);
       if (isHost && _voyageReallyStarted) window.syncFullState();
-      return;
-    }
-    if (d.type === 'begin_appraisal') {
-      // The other browser's player clicked "Yes, appraise" — run our own local
-      // appraisal too, computed from the same already-synced cabAllSlots/players,
-      // so this side also learns the game ended (see beginAppraisal above).
-      if (typeof beginAppraisal === 'function') beginAppraisal(d.data.instigatorIdx, true);
       return;
     }
     if (d.type === 'full_state') {
